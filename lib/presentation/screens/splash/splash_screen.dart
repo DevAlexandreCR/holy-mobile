@@ -19,10 +19,6 @@ class SplashScreen extends ConsumerWidget {
     final textTheme = Theme.of(context).textTheme;
     final isError = errorDetails != null;
 
-    ref.listen<AsyncValue<AppConfig>>(appConfigProvider, (previous, next) {
-      next.whenOrNull(data: (_) => context.go('/login'));
-    });
-
     return Scaffold(
       backgroundColor: colorScheme.primary,
       body: Center(

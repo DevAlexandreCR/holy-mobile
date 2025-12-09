@@ -2,13 +2,12 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:holy_mobile/core/config/app_config.dart';
+import 'package:holy_mobile/data/auth/token_storage.dart';
 
 final dioProvider = Provider<Dio>((ref) {
-  final config = ref.watch(appConfigProvider).value;
-
-  if (config == null) {
-    throw StateError('App configuration is not ready yet.');
-  }
+  final config = ref.watch(appConfigProvider).valueOrNull ??
+      (throw StateError('App configuration is not ready yet.'));
+  final tokenService = ref.watch(authTokenServiceProvider);
 
   final dio = Dio(
     BaseOptions(
@@ -23,7 +22,7 @@ final dioProvider = Provider<Dio>((ref) {
   dio.interceptors.add(
     InterceptorsWrapper(
       onRequest: (options, handler) async {
-        final token = await _readAuthToken();
+        final token = await tokenService.readToken();
         if (token != null && token.isNotEmpty) {
           options.headers['Authorization'] = 'Bearer $token';
         }
@@ -44,8 +43,3 @@ final dioProvider = Provider<Dio>((ref) {
 
   return dio;
 });
-
-Future<String?> _readAuthToken() async {
-  // TODO: Integrate with secure storage once authentication is implemented.
-  return null;
-}

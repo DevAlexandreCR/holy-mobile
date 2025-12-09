@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:holy_mobile/core/config/app_config.dart';
+import 'package:holy_mobile/presentation/state/auth/auth_controller.dart';
 import 'package:holy_mobile/presentation/screens/auth/forgot_password_screen.dart';
 import 'package:holy_mobile/presentation/screens/auth/login_screen.dart';
 import 'package:holy_mobile/presentation/screens/auth/register_screen.dart';
@@ -9,25 +10,18 @@ import 'package:holy_mobile/presentation/screens/settings/settings_screen.dart';
 import 'package:holy_mobile/presentation/screens/splash/splash_screen.dart';
 import 'package:holy_mobile/presentation/screens/verse/verse_of_the_day_screen.dart';
 
-final appRouterProvider = Provider<GoRouter>((ref) {
-  final configState = ref.watch(appConfigProvider);
-
-  return configState.when(
-    data: (config) => _buildRouter(config: config),
-    loading: () => _buildRouter(),
-    error: (error, _) => _buildRouter(
-      splashMessage: 'Error al cargar configuración',
-      errorDetails: error.toString(),
-    ),
-  );
+final authBootstrapProvider = FutureProvider<void>((ref) async {
+  await ref.watch(appConfigProvider.future);
+  await ref.read(authControllerProvider.notifier).restoreSession();
 });
 
-GoRouter _buildRouter({
-  AppConfig? config,
-  String splashMessage = 'Cargando configuración...',
-  String? errorDetails,
-}) {
-  final isReady = config != null;
+final appRouterProvider = Provider<GoRouter>((ref) {
+  final configState = ref.watch(appConfigProvider);
+  final authState = ref.watch(authControllerProvider);
+  final authBootstrap = ref.watch(authBootstrapProvider);
+
+  final splashMessage = _resolveSplashMessage(configState, authBootstrap);
+  final splashError = _resolveSplashError(configState, authBootstrap);
 
   return GoRouter(
     initialLocation: '/splash',
@@ -36,7 +30,7 @@ GoRouter _buildRouter({
         path: '/splash',
         builder: (context, state) => SplashScreen(
           message: splashMessage,
-          errorDetails: errorDetails,
+          errorDetails: splashError,
         ),
       ),
       GoRoute(
@@ -61,17 +55,61 @@ GoRouter _buildRouter({
       ),
     ],
     redirect: (context, state) {
+      final bootstrapping = configState.isLoading || authBootstrap.isLoading;
+      final hasErrors = configState.hasError || authBootstrap.hasError;
       final atSplash = state.matchedLocation == '/splash';
+      final atAuthRoute = state.matchedLocation == '/login' ||
+          state.matchedLocation == '/register' ||
+          state.matchedLocation == '/forgot-password';
+      final isProtectedRoute = state.matchedLocation == '/verse' ||
+          state.matchedLocation == '/settings';
 
-      if (!isReady && !atSplash) {
-        return '/splash';
+      if (hasErrors) {
+        return atSplash ? null : '/splash';
       }
 
-      if (isReady && atSplash) {
+      if (bootstrapping) {
+        return atSplash ? null : '/splash';
+      }
+
+      if (authState.isAuthenticated && (atSplash || atAuthRoute)) {
+        return '/verse';
+      }
+
+      if (!authState.isAuthenticated && (atSplash || isProtectedRoute)) {
         return '/login';
       }
 
       return null;
     },
   );
+});
+
+String _resolveSplashMessage(
+  AsyncValue<AppConfig> configState,
+  AsyncValue<void> authBootstrap,
+) {
+  if (configState.isLoading || authBootstrap.isLoading) {
+    return 'Preparando tu experiencia...';
+  }
+  if (configState.hasError) {
+    return 'Error al cargar configuración';
+  }
+  if (authBootstrap.hasError) {
+    return 'No se pudo validar tu sesión';
+  }
+  return 'Listo para comenzar';
+}
+
+String? _resolveSplashError(
+  AsyncValue<AppConfig> configState,
+  AsyncValue<void> authBootstrap,
+) {
+  if (configState.hasError) {
+    return configState.error.toString();
+  }
+  if (authBootstrap.hasError) {
+    return authBootstrap.error.toString();
+  }
+  return null;
 }
