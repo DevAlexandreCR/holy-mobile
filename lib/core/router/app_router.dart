@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:holy_mobile/core/config/app_config.dart';
+import 'package:holy_mobile/core/l10n/app_localizations.dart';
 import 'package:holy_mobile/presentation/state/auth/auth_controller.dart';
 import 'package:holy_mobile/presentation/screens/auth/forgot_password_screen.dart';
 import 'package:holy_mobile/presentation/screens/auth/login_screen.dart';
@@ -20,8 +21,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authControllerProvider);
   final authBootstrap = ref.watch(authBootstrapProvider);
 
-  final splashMessage = _resolveSplashMessage(configState, authBootstrap);
-  final splashError = _resolveSplashError(configState, authBootstrap);
+  const baseL10n = AppLocalizations(Locale('es'));
+
+  final splashMessage = _resolveSplashMessage(configState, authBootstrap, baseL10n);
+  final splashError = _resolveSplashError(configState, authBootstrap, baseL10n);
 
   return GoRouter(
     initialLocation: '/splash',
@@ -88,28 +91,30 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 String _resolveSplashMessage(
   AsyncValue<AppConfig> configState,
   AsyncValue<void> authBootstrap,
+  AppLocalizations l10n,
 ) {
   if (configState.isLoading || authBootstrap.isLoading) {
-    return 'Preparando tu experiencia...';
+    return l10n.splashPreparing;
   }
   if (configState.hasError) {
-    return 'Error al cargar configuración';
+    return l10n.splashConfigError;
   }
   if (authBootstrap.hasError) {
-    return 'No se pudo validar tu sesión';
+    return l10n.splashSessionError;
   }
-  return 'Listo para comenzar';
+  return l10n.splashReady;
 }
 
 String? _resolveSplashError(
   AsyncValue<AppConfig> configState,
   AsyncValue<void> authBootstrap,
+  AppLocalizations l10n,
 ) {
   if (configState.hasError) {
-    return configState.error.toString();
+    return configState.error?.toString() ?? l10n.splashConfigError;
   }
   if (authBootstrap.hasError) {
-    return authBootstrap.error.toString();
+    return authBootstrap.error?.toString() ?? l10n.splashSessionError;
   }
   return null;
 }

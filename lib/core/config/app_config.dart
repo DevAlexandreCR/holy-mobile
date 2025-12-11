@@ -1,4 +1,6 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:holy_mobile/core/l10n/app_localizations.dart';
 
 class AppConfig {
   final String baseApiUrl;
@@ -16,11 +18,12 @@ class AppConfig {
   /// In the future this could pull from env files, remote config, or platform
   /// channels. For now we return a static configuration.
   static Future<AppConfig> load() async {
-    return const AppConfig(
+    const l10n = AppLocalizations(Locale('es'));
+    return AppConfig(
       baseApiUrl: 'https://api.ejemplo.com',
       requestTimeout: Duration(seconds: 15),
-      genericErrorMessage: 'Ocurrió un error inesperado. Inténtalo nuevamente.',
-      networkErrorMessage: 'Verifica tu conexión a internet.',
+      genericErrorMessage: l10n.genericError,
+      networkErrorMessage: l10n.networkError,
     );
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:holy_mobile/core/l10n/app_localizations.dart';
 import 'package:holy_mobile/presentation/state/auth/auth_controller.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -37,7 +38,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     if (success) {
       context.go('/verse');
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('¡Bienvenido de nuevo!')),
+        SnackBar(content: Text(context.l10n.welcomeBack)),
       );
     } else if (state.errorMessage != null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -50,10 +51,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     final state = ref.watch(authControllerProvider);
+    final l10n = context.l10n;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Iniciar sesión'),
+        title: Text(l10n.loginTitle),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
@@ -63,26 +65,26 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'Bienvenido de nuevo',
+                l10n.loginHeadline,
                 style: textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 12),
               Text(
-                'Ingresa para continuar con tu experiencia bíblica.',
+                l10n.loginSubtitle,
                 style: textTheme.bodyMedium,
               ),
               const SizedBox(height: 24),
               TextFormField(
                 controller: _emailController,
                 enabled: !state.isLoading,
-                decoration: const InputDecoration(labelText: 'Correo electrónico'),
+                decoration: InputDecoration(labelText: l10n.emailLabel),
                 keyboardType: TextInputType.emailAddress,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Ingresa tu correo';
+                    return l10n.missingEmailError;
                   }
                   if (!value.contains('@')) {
-                    return 'Correo inválido';
+                    return l10n.invalidEmailError;
                   }
                   return null;
                 },
@@ -91,14 +93,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               TextFormField(
                 controller: _passwordController,
                 enabled: !state.isLoading,
-                decoration: const InputDecoration(labelText: 'Contraseña'),
+                decoration: InputDecoration(labelText: l10n.passwordLabel),
                 obscureText: true,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Ingresa tu contraseña';
+                    return l10n.missingPasswordError;
                   }
                   if (value.length < 6) {
-                    return 'Debe tener al menos 6 caracteres';
+                    return l10n.shortPasswordError;
                   }
                   return null;
                 },
@@ -112,16 +114,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         width: 18,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : const Text('Entrar'),
+                    : Text(l10n.loginAction),
               ),
               const SizedBox(height: 12),
               TextButton(
                 onPressed: state.isLoading ? null : () => context.go('/forgot-password'),
-                child: const Text('¿Olvidaste tu contraseña?'),
+                child: Text(l10n.forgotPassword),
               ),
               TextButton(
                 onPressed: state.isLoading ? null : () => context.go('/register'),
-                child: const Text('Crear cuenta nueva'),
+                child: Text(l10n.createAccount),
               ),
             ],
           ),

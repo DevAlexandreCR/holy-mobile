@@ -1,5 +1,7 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:holy_mobile/core/l10n/app_localizations.dart';
 import 'package:holy_mobile/data/network/api_client.dart';
 import 'package:holy_mobile/domain/verse/verse_of_the_day.dart';
 
@@ -17,7 +19,8 @@ class VerseApiClient {
       return VerseOfTheDay.fromMap(Map<String, dynamic>.from(data));
     }
 
-    throw StateError('Formato de versículo inesperado');
+    const l10n = AppLocalizations(Locale('es'));
+    throw StateError(l10n.unexpectedVerseFormat);
   }
 }
 

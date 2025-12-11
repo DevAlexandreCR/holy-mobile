@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:holy_mobile/core/l10n/app_localizations.dart';
 import 'package:holy_mobile/presentation/state/auth/auth_controller.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
@@ -42,7 +43,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     if (success) {
       context.go('/verse');
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Cuenta creada. ¡Bienvenido!')),
+        SnackBar(content: Text(context.l10n.accountCreated)),
       );
     } else if (state.errorMessage != null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -55,10 +56,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     final state = ref.watch(authControllerProvider);
+    final l10n = context.l10n;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Crear cuenta'),
+        title: Text(l10n.registerTitle),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
@@ -68,22 +70,22 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'Regístrate',
+                l10n.registerHeadline,
                 style: textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 12),
               Text(
-                'Crea tu cuenta para personalizar tus lecturas.',
+                l10n.registerSubtitle,
                 style: textTheme.bodyMedium,
               ),
               const SizedBox(height: 24),
               TextFormField(
                 controller: _nameController,
                 enabled: !state.isLoading,
-                decoration: const InputDecoration(labelText: 'Nombre completo'),
+                decoration: InputDecoration(labelText: l10n.nameLabel),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Ingresa tu nombre';
+                    return l10n.missingNameError;
                   }
                   return null;
                 },
@@ -92,14 +94,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               TextFormField(
                 controller: _emailController,
                 enabled: !state.isLoading,
-                decoration: const InputDecoration(labelText: 'Correo electrónico'),
+                decoration: InputDecoration(labelText: l10n.emailLabel),
                 keyboardType: TextInputType.emailAddress,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Ingresa tu correo';
+                    return l10n.missingEmailError;
                   }
                   if (!value.contains('@')) {
-                    return 'Correo inválido';
+                    return l10n.invalidEmailError;
                   }
                   return null;
                 },
@@ -108,14 +110,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               TextFormField(
                 controller: _passwordController,
                 enabled: !state.isLoading,
-                decoration: const InputDecoration(labelText: 'Contraseña'),
+                decoration: InputDecoration(labelText: l10n.passwordLabel),
                 obscureText: true,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Ingresa una contraseña';
+                    return l10n.missingPasswordError;
                   }
                   if (value.length < 6) {
-                    return 'Debe tener al menos 6 caracteres';
+                    return l10n.shortPasswordError;
                   }
                   return null;
                 },
@@ -124,11 +126,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               TextFormField(
                 controller: _confirmPasswordController,
                 enabled: !state.isLoading,
-                decoration: const InputDecoration(labelText: 'Confirmar contraseña'),
+                decoration: InputDecoration(labelText: l10n.confirmPasswordLabel),
                 obscureText: true,
                 validator: (value) {
                   if (value != _passwordController.text) {
-                    return 'Las contraseñas no coinciden';
+                    return l10n.passwordMismatchError;
                   }
                   return null;
                 },
@@ -142,12 +144,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         width: 18,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : const Text('Registrarse'),
+                    : Text(l10n.registerAction),
               ),
               const SizedBox(height: 12),
               TextButton(
                 onPressed: state.isLoading ? null : () => context.go('/login'),
-                child: const Text('Ya tengo una cuenta'),
+                child: Text(l10n.alreadyHaveAccount),
               ),
             ],
           ),

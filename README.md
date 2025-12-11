@@ -20,8 +20,8 @@ Aplicación Flutter que muestra el “Versículo del día”, permite elegir la 
 - Ruteo: GoRouter (`app_router.dart`).
 - Red: Dio con inyección de token y timeout en `api_client.dart`.
 - Capas: `data/` (clients/repos), `domain/` (entidades), `presentation/` (screens/state).
-- Temas: `lib/core/theme/app_theme.dart` define light/dark con paleta cálida y tipografía Manrope.
-- i18n: llaves en `lib/l10n/*.arb`, usando `AppLocalizations` (es por defecto, fácil de extender a en).
+- Temas: `lib/core/theme/app_theme.dart` define light/dark con paleta cálida (dorado/teal) y tipografía Manrope.
+- i18n: `lib/core/l10n/app_localizations.dart` centraliza las cadenas (es predeterminado, en como base secundaria). `MaterialApp` ya declara `localizationsDelegates`, `supportedLocales` y `locale: es`.
 
 ## Widgets nativos
 - Flutter guarda el verso en almacenamiento compartido vía `WidgetSyncService` → `WidgetVerseStorage` → `MethodChannel` `bible_widget/shared_verse`.

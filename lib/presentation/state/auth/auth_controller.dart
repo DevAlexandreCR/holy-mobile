@@ -1,11 +1,14 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:holy_mobile/core/l10n/app_localizations.dart';
 import 'package:holy_mobile/data/auth/auth_repository.dart';
 import 'package:holy_mobile/data/auth/models/auth_payload.dart';
 import 'package:holy_mobile/presentation/state/auth/auth_state.dart';
 
 class AuthController extends Notifier<AuthState> {
   late final AuthRepository _repository;
+  static const _l10n = AppLocalizations(Locale('es'));
 
   @override
   AuthState build() {
@@ -146,10 +149,10 @@ class AuthController extends Notifier<AuthState> {
           data is Map && data['message'] is String ? data['message'] as String : null;
       return responseMessage ??
           error.message ??
-          'No se pudo completar la solicitud. Inténtalo nuevamente.';
+          _l10n.authRequestFailed;
     }
 
-    return 'Algo salió mal. Inténtalo nuevamente.';
+    return _l10n.authUnexpectedError;
   }
 }
 

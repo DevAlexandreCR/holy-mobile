@@ -1,14 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:holy_mobile/core/l10n/app_localizations.dart';
 import 'package:holy_mobile/domain/verse/verse_of_the_day.dart';
 import 'package:holy_mobile/presentation/state/verse/verse_controller.dart';
 import 'package:share_plus/share_plus.dart';
-
-const _background = Color(0xFF0D1117);
-const _cardTop = Color(0xFF121A2A);
-const _cardBottom = Color(0xFF1A2940);
-const _accent = Color(0xFFF4D27A);
 
 class VerseOfTheDayScreen extends ConsumerStatefulWidget {
   const VerseOfTheDayScreen({super.key});
@@ -31,11 +27,12 @@ class _VerseOfTheDayScreenState extends ConsumerState<VerseOfTheDayScreen> {
   }
 
   void _onShare(VerseOfTheDay verse) {
+    final l10n = context.l10n;
     final shareText = '"${verse.text}"\n${verse.reference}\n${verse.versionName} '
         '(${verse.displayVersionCode})';
     Share.share(
       shareText,
-      subject: 'Versículo de hoy',
+      subject: l10n.shareSubject,
     );
   }
 
@@ -43,23 +40,23 @@ class _VerseOfTheDayScreenState extends ConsumerState<VerseOfTheDayScreen> {
   Widget build(BuildContext context) {
     final verseState = ref.watch(verseControllerProvider);
     final verse = verseState.verse;
+    final colorScheme = Theme.of(context).colorScheme;
+    final l10n = context.l10n;
+    final accent = colorScheme.tertiary;
 
     return Scaffold(
-      backgroundColor: _background,
+      backgroundColor: colorScheme.background,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        foregroundColor: Colors.white,
-        elevation: 0,
         titleSpacing: 0,
-        title: const Text('Versículo del día'),
+        title: Text(l10n.verseScreenTitle),
         actions: [
           IconButton(
-            tooltip: 'Compartir',
+            tooltip: l10n.shareTooltip,
             onPressed: verse == null ? null : () => _onShare(verse),
             icon: const Icon(Icons.ios_share_outlined),
           ),
           IconButton(
-            tooltip: 'Configuración',
+            tooltip: l10n.settingsTooltip,
             onPressed: () => context.go('/settings'),
             icon: const Icon(Icons.settings_outlined),
           ),
@@ -67,12 +64,20 @@ class _VerseOfTheDayScreenState extends ConsumerState<VerseOfTheDayScreen> {
       ),
       body: Stack(
         children: [
-          const Positioned(top: -140, left: -80, child: _GlowCircle(size: 260)),
-          const Positioned(bottom: -120, right: -40, child: _GlowCircle(size: 220)),
+          Positioned(
+            top: -140,
+            left: -80,
+            child: _GlowCircle(size: 260, color: colorScheme.primary),
+          ),
+          Positioned(
+            bottom: -120,
+            right: -40,
+            child: _GlowCircle(size: 220, color: colorScheme.tertiary),
+          ),
           SafeArea(
             child: RefreshIndicator(
-              color: _accent,
-              backgroundColor: _background,
+              color: accent,
+              backgroundColor: colorScheme.surface,
               onRefresh: _onRefresh,
               child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(
@@ -85,21 +90,22 @@ class _VerseOfTheDayScreenState extends ConsumerState<VerseOfTheDayScreen> {
                   _VerseCard(
                     verse: verse,
                     isLoading: verseState.isLoading,
-                    accent: _accent,
+                    colorScheme: colorScheme,
                   ),
                   const SizedBox(height: 16),
                   _ActionsRow(
                     isLoading: verseState.isLoading,
                     onRefresh: _onRefresh,
                     onShare: verse == null ? null : () => _onShare(verse),
-                    accent: _accent,
+                    colorScheme: colorScheme,
                   ),
                   if (verseState.hasError)
                     Padding(
                       padding: const EdgeInsets.only(top: 10),
                       child: _ErrorBanner(
                         message: verseState.errorMessage ??
-                            'No pudimos cargar el versículo de hoy.',
+                            l10n.verseLoadError,
+                        colorScheme: colorScheme,
                         onRetry: _onRefresh,
                       ),
                     ),
@@ -113,6 +119,11 @@ class _VerseOfTheDayScreenState extends ConsumerState<VerseOfTheDayScreen> {
   }
 
   Widget _buildHeader(BuildContext context, VerseOfTheDay? verse) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final l10n = context.l10n;
+    final muted = colorScheme.onBackground.withOpacity(0.7);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -121,19 +132,23 @@ class _VerseOfTheDayScreenState extends ConsumerState<VerseOfTheDayScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.05),
+                color: colorScheme.primary.withOpacity(0.08),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.white12),
+                border: Border.all(color: colorScheme.primary.withOpacity(0.18)),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.wb_twilight_outlined, color: Colors.white, size: 18),
+                  Icon(
+                    Icons.wb_twilight_outlined,
+                    color: colorScheme.primary,
+                    size: 18,
+                  ),
                   const SizedBox(width: 6),
                   Text(
-                    'Versículo de hoy',
-                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                          color: Colors.white,
+                    l10n.verseOfDayTag,
+                    style: textTheme.labelLarge?.copyWith(
+                          color: colorScheme.onBackground,
                           fontWeight: FontWeight.w700,
                         ),
                   ),
@@ -144,18 +159,16 @@ class _VerseOfTheDayScreenState extends ConsumerState<VerseOfTheDayScreen> {
             if (verse != null && verse.date.isNotEmpty)
               Text(
                 verse.date,
-                style: Theme.of(context)
-                    .textTheme
-                    .labelMedium
-                    ?.copyWith(color: Colors.white70),
+                style:
+                    textTheme.labelMedium?.copyWith(color: colorScheme.onBackground),
               ),
           ],
         ),
         const SizedBox(height: 8),
         Text(
-          'Renueva tu espíritu con la palabra diaria.',
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: Colors.white70,
+          l10n.verseSubtitle,
+          style: textTheme.bodyLarge?.copyWith(
+                color: muted,
               ),
         ),
       ],
@@ -167,28 +180,34 @@ class _VerseCard extends StatelessWidget {
   const _VerseCard({
     required this.verse,
     required this.isLoading,
-    required this.accent,
+    required this.colorScheme,
   });
 
   final VerseOfTheDay? verse;
   final bool isLoading;
-  final Color accent;
+  final ColorScheme colorScheme;
 
   @override
   Widget build(BuildContext context) {
+    final accent = colorScheme.tertiary;
+    final textTheme = Theme.of(context).textTheme;
+    final onSurface = colorScheme.onSurface;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [_cardTop, _cardBottom],
+        gradient: LinearGradient(
+          colors: [
+            colorScheme.surfaceVariant,
+            colorScheme.surface,
+          ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(26),
-        border: Border.all(color: Colors.white10),
+        border: Border.all(color: colorScheme.outline.withOpacity(0.1)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.35),
+            color: colorScheme.shadow.withOpacity(0.1),
             blurRadius: 26,
             offset: const Offset(0, 16),
           ),
@@ -202,20 +221,20 @@ class _VerseCard extends StatelessWidget {
               Icon(Icons.auto_awesome, color: accent, size: 22),
               const SizedBox(width: 8),
               Text(
-                'Palabra viva',
-                style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      color: Colors.white,
+                context.l10n.verseSectionTitle,
+                style: textTheme.labelLarge?.copyWith(
+                      color: onSurface,
                       fontWeight: FontWeight.w700,
                     ),
               ),
               const Spacer(),
               if (isLoading)
-                const SizedBox(
+                SizedBox(
                   height: 18,
                   width: 18,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: Colors.white70,
+                    color: onSurface.withOpacity(0.7),
                   ),
                 ),
             ],
@@ -230,8 +249,8 @@ class _VerseCard extends StatelessWidget {
                     children: [
                       Text(
                         '"${verse!.text}"',
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              color: Colors.white,
+                        style: textTheme.titleLarge?.copyWith(
+                              color: onSurface,
                               fontWeight: FontWeight.w700,
                               height: 1.4,
                             ),
@@ -239,7 +258,7 @@ class _VerseCard extends StatelessWidget {
                       const SizedBox(height: 16),
                       Text(
                         verse!.reference,
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        style: textTheme.titleMedium?.copyWith(
                               color: accent,
                               fontWeight: FontWeight.w700,
                             ),
@@ -247,14 +266,14 @@ class _VerseCard extends StatelessWidget {
                       const SizedBox(height: 4),
                       Text(
                         '${verse!.displayVersionCode} • ${verse!.versionName}',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Colors.white70,
+                        style: textTheme.bodyMedium?.copyWith(
+                              color: onSurface.withOpacity(0.72),
                               letterSpacing: 0.2,
                             ),
                       ),
                     ],
                   )
-                : _SkeletonPlaceholder(accent: accent),
+                : _SkeletonPlaceholder(colorScheme: colorScheme),
           ),
         ],
       ),
@@ -267,16 +286,20 @@ class _ActionsRow extends StatelessWidget {
     required this.isLoading,
     required this.onRefresh,
     required this.onShare,
-    required this.accent,
+    required this.colorScheme,
   });
 
   final bool isLoading;
   final Future<void> Function() onRefresh;
   final VoidCallback? onShare;
-  final Color accent;
+  final ColorScheme colorScheme;
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final accent = colorScheme.tertiary;
+    final onSurface = colorScheme.onSurface;
+
     return Row(
       children: [
         Expanded(
@@ -286,13 +309,13 @@ class _ActionsRow extends StatelessWidget {
                 ? const SizedBox(
                     height: 18,
                     width: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : const Icon(Icons.refresh),
-            label: const Text('Actualizar'),
+            label: Text(l10n.updateAction),
             style: FilledButton.styleFrom(
               backgroundColor: accent.withOpacity(0.16),
-              foregroundColor: Colors.white,
+              foregroundColor: onSurface,
               side: BorderSide(color: accent.withOpacity(0.6)),
             ),
           ),
@@ -302,11 +325,11 @@ class _ActionsRow extends StatelessWidget {
           child: OutlinedButton.icon(
             onPressed: onShare,
             icon: const Icon(Icons.ios_share_outlined),
-            label: const Text('Compartir'),
+            label: Text(l10n.shareAction),
             style: OutlinedButton.styleFrom(
-              foregroundColor: Colors.white,
-              side: BorderSide(color: Colors.white24),
-              backgroundColor: Colors.white.withOpacity(0.04),
+              foregroundColor: onSurface,
+              side: BorderSide(color: colorScheme.outline.withOpacity(0.6)),
+              backgroundColor: colorScheme.surfaceVariant.withOpacity(0.4),
             ),
           ),
         ),
@@ -319,33 +342,38 @@ class _ErrorBanner extends StatelessWidget {
   const _ErrorBanner({
     required this.message,
     required this.onRetry,
+    required this.colorScheme,
   });
 
   final String message;
   final Future<void> Function() onRetry;
+  final ColorScheme colorScheme;
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.red.withOpacity(0.1),
+        color: colorScheme.errorContainer.withOpacity(0.9),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.red.withOpacity(0.2)),
+        border: Border.all(color: colorScheme.error.withOpacity(0.25)),
       ),
       child: Row(
         children: [
-          const Icon(Icons.error_outline, color: Colors.redAccent),
+          Icon(Icons.error_outline, color: colorScheme.error),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
               message,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.white),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onErrorContainer,
+                  ),
             ),
           ),
           TextButton(
             onPressed: onRetry,
-            child: const Text('Reintentar'),
+            child: Text(l10n.errorRetry),
           ),
         ],
       ),
@@ -354,25 +382,31 @@ class _ErrorBanner extends StatelessWidget {
 }
 
 class _SkeletonPlaceholder extends StatelessWidget {
-  const _SkeletonPlaceholder({required this.accent});
+  const _SkeletonPlaceholder({required this.colorScheme});
 
-  final Color accent;
+  final ColorScheme colorScheme;
 
   @override
   Widget build(BuildContext context) {
+    final accent = colorScheme.tertiary;
+    final baseColor = colorScheme.onSurface;
     return Column(
       key: const ValueKey('skeleton'),
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _ShimmerBlock(height: 22, width: double.infinity),
+        _ShimmerBlock(height: 22, width: double.infinity, baseColor: baseColor),
         const SizedBox(height: 10),
-        _ShimmerBlock(height: 22, width: double.infinity),
+        _ShimmerBlock(height: 22, width: double.infinity, baseColor: baseColor),
         const SizedBox(height: 10),
-        _ShimmerBlock(height: 22, width: MediaQuery.sizeOf(context).width * 0.7),
+        _ShimmerBlock(
+          height: 22,
+          width: MediaQuery.sizeOf(context).width * 0.7,
+          baseColor: baseColor,
+        ),
         const SizedBox(height: 18),
-        _ShimmerBlock(height: 16, width: 140, color: accent.withOpacity(0.4)),
+        _ShimmerBlock(height: 16, width: 140, baseColor: accent),
         const SizedBox(height: 6),
-        _ShimmerBlock(height: 14, width: 200),
+        _ShimmerBlock(height: 14, width: 200, baseColor: baseColor),
       ],
     );
   }
@@ -382,12 +416,12 @@ class _ShimmerBlock extends StatelessWidget {
   const _ShimmerBlock({
     required this.height,
     required this.width,
-    this.color,
+    required this.baseColor,
   });
 
   final double height;
   final double width;
-  final Color? color;
+  final Color baseColor;
 
   @override
   Widget build(BuildContext context) {
@@ -395,7 +429,7 @@ class _ShimmerBlock extends StatelessWidget {
       height: height,
       width: width,
       decoration: BoxDecoration(
-        color: (color ?? Colors.white).withOpacity(0.08),
+        color: baseColor.withOpacity(0.08),
         borderRadius: BorderRadius.circular(10),
       ),
     );
@@ -403,9 +437,10 @@ class _ShimmerBlock extends StatelessWidget {
 }
 
 class _GlowCircle extends StatelessWidget {
-  const _GlowCircle({this.size = 220});
+  const _GlowCircle({this.size = 220, required this.color});
 
   final double size;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
@@ -416,7 +451,7 @@ class _GlowCircle extends StatelessWidget {
         shape: BoxShape.circle,
         gradient: RadialGradient(
           colors: [
-            Colors.white.withOpacity(0.12),
+            color.withOpacity(0.12),
             Colors.transparent,
           ],
         ),

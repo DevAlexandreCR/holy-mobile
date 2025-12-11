@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:holy_mobile/core/l10n/app_localizations.dart';
 import 'package:holy_mobile/data/bible/bible_repository.dart';
 import 'package:holy_mobile/presentation/state/auth/auth_controller.dart';
 import 'package:holy_mobile/presentation/state/settings/versions_state.dart';
@@ -8,6 +10,7 @@ import 'package:holy_mobile/presentation/state/verse/verse_controller.dart';
 
 class VersionsController extends Notifier<VersionsState> {
   late final BibleRepository _repository;
+  static const _l10n = AppLocalizations(Locale('es'));
 
   @override
   VersionsState build() {
@@ -49,7 +52,7 @@ class VersionsController extends Notifier<VersionsState> {
     if (!success) {
       final authState = ref.read(authControllerProvider);
       state = state.copyWith(
-        errorMessage: authState.errorMessage ?? 'No se pudo actualizar la versión.',
+        errorMessage: authState.errorMessage ?? _l10n.versionsUpdateError,
       );
     }
 
@@ -68,10 +71,10 @@ class VersionsController extends Notifier<VersionsState> {
           data is Map && data['message'] is String ? data['message'] as String : null;
       return responseMessage ??
           error.message ??
-          'No pudimos cargar las versiones. Inténtalo de nuevo.';
+          _l10n.versionsLoadError;
     }
 
-    return 'No pudimos cargar las versiones. Inténtalo de nuevo.';
+    return _l10n.versionsLoadError;
   }
 }
 

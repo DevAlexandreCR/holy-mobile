@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:holy_mobile/core/l10n/app_localizations.dart';
 import 'package:holy_mobile/presentation/state/auth/auth_controller.dart';
 
 class ForgotPasswordScreen extends ConsumerStatefulWidget {
@@ -31,7 +32,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
 
     if (success) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Te enviamos instrucciones a tu correo.')),
+        SnackBar(content: Text(context.l10n.instructionsSent)),
       );
       context.go('/login');
     } else if (state.errorMessage != null) {
@@ -45,10 +46,11 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     final state = ref.watch(authControllerProvider);
+    final l10n = context.l10n;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Recuperar contraseña'),
+        title: Text(l10n.forgotPasswordTitle),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
@@ -58,26 +60,26 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                '¿Olvidaste tu contraseña?',
+                l10n.forgotPasswordHeadline,
                 style: textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 12),
               Text(
-                'Te enviaremos instrucciones a tu correo.',
+                l10n.forgotPasswordSubtitle,
                 style: textTheme.bodyMedium,
               ),
               const SizedBox(height: 24),
               TextFormField(
                 controller: _emailController,
                 enabled: !state.isLoading,
-                decoration: const InputDecoration(labelText: 'Correo electrónico'),
+                decoration: InputDecoration(labelText: l10n.emailLabel),
                 keyboardType: TextInputType.emailAddress,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Ingresa tu correo';
+                    return l10n.missingEmailError;
                   }
                   if (!value.contains('@')) {
-                    return 'Correo inválido';
+                    return l10n.invalidEmailError;
                   }
                   return null;
                 },
@@ -91,11 +93,11 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                         width: 18,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : const Text('Enviar enlace'),
+                    : Text(l10n.sendLink),
               ),
               TextButton(
                 onPressed: state.isLoading ? null : () => context.go('/login'),
-                child: const Text('Volver a iniciar sesión'),
+                child: Text(l10n.backToLogin),
               ),
             ],
           ),

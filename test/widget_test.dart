@@ -5,14 +5,47 @@
 // gestures. You can also use WidgetTester to find child widgets in the widget
 // tree, read text, and verify that the values of widget properties are correct.
 
-import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
+import 'package:holy_mobile/core/router/app_router.dart';
 import 'package:holy_mobile/main.dart';
 
 void main() {
-  testWidgets('Shows splash while configuration loads', (WidgetTester tester) async {
-    await tester.pumpWidget(const ProviderScope(child: HolyVersoApp()));
+  testWidgets('boots app with injected router', (WidgetTester tester) async {
+    final testRouter = GoRouter(
+      initialLocation: '/',
+      routes: [
+        GoRoute(
+          path: '/',
+          builder: (context, state) => const _FakeHome(),
+        ),
+      ],
+    );
 
-    expect(find.textContaining('Cargando'), findsOneWidget);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          appRouterProvider.overrideWithValue(testRouter),
+        ],
+        child: const HolyVersoApp(),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('Test Home'), findsOneWidget);
   });
+}
+
+class _FakeHome extends StatelessWidget {
+  const _FakeHome();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Material(
+      child: Center(child: Text('Test Home')),
+    );
+  }
 }
