@@ -44,7 +44,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final l10n = context.l10n;
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    final background = colorScheme.background;
+    final background = colorScheme.surface;
     final highlight = colorScheme.tertiary;
 
     return Scaffold(
@@ -78,7 +78,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   Text(
                     l10n.preferencesTitle,
                     style: textTheme.headlineSmall?.copyWith(
-                          color: colorScheme.onBackground,
+                          color: colorScheme.onSurface,
                           fontWeight: FontWeight.w700,
                         ),
                   ),
@@ -86,7 +86,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   Text(
                     l10n.preferencesSubtitle,
                     style: textTheme.bodyMedium?.copyWith(
-                          color: colorScheme.onBackground.withOpacity(0.7),
+                          color: colorScheme.onSurface.withOpacity(0.7),
                         ),
                   ),
                   const SizedBox(height: 18),
@@ -127,7 +127,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }) {
     final l10n = context.l10n;
     final highlight = colorScheme.tertiary;
-    final background = colorScheme.background;
+    final background = colorScheme.surface;
     final onSurface = colorScheme.onSurface;
 
     if (versionsState.isLoading && !versionsState.hasLoaded) {
@@ -200,7 +200,7 @@ class _SectionCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceVariant.withOpacity(0.7),
+        color: colorScheme.surfaceContainerHighest.withOpacity(0.7),
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: colorScheme.outline.withOpacity(0.2)),
       ),
@@ -267,7 +267,7 @@ class _VersionTile extends StatelessWidget {
                 ? [colorScheme.tertiary.withOpacity(0.14), colorScheme.surface]
                 : [
                     colorScheme.surface.withOpacity(0.6),
-                    colorScheme.surfaceVariant.withOpacity(0.7),
+                    colorScheme.surfaceContainerHighest.withOpacity(0.7),
                   ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,

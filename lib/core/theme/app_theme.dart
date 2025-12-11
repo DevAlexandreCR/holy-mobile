@@ -17,7 +17,7 @@ class AppTheme {
     ).copyWith(
       secondary: const Color(0xFF2E6A6A),
       tertiary: const Color(0xFF8C6C3F),
-      surfaceVariant: const Color(0xFFF0E5D5),
+      surfaceContainerHighest: const Color(0xFFF0E5D5),
     );
 
     return _buildTheme(colorScheme);
@@ -32,7 +32,7 @@ class AppTheme {
     ).copyWith(
       secondary: const Color(0xFF4FB3B3),
       tertiary: const Color(0xFFD9B36F),
-      surfaceVariant: const Color(0xFF1A2436),
+      surfaceContainerHighest: const Color(0xFF1A2436),
     );
 
     return _buildTheme(colorScheme);
@@ -40,23 +40,23 @@ class AppTheme {
 
   static ThemeData _buildTheme(ColorScheme colorScheme) {
     final textTheme = GoogleFonts.manropeTextTheme().apply(
-      bodyColor: colorScheme.onBackground,
-      displayColor: colorScheme.onBackground,
+      bodyColor: colorScheme.onSurface,
+      displayColor: colorScheme.onSurface,
     );
 
     return ThemeData(
       useMaterial3: true,
       colorScheme: colorScheme,
-      scaffoldBackgroundColor: colorScheme.background,
+      scaffoldBackgroundColor: colorScheme.surface,
       textTheme: textTheme,
       appBarTheme: AppBarTheme(
         backgroundColor: Colors.transparent,
-        foregroundColor: colorScheme.onBackground,
+        foregroundColor: colorScheme.onSurface,
         elevation: 0,
         centerTitle: true,
         titleTextStyle: textTheme.titleLarge?.copyWith(
           fontWeight: FontWeight.w700,
-          color: colorScheme.onBackground,
+          color: colorScheme.onSurface,
         ),
       ),
       cardTheme: CardTheme(
@@ -93,7 +93,7 @@ class AppTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: colorScheme.surfaceVariant,
+        fillColor: colorScheme.surfaceContainerHighest,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
           borderSide: BorderSide.none,
@@ -106,7 +106,7 @@ class AppTheme {
       ),
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
-        backgroundColor: colorScheme.surfaceVariant,
+        backgroundColor: colorScheme.surfaceContainerHighest,
         contentTextStyle: textTheme.bodyMedium?.copyWith(
           color: colorScheme.onSurface,
         ),

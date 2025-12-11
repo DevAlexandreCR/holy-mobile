@@ -45,7 +45,7 @@ class _VerseOfTheDayScreenState extends ConsumerState<VerseOfTheDayScreen> {
     final accent = colorScheme.tertiary;
 
     return Scaffold(
-      backgroundColor: colorScheme.background,
+      backgroundColor: colorScheme.surface,
       appBar: AppBar(
         titleSpacing: 0,
         title: Text(l10n.verseScreenTitle),
@@ -122,7 +122,7 @@ class _VerseOfTheDayScreenState extends ConsumerState<VerseOfTheDayScreen> {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final l10n = context.l10n;
-    final muted = colorScheme.onBackground.withOpacity(0.7);
+    final muted = colorScheme.onSurface.withOpacity(0.7);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -148,7 +148,7 @@ class _VerseOfTheDayScreenState extends ConsumerState<VerseOfTheDayScreen> {
                   Text(
                     l10n.verseOfDayTag,
                     style: textTheme.labelLarge?.copyWith(
-                          color: colorScheme.onBackground,
+                          color: colorScheme.onSurface,
                           fontWeight: FontWeight.w700,
                         ),
                   ),
@@ -160,7 +160,7 @@ class _VerseOfTheDayScreenState extends ConsumerState<VerseOfTheDayScreen> {
               Text(
                 verse.date,
                 style:
-                    textTheme.labelMedium?.copyWith(color: colorScheme.onBackground),
+                    textTheme.labelMedium?.copyWith(color: colorScheme.onSurface),
               ),
           ],
         ),
@@ -197,7 +197,7 @@ class _VerseCard extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            colorScheme.surfaceVariant,
+            colorScheme.surfaceContainerHighest,
             colorScheme.surface,
           ],
           begin: Alignment.topLeft,
@@ -329,7 +329,7 @@ class _ActionsRow extends StatelessWidget {
             style: OutlinedButton.styleFrom(
               foregroundColor: onSurface,
               side: BorderSide(color: colorScheme.outline.withOpacity(0.6)),
-              backgroundColor: colorScheme.surfaceVariant.withOpacity(0.4),
+              backgroundColor: colorScheme.surfaceContainerHighest.withOpacity(0.4),
             ),
           ),
         ),
