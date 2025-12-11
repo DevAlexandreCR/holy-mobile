@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:holy_mobile/core/l10n/app_localizations.dart';
 
@@ -15,13 +17,19 @@ class AppConfig {
     required this.networkErrorMessage,
   });
 
-  /// In the future this could pull from env files, remote config, or platform
-  /// channels. For now we return a static configuration.
+  /// Load configuration from .env files based on build mode
   static Future<AppConfig> load() async {
+    // Load the appropriate .env file based on build mode
+    final envFile = kReleaseMode ? '.env.production' : '.env.development';
+    await dotenv.load(fileName: envFile);
+
     const l10n = AppLocalizations(Locale('es'));
+
     return AppConfig(
-      baseApiUrl: 'https://api.ejemplo.com',
-      requestTimeout: Duration(seconds: 15),
+      baseApiUrl: dotenv.get('API_URL', fallback: 'http://localhost:3000'),
+      requestTimeout: Duration(
+        seconds: int.parse(dotenv.get('REQUEST_TIMEOUT', fallback: '15')),
+      ),
       genericErrorMessage: l10n.genericError,
       networkErrorMessage: l10n.networkError,
     );

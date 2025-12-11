@@ -7,15 +7,8 @@ import 'package:holy_mobile/data/auth/token_storage.dart';
 final dioProvider = Provider<Dio>((ref) {
   final configAsync = ref.watch(appConfigProvider);
 
-  // Use default values while config is loading
-  final config =
-      configAsync.whenData((c) => c).value ??
-      const AppConfig(
-        baseApiUrl: 'https://api.ejemplo.com',
-        requestTimeout: Duration(seconds: 15),
-        genericErrorMessage: 'Error genérico',
-        networkErrorMessage: 'Error de red',
-      );
+  // Wait for config to load from .env files
+  final config = configAsync.requireValue;
 
   final tokenService = ref.watch(authTokenServiceProvider);
 
