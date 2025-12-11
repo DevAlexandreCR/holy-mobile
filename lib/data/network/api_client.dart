@@ -5,11 +5,7 @@ import 'package:holy_mobile/core/config/app_config.dart';
 import 'package:holy_mobile/data/auth/token_storage.dart';
 
 final dioProvider = Provider<Dio>((ref) {
-  final configAsync = ref.watch(appConfigProvider);
-
-  // Wait for config to load from .env files
-  final config = configAsync.requireValue;
-
+  final config = ref.watch(appConfigProvider);
   final tokenService = ref.watch(authTokenServiceProvider);
 
   final dio = Dio(

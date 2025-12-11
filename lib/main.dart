@@ -1,11 +1,18 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:holy_mobile/core/l10n/app_localizations.dart';
 import 'package:holy_mobile/core/router/app_router.dart';
 import 'package:holy_mobile/core/theme/app_theme.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Load .env file before app starts
+  final envFile = kReleaseMode ? '.env.production' : '.env.development';
+  await dotenv.load(fileName: envFile);
+
   runApp(const ProviderScope(child: HolyVersoApp()));
 }
 

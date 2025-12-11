@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:holy_mobile/core/config/app_config.dart';
 import 'package:holy_mobile/core/l10n/app_localizations.dart';
 import 'package:holy_mobile/presentation/state/auth/auth_controller.dart';
 import 'package:holy_mobile/presentation/screens/auth/forgot_password_screen.dart';
@@ -11,35 +10,25 @@ import 'package:holy_mobile/presentation/screens/settings/settings_screen.dart';
 import 'package:holy_mobile/presentation/screens/splash/splash_screen.dart';
 import 'package:holy_mobile/presentation/screens/verse/verse_of_the_day_screen.dart';
 
-final authBootstrapProvider = FutureProvider<void>((ref) async {
-  await ref.watch(appConfigProvider.future);
-  await ref.read(authControllerProvider.notifier).restoreSession();
-});
-
 final appRouterProvider = Provider<GoRouter>((ref) {
-  final configState = ref.watch(appConfigProvider);
   final authState = ref.watch(authControllerProvider);
-  final authBootstrap = ref.watch(authBootstrapProvider);
 
   const baseL10n = AppLocalizations(Locale('es'));
 
-  final splashMessage = _resolveSplashMessage(configState, authBootstrap, baseL10n);
-  final splashError = _resolveSplashError(configState, authBootstrap, baseL10n);
+  final splashMessage = authState.isLoading
+      ? baseL10n.splashPreparing
+      : baseL10n.splashReady;
+  final splashError = authState.errorMessage;
 
   return GoRouter(
     initialLocation: '/splash',
     routes: [
       GoRoute(
         path: '/splash',
-        builder: (context, state) => SplashScreen(
-          message: splashMessage,
-          errorDetails: splashError,
-        ),
+        builder: (context, state) =>
+            SplashScreen(message: splashMessage, errorDetails: splashError),
       ),
-      GoRoute(
-        path: '/login',
-        builder: (context, state) => const LoginScreen(),
-      ),
+      GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
       GoRoute(
         path: '/register',
         builder: (context, state) => const RegisterScreen(),
@@ -58,18 +47,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
     ],
     redirect: (context, state) {
-      final bootstrapping = configState.isLoading || authBootstrap.isLoading;
-      final hasErrors = configState.hasError || authBootstrap.hasError;
+      final bootstrapping = authState.isLoading;
       final atSplash = state.matchedLocation == '/splash';
-      final atAuthRoute = state.matchedLocation == '/login' ||
+      final atAuthRoute =
+          state.matchedLocation == '/login' ||
           state.matchedLocation == '/register' ||
           state.matchedLocation == '/forgot-password';
-      final isProtectedRoute = state.matchedLocation == '/verse' ||
+      final isProtectedRoute =
+          state.matchedLocation == '/verse' ||
           state.matchedLocation == '/settings';
-
-      if (hasErrors) {
-        return atSplash ? null : '/splash';
-      }
 
       if (bootstrapping) {
         return atSplash ? null : '/splash';
@@ -87,34 +73,3 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     },
   );
 });
-
-String _resolveSplashMessage(
-  AsyncValue<AppConfig> configState,
-  AsyncValue<void> authBootstrap,
-  AppLocalizations l10n,
-) {
-  if (configState.isLoading || authBootstrap.isLoading) {
-    return l10n.splashPreparing;
-  }
-  if (configState.hasError) {
-    return l10n.splashConfigError;
-  }
-  if (authBootstrap.hasError) {
-    return l10n.splashSessionError;
-  }
-  return l10n.splashReady;
-}
-
-String? _resolveSplashError(
-  AsyncValue<AppConfig> configState,
-  AsyncValue<void> authBootstrap,
-  AppLocalizations l10n,
-) {
-  if (configState.hasError) {
-    return configState.error?.toString() ?? l10n.splashConfigError;
-  }
-  if (authBootstrap.hasError) {
-    return authBootstrap.error?.toString() ?? l10n.splashSessionError;
-  }
-  return null;
-}

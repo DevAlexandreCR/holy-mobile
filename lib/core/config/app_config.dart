@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -17,12 +16,8 @@ class AppConfig {
     required this.networkErrorMessage,
   });
 
-  /// Load configuration from .env files based on build mode
-  static Future<AppConfig> load() async {
-    // Load the appropriate .env file based on build mode
-    final envFile = kReleaseMode ? '.env.production' : '.env.development';
-    await dotenv.load(fileName: envFile);
-
+  /// Load configuration from .env files (dotenv must be loaded first in main)
+  static AppConfig load() {
     const l10n = AppLocalizations(Locale('es'));
 
     return AppConfig(
@@ -36,6 +31,6 @@ class AppConfig {
   }
 }
 
-final appConfigProvider = FutureProvider<AppConfig>((ref) async {
+final appConfigProvider = Provider<AppConfig>((ref) {
   return AppConfig.load();
 });
