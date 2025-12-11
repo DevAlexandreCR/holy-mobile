@@ -41,13 +41,18 @@ class VerseController extends Notifier<VerseState> {
     state = state.copyWith(isLoading: true, clearError: true);
 
     try {
-      final verse = await _repository.fetchTodayVerse(forceRefresh: forceRefresh);
+      final verse = await _repository.fetchTodayVerse(
+        forceRefresh: forceRefresh,
+      );
       state = state.copyWith(verse: verse, isLoading: false);
       unawaited(_handleAfterFetch(verse));
     } catch (error) {
+      // Check if it's a 404 error (no versions configured)
+      final is404 = error is DioException && error.response?.statusCode == 404;
+
       state = state.copyWith(
         isLoading: false,
-        errorMessage: _mapError(error),
+        errorMessage: is404 ? null : _mapError(error),
       );
     }
   }
@@ -59,16 +64,16 @@ class VerseController extends Notifier<VerseState> {
   String _mapError(Object error) {
     if (error is DioException) {
       final data = error.response?.data;
-      final responseMessage =
-          data is Map && data['message'] is String ? data['message'] as String : null;
-      return responseMessage ??
-          error.message ??
-          _l10n.verseRequestError;
+      final responseMessage = data is Map && data['message'] is String
+          ? data['message'] as String
+          : null;
+      return responseMessage ?? error.message ?? _l10n.verseRequestError;
     }
 
     return _l10n.verseRequestError;
   }
 }
 
-final verseControllerProvider =
-    NotifierProvider<VerseController, VerseState>(VerseController.new);
+final verseControllerProvider = NotifierProvider<VerseController, VerseState>(
+  VerseController.new,
+);

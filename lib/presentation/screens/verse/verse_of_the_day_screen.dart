@@ -10,7 +10,8 @@ class VerseOfTheDayScreen extends ConsumerStatefulWidget {
   const VerseOfTheDayScreen({super.key});
 
   @override
-  ConsumerState<VerseOfTheDayScreen> createState() => _VerseOfTheDayScreenState();
+  ConsumerState<VerseOfTheDayScreen> createState() =>
+      _VerseOfTheDayScreenState();
 }
 
 class _VerseOfTheDayScreenState extends ConsumerState<VerseOfTheDayScreen> {
@@ -23,17 +24,17 @@ class _VerseOfTheDayScreenState extends ConsumerState<VerseOfTheDayScreen> {
   }
 
   Future<void> _onRefresh() {
-    return ref.read(verseControllerProvider.notifier).loadVerse(forceRefresh: true);
+    return ref
+        .read(verseControllerProvider.notifier)
+        .loadVerse(forceRefresh: true);
   }
 
   void _onShare(VerseOfTheDay verse) {
     final l10n = context.l10n;
-    final shareText = '"${verse.text}"\n${verse.reference}\n${verse.versionName} '
+    final shareText =
+        '"${verse.text}"\n${verse.reference}\n${verse.versionName} '
         '(${verse.displayVersionCode})';
-    Share.share(
-      shareText,
-      subject: l10n.shareSubject,
-    );
+    Share.share(shareText, subject: l10n.shareSubject);
   }
 
   @override
@@ -83,7 +84,10 @@ class _VerseOfTheDayScreenState extends ConsumerState<VerseOfTheDayScreen> {
                 physics: const AlwaysScrollableScrollPhysics(
                   parent: BouncingScrollPhysics(),
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 12,
+                ),
                 children: [
                   _buildHeader(context, verse),
                   const SizedBox(height: 16),
@@ -103,8 +107,7 @@ class _VerseOfTheDayScreenState extends ConsumerState<VerseOfTheDayScreen> {
                     Padding(
                       padding: const EdgeInsets.only(top: 10),
                       child: _ErrorBanner(
-                        message: verseState.errorMessage ??
-                            l10n.verseLoadError,
+                        message: verseState.errorMessage ?? l10n.verseLoadError,
                         colorScheme: colorScheme,
                         onRetry: _onRefresh,
                       ),
@@ -134,7 +137,9 @@ class _VerseOfTheDayScreenState extends ConsumerState<VerseOfTheDayScreen> {
               decoration: BoxDecoration(
                 color: colorScheme.primary.withOpacity(0.08),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: colorScheme.primary.withOpacity(0.18)),
+                border: Border.all(
+                  color: colorScheme.primary.withOpacity(0.18),
+                ),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -148,9 +153,9 @@ class _VerseOfTheDayScreenState extends ConsumerState<VerseOfTheDayScreen> {
                   Text(
                     l10n.verseOfDayTag,
                     style: textTheme.labelLarge?.copyWith(
-                          color: colorScheme.onSurface,
-                          fontWeight: FontWeight.w700,
-                        ),
+                      color: colorScheme.onSurface,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ],
               ),
@@ -159,17 +164,16 @@ class _VerseOfTheDayScreenState extends ConsumerState<VerseOfTheDayScreen> {
             if (verse != null && verse.date.isNotEmpty)
               Text(
                 verse.date,
-                style:
-                    textTheme.labelMedium?.copyWith(color: colorScheme.onSurface),
+                style: textTheme.labelMedium?.copyWith(
+                  color: colorScheme.onSurface,
+                ),
               ),
           ],
         ),
         const SizedBox(height: 8),
         Text(
           l10n.verseSubtitle,
-          style: textTheme.bodyLarge?.copyWith(
-                color: muted,
-              ),
+          style: textTheme.bodyLarge?.copyWith(color: muted),
         ),
       ],
     );
@@ -196,10 +200,7 @@ class _VerseCard extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            colorScheme.surfaceContainerHighest,
-            colorScheme.surface,
-          ],
+          colors: [colorScheme.surfaceContainerHighest, colorScheme.surface],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -223,9 +224,9 @@ class _VerseCard extends StatelessWidget {
               Text(
                 context.l10n.verseSectionTitle,
                 style: textTheme.labelLarge?.copyWith(
-                      color: onSurface,
-                      fontWeight: FontWeight.w700,
-                    ),
+                  color: onSurface,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               const Spacer(),
               if (isLoading)
@@ -250,30 +251,32 @@ class _VerseCard extends StatelessWidget {
                       Text(
                         '"${verse!.text}"',
                         style: textTheme.titleLarge?.copyWith(
-                              color: onSurface,
-                              fontWeight: FontWeight.w700,
-                              height: 1.4,
-                            ),
+                          color: onSurface,
+                          fontWeight: FontWeight.w700,
+                          height: 1.4,
+                        ),
                       ),
                       const SizedBox(height: 16),
                       Text(
                         verse!.reference,
                         style: textTheme.titleMedium?.copyWith(
-                              color: accent,
-                              fontWeight: FontWeight.w700,
-                            ),
+                          color: accent,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         '${verse!.displayVersionCode} • ${verse!.versionName}',
                         style: textTheme.bodyMedium?.copyWith(
-                              color: onSurface.withOpacity(0.72),
-                              letterSpacing: 0.2,
-                            ),
+                          color: onSurface.withOpacity(0.72),
+                          letterSpacing: 0.2,
+                        ),
                       ),
                     ],
                   )
-                : _SkeletonPlaceholder(colorScheme: colorScheme),
+                : isLoading
+                ? _SkeletonPlaceholder(colorScheme: colorScheme)
+                : _EmptyState(colorScheme: colorScheme),
           ),
         ],
       ),
@@ -329,7 +332,9 @@ class _ActionsRow extends StatelessWidget {
             style: OutlinedButton.styleFrom(
               foregroundColor: onSurface,
               side: BorderSide(color: colorScheme.outline.withOpacity(0.6)),
-              backgroundColor: colorScheme.surfaceContainerHighest.withOpacity(0.4),
+              backgroundColor: colorScheme.surfaceContainerHighest.withOpacity(
+                0.4,
+              ),
             ),
           ),
         ),
@@ -367,14 +372,11 @@ class _ErrorBanner extends StatelessWidget {
             child: Text(
               message,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.onErrorContainer,
-                  ),
+                color: colorScheme.onErrorContainer,
+              ),
             ),
           ),
-          TextButton(
-            onPressed: onRetry,
-            child: Text(l10n.errorRetry),
-          ),
+          TextButton(onPressed: onRetry, child: Text(l10n.errorRetry)),
         ],
       ),
     );
@@ -407,6 +409,51 @@ class _SkeletonPlaceholder extends StatelessWidget {
         _ShimmerBlock(height: 16, width: 140, baseColor: accent),
         const SizedBox(height: 6),
         _ShimmerBlock(height: 14, width: 200, baseColor: baseColor),
+      ],
+    );
+  }
+}
+
+class _EmptyState extends StatelessWidget {
+  const _EmptyState({required this.colorScheme});
+
+  final ColorScheme colorScheme;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return Column(
+      key: const ValueKey('empty'),
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Icon(
+          Icons.info_outline,
+          size: 48,
+          color: colorScheme.primary.withOpacity(0.6),
+        ),
+        const SizedBox(height: 16),
+        Text(
+          'No hay versículo disponible',
+          style: textTheme.titleMedium?.copyWith(
+            color: colorScheme.onSurface.withOpacity(0.8),
+            fontWeight: FontWeight.w600,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Configura tus versiones de la Biblia en Ajustes para ver el versículo del día',
+          style: textTheme.bodyMedium?.copyWith(
+            color: colorScheme.onSurface.withOpacity(0.6),
+          ),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 16),
+        FilledButton.icon(
+          onPressed: () => context.go('/settings'),
+          icon: const Icon(Icons.settings_outlined),
+          label: const Text('Ir a Ajustes'),
+        ),
       ],
     );
   }
@@ -450,10 +497,7 @@ class _GlowCircle extends StatelessWidget {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         gradient: RadialGradient(
-          colors: [
-            color.withOpacity(0.12),
-            Colors.transparent,
-          ],
+          colors: [color.withOpacity(0.12), Colors.transparent],
         ),
       ),
     );
