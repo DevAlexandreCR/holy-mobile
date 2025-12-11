@@ -14,7 +14,11 @@ class AuthController extends Notifier<AuthState> {
   }
 
   Future<void> restoreSession() async {
-    state = state.copyWith(isLoading: true, clearError: true);
+    state = state.copyWith(
+      isLoading: true,
+      isUpdatingSettings: false,
+      clearError: true,
+    );
     try {
       final session = await _repository.restoreSession();
       if (session == null) {
@@ -31,7 +35,11 @@ class AuthController extends Notifier<AuthState> {
     required String email,
     required String password,
   }) async {
-    state = state.copyWith(isLoading: true, clearError: true);
+    state = state.copyWith(
+      isLoading: true,
+      isUpdatingSettings: false,
+      clearError: true,
+    );
     try {
       final payload = await _repository.login(email: email, password: password);
       _setAuthenticated(payload);
@@ -47,7 +55,11 @@ class AuthController extends Notifier<AuthState> {
     required String email,
     required String password,
   }) async {
-    state = state.copyWith(isLoading: true, clearError: true);
+    state = state.copyWith(
+      isLoading: true,
+      isUpdatingSettings: false,
+      clearError: true,
+    );
     try {
       final payload =
           await _repository.register(name: name, email: email, password: password);
@@ -60,7 +72,11 @@ class AuthController extends Notifier<AuthState> {
   }
 
   Future<bool> sendForgotPassword(String email) async {
-    state = state.copyWith(isLoading: true, clearError: true);
+    state = state.copyWith(
+      isLoading: true,
+      isUpdatingSettings: false,
+      clearError: true,
+    );
     try {
       await _repository.forgotPassword(email);
       state = state.copyWith(isLoading: false);
@@ -75,7 +91,11 @@ class AuthController extends Notifier<AuthState> {
     required String token,
     required String newPassword,
   }) async {
-    state = state.copyWith(isLoading: true, clearError: true);
+    state = state.copyWith(
+      isLoading: true,
+      isUpdatingSettings: false,
+      clearError: true,
+    );
     try {
       await _repository.resetPassword(token: token, newPassword: newPassword);
       state = state.copyWith(isLoading: false);
@@ -91,11 +111,30 @@ class AuthController extends Notifier<AuthState> {
     state = const AuthState();
   }
 
+  Future<bool> updatePreferredVersion(int versionId) async {
+    state = state.copyWith(isUpdatingSettings: true, clearError: true);
+    try {
+      final updatedSettings = await _repository.updatePreferredVersion(versionId);
+      state = state.copyWith(
+        settings: updatedSettings,
+        isUpdatingSettings: false,
+      );
+      return true;
+    } catch (error) {
+      state = state.copyWith(
+        isUpdatingSettings: false,
+        errorMessage: _mapError(error),
+      );
+      return false;
+    }
+  }
+
   void _setAuthenticated(AuthPayload payload) {
     state = AuthState(
       user: payload.user,
       settings: payload.settings,
       isLoading: false,
+      isUpdatingSettings: false,
       errorMessage: null,
     );
   }

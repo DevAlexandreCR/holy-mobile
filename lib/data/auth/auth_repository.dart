@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:holy_mobile/data/auth/auth_api_client.dart';
 import 'package:holy_mobile/data/auth/models/auth_payload.dart';
+import 'package:holy_mobile/data/auth/models/user_settings.dart';
 import 'package:holy_mobile/data/auth/token_storage.dart';
 
 class AuthRepository {
@@ -65,6 +66,10 @@ class AuthRepository {
 
   Future<void> logout() {
     return _tokenService.clearToken();
+  }
+
+  Future<UserSettings> updatePreferredVersion(int versionId) {
+    return _client.updatePreferredVersion(versionId);
   }
 
   Future<void> _persistToken(String? token) async {

@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:holy_mobile/data/auth/models/auth_payload.dart';
+import 'package:holy_mobile/data/auth/models/user_settings.dart';
 import 'package:holy_mobile/data/network/api_client.dart';
 
 class AuthApiClient {
@@ -63,6 +64,17 @@ class AuthApiClient {
   Future<AuthPayload> me() async {
     final response = await _dio.get('/auth/me');
     return AuthPayload.fromMap(response.data as Map<String, dynamic>);
+  }
+
+  Future<UserSettings> updatePreferredVersion(int versionId) async {
+    final response = await _dio.put(
+      '/user/settings/version',
+      data: {'version_id': versionId},
+    );
+
+    final rawData = response.data;
+    final data = rawData is Map ? rawData['data'] ?? rawData : rawData;
+    return UserSettings.fromMap(Map<String, dynamic>.from(data as Map));
   }
 }
 
