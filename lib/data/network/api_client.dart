@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:holy_mobile/core/config/app_config.dart';
 import 'package:holy_mobile/data/auth/token_storage.dart';
+import 'package:holy_mobile/presentation/state/auth/auth_controller.dart';
 
 final dioProvider = Provider<Dio>((ref) {
   final config = ref.watch(appConfigProvider);
@@ -26,6 +27,14 @@ final dioProvider = Provider<Dio>((ref) {
           options.headers['Authorization'] = 'Bearer $token';
         }
         handler.next(options);
+      },
+      onError: (error, handler) async {
+        // Si recibimos un 401, hacer logout automáticamente
+        if (error.response?.statusCode == 401) {
+          final authNotifier = ref.read(authControllerProvider.notifier);
+          await authNotifier.logout();
+        }
+        handler.next(error);
       },
     ),
   );
