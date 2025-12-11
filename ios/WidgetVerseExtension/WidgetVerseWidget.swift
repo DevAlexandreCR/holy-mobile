@@ -9,6 +9,18 @@ private enum SharedConfig {
     static let widgetVerseKey = "widgetVerse" // Must match Flutter channel.
 }
 
+private enum WidgetVersePlaceholder {
+    static let message = "Abre Bible Widget para actualizar el versículo"
+
+    static let sample = WidgetVerseModel(
+        date: "2024-01-01",
+        versionCode: "RVR1960",
+        versionName: "Reina-Valera 1960",
+        reference: "Juan 3:16",
+        text: "Porque de tal manera amó Dios al mundo, que ha dado a su Hijo unigénito."
+    )
+}
+
 struct WidgetVerseModel: Codable {
     let date: String
     let versionCode: String
@@ -71,26 +83,26 @@ struct WidgetVerseEntry: TimelineEntry {
 
 struct WidgetVerseProvider: TimelineProvider {
     func placeholder(in context: Context) -> WidgetVerseEntry {
-        WidgetVerseEntry(
-            date: Date(),
-            verse: WidgetVerseModel(
-                date: "2024-01-01",
-                versionCode: "RVR1960",
-                versionName: "Reina-Valera 1960",
-                reference: "Juan 3:16",
-                text: "Porque de tal manera amó Dios al mundo, que ha dado a su Hijo unigénito."
-            ),
-            isPlaceholder: true
-        )
+        WidgetVerseEntry(date: Date(), verse: nil, isPlaceholder: true)
     }
 
     func getSnapshot(in context: Context, completion: @escaping (WidgetVerseEntry) -> Void) {
-        let entry = WidgetVerseEntry(date: Date(), verse: loadSavedVerse(), isPlaceholder: false)
+        let savedVerse = loadSavedVerse()
+        let entry = WidgetVerseEntry(
+            date: Date(),
+            verse: savedVerse ?? WidgetVersePlaceholder.sample,
+            isPlaceholder: savedVerse == nil
+        )
         completion(entry)
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<WidgetVerseEntry>) -> Void) {
-        let entry = WidgetVerseEntry(date: Date(), verse: loadSavedVerse(), isPlaceholder: false)
+        let savedVerse = loadSavedVerse()
+        let entry = WidgetVerseEntry(
+            date: Date(),
+            verse: savedVerse,
+            isPlaceholder: savedVerse == nil
+        )
         let refreshDate = Calendar.current.date(byAdding: .hour, value: 12, to: Date()) ?? Date().addingTimeInterval(12 * 3600)
         completion(Timeline(entries: [entry], policy: .after(refreshDate)))
     }
@@ -114,12 +126,22 @@ struct WidgetVerseView: View {
     var body: some View {
         ZStack {
             LinearGradient(
-                colors: [Color(red: 18/255, green: 26/255, blue: 42/255), Color(red: 26/255, green: 41/255, blue: 64/255)],
+                colors: [
+                    Color(red: 18/255, green: 26/255, blue: 42/255),
+                    Color(red: 26/255, green: 41/255, blue: 64/255)
+                ],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
             VStack(alignment: .leading, spacing: 8) {
-                if let verse = entry.verse {
+                if entry.isPlaceholder || entry.verse == nil {
+                    Text(WidgetVersePlaceholder.message)
+                        .font(.subheadline)
+                        .foregroundColor(.white.opacity(0.85))
+                        .multilineTextAlignment(.leading)
+                        .minimumScaleFactor(0.9)
+                        .accessibilityLabel("Widget sin datos, abre la app para sincronizar.")
+                } else if let verse = entry.verse {
                     Text(verse.text)
                         .font(family == .systemSmall ? .headline : .title3)
                         .fontWeight(.medium)
@@ -135,15 +157,13 @@ struct WidgetVerseView: View {
                             .font(.subheadline)
                             .fontWeight(.semibold)
                             .foregroundColor(Color(red: 244/255, green: 210/255, blue: 122/255))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
                         Text(verse.versionCode.uppercased())
                             .font(.caption)
                             .foregroundColor(Color(red: 126/255, green: 169/255, blue: 225/255))
+                            .lineLimit(1)
                     }
-                } else {
-                    Text("Abre Bible Widget para actualizar el versículo")
-                        .font(.subheadline)
-                        .foregroundColor(.white.opacity(0.85))
-                        .multilineTextAlignment(.leading)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
@@ -175,9 +195,21 @@ struct WidgetVerseBundle: WidgetBundle {
 struct WidgetVerseWidget_Previews: PreviewProvider {
     static var previews: some View {
         Group {
-            WidgetVerseView(entry: WidgetVerseProvider().placeholder(in: .init()))
+            WidgetVerseView(
+                entry: WidgetVerseEntry(
+                    date: Date(),
+                    verse: WidgetVersePlaceholder.sample,
+                    isPlaceholder: false
+                )
+            )
                 .previewContext(WidgetPreviewContext(family: .systemSmall))
-            WidgetVerseView(entry: WidgetVerseProvider().placeholder(in: .init()))
+            WidgetVerseView(
+                entry: WidgetVerseEntry(
+                    date: Date(),
+                    verse: nil,
+                    isPlaceholder: true
+                )
+            )
                 .previewContext(WidgetPreviewContext(family: .systemMedium))
         }
     }

@@ -1,16 +1,34 @@
-# holy_mobile
+# Bible Widget (holy-mobile)
 
-A new Flutter project.
+Aplicación Flutter que muestra el “Versículo del día”, permite elegir la versión bíblica y sincroniza el verso con widgets nativos en iOS y Android.
 
-## Getting Started
+## Requisitos
+- Flutter 3.19+ y Dart 3.
+- Toolchain para iOS (Xcode) y/o Android (Android SDK + emulador/dispositivo).
 
-This project is a starting point for a Flutter application.
+## Configuración de backend
+- El `baseApiUrl` se define en `lib/core/config/app_config.dart` (método `AppConfig.load()`).
+- Ajusta el valor a la URL del backend (ej. `https://api.tu-dominio.com`). En el futuro puede moverse a `--dart-define`, flavors o archivos `.env`.
 
-A few resources to get you started if this is your first Flutter project:
+## Ejecutar
+- Instalar dependencias: `flutter pub get`.
+- Correr en emulador/dispositivo: `flutter run -d <device-id>`.
+- Habilitar null-safety y análisis estándar: `flutter analyze` antes de abrir PR.
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+## Arquitectura y stack
+- Estado: Riverpod (`ProviderScope` en `main.dart`).
+- Ruteo: GoRouter (`app_router.dart`).
+- Red: Dio con inyección de token y timeout en `api_client.dart`.
+- Capas: `data/` (clients/repos), `domain/` (entidades), `presentation/` (screens/state).
+- Temas: `lib/core/theme/app_theme.dart` define light/dark con paleta cálida y tipografía Manrope.
+- i18n: llaves en `lib/l10n/*.arb`, usando `AppLocalizations` (es por defecto, fácil de extender a en).
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Widgets nativos
+- Flutter guarda el verso en almacenamiento compartido vía `WidgetSyncService` → `WidgetVerseStorage` → `MethodChannel` `bible_widget/shared_verse`.
+- iOS: App Group (ej. `group.biblewidget.app`) con clave `widgetVerse`; `AppDelegate.swift` escribe el JSON recibido por canal y dispara `WidgetCenter.shared.reloadAllTimelines()` cuando Flutter llama `refreshWidgets`. El stub de WidgetKit está en `ios/WidgetVerseExtension/WidgetVerseWidget.swift` (placeholder amistoso + timeline cada ~12h); habilita el App Group tanto en Runner como en la extensión.
+- Android: SharedPreferences (`bible_widget_prefs`/`widgetVerse`), `BibleWidgetProvider` lee y refresca widgets; `refreshWidgets` envía broadcast de actualización.
+
+## Pruebas
+- Unit y widget tests en `test/`.
+- Casos clave: selección de versión (VersionsController), mapeo `/verse/today` a `VerseOfTheDay`/`WidgetVerse`, render básico de `VerseOfTheDayScreen`.
+- Ejecutar todo: `flutter test`.
