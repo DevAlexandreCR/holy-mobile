@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:holy_mobile/data/bible/bible_repository.dart';
 import 'package:holy_mobile/presentation/state/auth/auth_controller.dart';
 import 'package:holy_mobile/presentation/state/settings/versions_state.dart';
+import 'package:holy_mobile/presentation/state/verse/verse_controller.dart';
 
 class VersionsController extends Notifier<VersionsState> {
   late final BibleRepository _repository;
@@ -49,6 +51,11 @@ class VersionsController extends Notifier<VersionsState> {
       state = state.copyWith(
         errorMessage: authState.errorMessage ?? 'No se pudo actualizar la versión.',
       );
+    }
+
+    if (success) {
+      // Refresh verse of the day with the newly selected version without blocking the UI.
+      unawaited(ref.read(verseControllerProvider.notifier).loadVerse(forceRefresh: true));
     }
 
     return success;
