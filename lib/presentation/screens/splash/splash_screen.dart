@@ -33,10 +33,14 @@ class SplashScreen extends ConsumerWidget {
                 color: colorScheme.onPrimary.withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
-              child: Icon(
-                Icons.auto_stories_rounded,
-                color: colorScheme.onPrimary,
-                size: 42,
+              child: SizedBox(
+                height: 42,
+                width: 42,
+                child: Image.asset(
+                  'assets/icon/app_icon.png',
+                  fit: BoxFit.contain,
+                  color: null,
+                ),
               ),
             ),
             const SizedBox(height: 18),

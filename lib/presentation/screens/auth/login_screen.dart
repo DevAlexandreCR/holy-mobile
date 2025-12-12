@@ -215,11 +215,13 @@ class _LogoHeader extends StatelessWidget {
                 color: AppColors.holyGold.withOpacity(0.4),
               ),
             ),
-            child: const Center(
-              child: Icon(
-                Icons.auto_awesome,
-                color: AppColors.holyGold,
-                size: AppSizes.iconLarge,
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(10),
+                child: Image.asset(
+                  'assets/icon/app_icon.png',
+                  fit: BoxFit.contain,
+                ),
               ),
             ),
           ),
