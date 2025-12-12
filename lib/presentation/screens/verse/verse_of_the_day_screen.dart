@@ -58,7 +58,7 @@ class _VerseOfTheDayScreenState extends ConsumerState<VerseOfTheDayScreen> {
           ),
           IconButton(
             tooltip: l10n.settingsTooltip,
-            onPressed: () => context.go('/settings'),
+            onPressed: () => context.push('/settings'),
             icon: const Icon(Icons.settings_outlined),
           ),
         ],
@@ -450,7 +450,7 @@ class _EmptyState extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         FilledButton.icon(
-          onPressed: () => context.go('/settings'),
+          onPressed: () => context.push('/settings'),
           icon: const Icon(Icons.settings_outlined),
           label: const Text('Ir a Ajustes'),
         ),
