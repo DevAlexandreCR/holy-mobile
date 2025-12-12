@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:holy_mobile/core/l10n/app_localizations.dart';
+import 'package:holy_mobile/core/theme/app_colors.dart';
+import 'package:holy_mobile/core/theme/app_design_tokens.dart';
+import 'package:holy_mobile/core/theme/app_text_styles.dart';
 import 'package:holy_mobile/domain/verse/verse_of_the_day.dart';
 import 'package:holy_mobile/presentation/state/verse/verse_controller.dart';
 import 'package:share_plus/share_plus.dart';
@@ -15,6 +18,8 @@ class VerseOfTheDayScreen extends ConsumerStatefulWidget {
 }
 
 class _VerseOfTheDayScreenState extends ConsumerState<VerseOfTheDayScreen> {
+  bool _isFavorite = false;
+
   @override
   void initState() {
     super.initState();
@@ -37,79 +42,82 @@ class _VerseOfTheDayScreenState extends ConsumerState<VerseOfTheDayScreen> {
     Share.share(shareText, subject: l10n.shareSubject);
   }
 
+  void _toggleFavorite() {
+    setState(() => _isFavorite = !_isFavorite);
+  }
+
   @override
   Widget build(BuildContext context) {
     final verseState = ref.watch(verseControllerProvider);
     final verse = verseState.verse;
-    final colorScheme = Theme.of(context).colorScheme;
     final l10n = context.l10n;
-    final accent = colorScheme.tertiary;
 
     return Scaffold(
-      backgroundColor: colorScheme.surface,
+      backgroundColor: AppColors.midnightFaith,
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         titleSpacing: 0,
-        title: Text(l10n.verseScreenTitle),
+        title: Text(
+          l10n.verseScreenTitle,
+          style: AppTextStyles.headline3.copyWith(
+            color: AppColors.pureWhite,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
         actions: [
           IconButton(
             tooltip: l10n.shareTooltip,
             onPressed: verse == null ? null : () => _onShare(verse),
-            icon: const Icon(Icons.ios_share_outlined),
+            icon: Icon(
+              Icons.ios_share,
+              color: verse == null
+                  ? AppColors.softMist.withOpacity(0.4)
+                  : AppColors.pureWhite,
+            ),
           ),
           IconButton(
             tooltip: l10n.settingsTooltip,
             onPressed: () => context.push('/settings'),
-            icon: const Icon(Icons.settings_outlined),
+            icon: const Icon(
+              Icons.settings_outlined,
+              color: AppColors.pureWhite,
+            ),
           ),
         ],
       ),
       body: Stack(
         children: [
-          Positioned(
-            top: -140,
-            left: -80,
-            child: _GlowCircle(size: 260, color: colorScheme.primary),
-          ),
-          Positioned(
-            bottom: -120,
-            right: -40,
-            child: _GlowCircle(size: 220, color: colorScheme.tertiary),
-          ),
+          const _VerseBackground(),
           SafeArea(
             child: RefreshIndicator(
-              color: accent,
-              backgroundColor: colorScheme.surface,
+              color: AppColors.holyGold,
+              backgroundColor: AppColors.midnightFaith,
               onRefresh: _onRefresh,
               child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(
                   parent: BouncingScrollPhysics(),
                 ),
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 12,
+                  horizontal: AppSpacing.lg,
+                  vertical: AppSpacing.md,
                 ),
                 children: [
-                  _buildHeader(context, verse),
-                  const SizedBox(height: 16),
+                  _Header(verse: verse),
+                  const SizedBox(height: AppSpacing.md),
                   _VerseCard(
                     verse: verse,
                     isLoading: verseState.isLoading,
-                    colorScheme: colorScheme,
-                  ),
-                  const SizedBox(height: 16),
-                  _ActionsRow(
-                    isLoading: verseState.isLoading,
-                    onRefresh: _onRefresh,
+                    isFavorite: _isFavorite,
+                    onToggleFavorite: _toggleFavorite,
                     onShare: verse == null ? null : () => _onShare(verse),
-                    colorScheme: colorScheme,
                   ),
                   if (verseState.hasError)
                     Padding(
-                      padding: const EdgeInsets.only(top: 10),
-                      child: _ErrorBanner(
-                        message: verseState.errorMessage ?? l10n.verseLoadError,
-                        colorScheme: colorScheme,
-                        onRetry: _onRefresh,
+                      padding: const EdgeInsets.only(top: AppSpacing.md),
+                      child: _ErrorPill(
+                        message:
+                            verseState.errorMessage ?? l10n.verseLoadError,
                       ),
                     ),
                 ],
@@ -120,61 +128,66 @@ class _VerseOfTheDayScreenState extends ConsumerState<VerseOfTheDayScreen> {
       ),
     );
   }
+}
 
-  Widget _buildHeader(BuildContext context, VerseOfTheDay? verse) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
+class _Header extends StatelessWidget {
+  const _Header({this.verse});
+
+  final VerseOfTheDay? verse;
+
+  @override
+  Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final muted = colorScheme.onSurface.withOpacity(0.7);
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: colorScheme.primary.withOpacity(0.08),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: colorScheme.primary.withOpacity(0.18),
-                ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.wb_twilight_outlined,
-                    color: colorScheme.primary,
-                    size: 18,
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    l10n.verseOfDayTag,
-                    style: textTheme.labelLarge?.copyWith(
-                      color: colorScheme.onSurface,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
-              ),
+        Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.sm,
+          ),
+          decoration: BoxDecoration(
+            color: AppColors.pureWhite.withOpacity(0.06),
+            borderRadius: AppBorderRadius.button,
+            border: Border.all(
+              color: AppColors.pureWhite.withOpacity(0.1),
             ),
-            const Spacer(),
-            if (verse != null && verse.date.isNotEmpty)
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.auto_awesome,
+                color: AppColors.holyGold,
+                size: AppSizes.iconSmall,
+              ),
+              const SizedBox(width: AppSpacing.xs),
               Text(
-                verse.date,
-                style: textTheme.labelMedium?.copyWith(
-                  color: colorScheme.onSurface,
+                l10n.verseOfDayTag,
+                style: AppTextStyles.labelMedium.copyWith(
+                  color: AppColors.pureWhite,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
-          ],
+            ],
+          ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: AppSpacing.sm),
         Text(
           l10n.verseSubtitle,
-          style: textTheme.bodyLarge?.copyWith(color: muted),
+          style: AppTextStyles.bodyLarge.copyWith(
+            color: AppColors.softMist.withOpacity(0.85),
+          ),
         ),
+        if (verse != null && verse!.date.isNotEmpty) ...[
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            verse!.date,
+            style: AppTextStyles.bodySmall.copyWith(
+              color: AppColors.softMist.withOpacity(0.7),
+            ),
+          ),
+        ],
       ],
     );
   }
@@ -184,157 +197,137 @@ class _VerseCard extends StatelessWidget {
   const _VerseCard({
     required this.verse,
     required this.isLoading,
-    required this.colorScheme,
+    required this.isFavorite,
+    required this.onToggleFavorite,
+    required this.onShare,
   });
 
   final VerseOfTheDay? verse;
   final bool isLoading;
-  final ColorScheme colorScheme;
+  final bool isFavorite;
+  final VoidCallback onToggleFavorite;
+  final VoidCallback? onShare;
 
   @override
   Widget build(BuildContext context) {
-    final accent = colorScheme.tertiary;
-    final textTheme = Theme.of(context).textTheme;
-    final onSurface = colorScheme.onSurface;
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [colorScheme.surfaceContainerHighest, colorScheme.surface],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+    return AspectRatio(
+      aspectRatio: 9 / 19.5,
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        decoration: BoxDecoration(
+          gradient: AppColors.midnightGradient,
+          borderRadius: BorderRadius.circular(AppBorderRadius.xl),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.35),
+              blurRadius: 34,
+              offset: const Offset(0, 20),
+            ),
+          ],
         ),
-        borderRadius: BorderRadius.circular(26),
-        border: Border.all(color: colorScheme.outline.withOpacity(0.1)),
-        boxShadow: [
-          BoxShadow(
-            color: colorScheme.shadow.withOpacity(0.1),
-            blurRadius: 26,
-            offset: const Offset(0, 16),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.auto_awesome, color: accent, size: 22),
-              const SizedBox(width: 8),
-              Text(
-                context.l10n.verseSectionTitle,
-                style: textTheme.labelLarge?.copyWith(
-                  color: onSurface,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const Spacer(),
-              if (isLoading)
-                SizedBox(
-                  height: 18,
-                  width: 18,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: onSurface.withOpacity(0.7),
+        child: Stack(
+          children: [
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 250),
+              child: verse != null
+                  ? _VerseContent(verse: verse!)
+                  : isLoading
+                      ? _SkeletonPlaceholder()
+                      : const _EmptyState(),
+            ),
+            Positioned(
+              bottom: AppSpacing.md,
+              right: AppSpacing.md,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  _CircleIconButton(
+                    icon: isFavorite
+                        ? Icons.favorite
+                        : Icons.favorite_border,
+                    color: isFavorite
+                        ? AppColors.holyGold
+                        : AppColors.pureWhite.withOpacity(0.85),
+                    onPressed: onToggleFavorite,
                   ),
-                ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          AnimatedSwitcher(
-            duration: const Duration(milliseconds: 200),
-            child: verse != null
-                ? Column(
-                    key: const ValueKey('content'),
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '"${verse!.text}"',
-                        style: textTheme.titleLarge?.copyWith(
-                          color: onSurface,
-                          fontWeight: FontWeight.w700,
-                          height: 1.4,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        verse!.reference,
-                        style: textTheme.titleMedium?.copyWith(
-                          color: accent,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '${verse!.displayVersionCode} • ${verse!.versionName}',
-                        style: textTheme.bodyMedium?.copyWith(
-                          color: onSurface.withOpacity(0.72),
-                          letterSpacing: 0.2,
-                        ),
-                      ),
-                    ],
-                  )
-                : isLoading
-                ? _SkeletonPlaceholder(colorScheme: colorScheme)
-                : _EmptyState(colorScheme: colorScheme),
-          ),
-        ],
+                  const SizedBox(width: AppSpacing.sm),
+                  _CircleIconButton(
+                    icon: Icons.ios_share,
+                    color: AppColors.pureWhite.withOpacity(0.85),
+                    onPressed: onShare,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 }
 
-class _ActionsRow extends StatelessWidget {
-  const _ActionsRow({
-    required this.isLoading,
-    required this.onRefresh,
-    required this.onShare,
-    required this.colorScheme,
-  });
+class _VerseContent extends StatelessWidget {
+  const _VerseContent({required this.verse});
 
-  final bool isLoading;
-  final Future<void> Function() onRefresh;
-  final VoidCallback? onShare;
-  final ColorScheme colorScheme;
+  final VerseOfTheDay verse;
 
   @override
   Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    final accent = colorScheme.tertiary;
-    final onSurface = colorScheme.onSurface;
-
-    return Row(
+    return Column(
+      key: const ValueKey('verse-content'),
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(
-          child: FilledButton.icon(
-            onPressed: isLoading ? null : onRefresh,
-            icon: isLoading
-                ? const SizedBox(
-                    height: 18,
-                    width: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.refresh),
-            label: Text(l10n.updateAction),
-            style: FilledButton.styleFrom(
-              backgroundColor: accent.withOpacity(0.16),
-              foregroundColor: onSurface,
-              side: BorderSide(color: accent.withOpacity(0.6)),
+        Align(
+          alignment: Alignment.topRight,
+          child: Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.sm,
+              vertical: AppSpacing.xs,
+            ),
+            decoration: BoxDecoration(
+              color: AppColors.pureWhite.withOpacity(0.06),
+              borderRadius: AppBorderRadius.button,
+              border: Border.all(
+                color: AppColors.pureWhite.withOpacity(0.08),
+              ),
+            ),
+            child: Text(
+              '${verse.displayVersionCode} • ${verse.versionName}',
+              style: AppTextStyles.referenceSmall.copyWith(
+                color: AppColors.morningLight,
+                fontSize: 12,
+              ),
             ),
           ),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(height: AppSpacing.md),
         Expanded(
-          child: OutlinedButton.icon(
-            onPressed: onShare,
-            icon: const Icon(Icons.ios_share_outlined),
-            label: Text(l10n.shareAction),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: onSurface,
-              side: BorderSide(color: colorScheme.outline.withOpacity(0.6)),
-              backgroundColor: colorScheme.surfaceContainerHighest.withOpacity(
-                0.4,
-              ),
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '"${verse.text}"',
+                  style: AppTextStyles.headline1.copyWith(
+                    color: AppColors.pureWhite,
+                    height: 1.35,
+                    shadows: AppShadows.textGlow,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                Text(
+                  verse.reference,
+                  style: AppTextStyles.reference.copyWith(
+                    shadows: [
+                      Shadow(
+                        color: AppColors.holyGold.withOpacity(0.5),
+                        blurRadius: 10,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
         ),
@@ -343,40 +336,64 @@ class _ActionsRow extends StatelessWidget {
   }
 }
 
-class _ErrorBanner extends StatelessWidget {
-  const _ErrorBanner({
-    required this.message,
-    required this.onRetry,
-    required this.colorScheme,
+class _CircleIconButton extends StatelessWidget {
+  const _CircleIconButton({
+    required this.icon,
+    required this.color,
+    this.onPressed,
   });
 
-  final String message;
-  final Future<void> Function() onRetry;
-  final ColorScheme colorScheme;
+  final IconData icon;
+  final Color color;
+  final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context) {
-    final l10n = context.l10n;
     return Container(
-      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: colorScheme.errorContainer.withOpacity(0.9),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: colorScheme.error.withOpacity(0.25)),
+        color: AppColors.pureWhite.withOpacity(0.08),
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: AppColors.pureWhite.withOpacity(0.1),
+        ),
+      ),
+      child: IconButton(
+        onPressed: onPressed,
+        icon: Icon(icon, color: color, size: AppSizes.iconMedium),
+      ),
+    );
+  }
+}
+
+class _ErrorPill extends StatelessWidget {
+  const _ErrorPill({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.error.withOpacity(0.12),
+        borderRadius: AppBorderRadius.card,
+        border: Border.all(color: AppColors.error.withOpacity(0.4)),
       ),
       child: Row(
         children: [
-          Icon(Icons.error_outline, color: colorScheme.error),
-          const SizedBox(width: 10),
+          const Icon(Icons.error_outline, color: AppColors.error),
+          const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Text(
               message,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: colorScheme.onErrorContainer,
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.pureWhite,
               ),
             ),
           ),
-          TextButton(onPressed: onRetry, child: Text(l10n.errorRetry)),
         ],
       ),
     );
@@ -384,44 +401,41 @@ class _ErrorBanner extends StatelessWidget {
 }
 
 class _SkeletonPlaceholder extends StatelessWidget {
-  const _SkeletonPlaceholder({required this.colorScheme});
-
-  final ColorScheme colorScheme;
-
   @override
   Widget build(BuildContext context) {
-    final accent = colorScheme.tertiary;
-    final baseColor = colorScheme.onSurface;
     return Column(
       key: const ValueKey('skeleton'),
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _ShimmerBlock(height: 22, width: double.infinity, baseColor: baseColor),
+        Container(
+          height: 18,
+          width: 120,
+          decoration: BoxDecoration(
+            color: AppColors.pureWhite.withOpacity(0.06),
+            borderRadius: AppBorderRadius.button,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        _ShimmerBlock(height: 22, width: double.infinity),
         const SizedBox(height: 10),
-        _ShimmerBlock(height: 22, width: double.infinity, baseColor: baseColor),
+        _ShimmerBlock(height: 22, width: double.infinity),
         const SizedBox(height: 10),
         _ShimmerBlock(
           height: 22,
           width: MediaQuery.sizeOf(context).width * 0.7,
-          baseColor: baseColor,
         ),
-        const SizedBox(height: 18),
-        _ShimmerBlock(height: 16, width: 140, baseColor: accent),
-        const SizedBox(height: 6),
-        _ShimmerBlock(height: 14, width: 200, baseColor: baseColor),
+        const SizedBox(height: AppSpacing.lg),
+        _ShimmerBlock(height: 16, width: 140),
       ],
     );
   }
 }
 
 class _EmptyState extends StatelessWidget {
-  const _EmptyState({required this.colorScheme});
-
-  final ColorScheme colorScheme;
+  const _EmptyState();
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
     return Column(
       key: const ValueKey('empty'),
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -429,26 +443,26 @@ class _EmptyState extends StatelessWidget {
         Icon(
           Icons.info_outline,
           size: 48,
-          color: colorScheme.primary.withOpacity(0.6),
+          color: AppColors.holyGold.withOpacity(0.8),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: AppSpacing.md),
         Text(
           'No hay versículo disponible',
-          style: textTheme.titleMedium?.copyWith(
-            color: colorScheme.onSurface.withOpacity(0.8),
-            fontWeight: FontWeight.w600,
+          style: AppTextStyles.labelLarge.copyWith(
+            color: AppColors.pureWhite,
+            fontWeight: FontWeight.w700,
           ),
           textAlign: TextAlign.center,
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: AppSpacing.sm),
         Text(
           'Configura tus versiones de la Biblia en Ajustes para ver el versículo del día',
-          style: textTheme.bodyMedium?.copyWith(
-            color: colorScheme.onSurface.withOpacity(0.6),
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: AppColors.softMist.withOpacity(0.8),
           ),
           textAlign: TextAlign.center,
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: AppSpacing.md),
         FilledButton.icon(
           onPressed: () => context.push('/settings'),
           icon: const Icon(Icons.settings_outlined),
@@ -463,12 +477,10 @@ class _ShimmerBlock extends StatelessWidget {
   const _ShimmerBlock({
     required this.height,
     required this.width,
-    required this.baseColor,
   });
 
   final double height;
   final double width;
-  final Color baseColor;
 
   @override
   Widget build(BuildContext context) {
@@ -476,29 +488,66 @@ class _ShimmerBlock extends StatelessWidget {
       height: height,
       width: width,
       decoration: BoxDecoration(
-        color: baseColor.withOpacity(0.08),
+        color: AppColors.pureWhite.withOpacity(0.06),
         borderRadius: BorderRadius.circular(10),
       ),
     );
   }
 }
 
-class _GlowCircle extends StatelessWidget {
-  const _GlowCircle({this.size = 220, required this.color});
-
-  final double size;
-  final Color color;
+class _VerseBackground extends StatelessWidget {
+  const _VerseBackground();
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: size,
-      height: size,
       decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: RadialGradient(
-          colors: [color.withOpacity(0.12), Colors.transparent],
+        gradient: LinearGradient(
+          colors: [
+            AppColors.midnightFaithDark,
+            AppColors.midnightFaith,
+          ],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
         ),
+      ),
+      child: Stack(
+        children: [
+          Positioned(
+            top: -140,
+            left: -80,
+            child: Container(
+              width: 280,
+              height: 280,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    AppColors.holyGold.withOpacity(0.18),
+                    Colors.transparent,
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: -140,
+            right: -80,
+            child: Container(
+              width: 260,
+              height: 260,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    AppColors.morningLight.withOpacity(0.16),
+                    Colors.transparent,
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
