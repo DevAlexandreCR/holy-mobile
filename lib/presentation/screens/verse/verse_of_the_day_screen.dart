@@ -210,8 +210,15 @@ class _VerseCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AspectRatio(
-      aspectRatio: 9 / 19.5,
+    final screenSize = MediaQuery.sizeOf(context);
+    final contentWidth = screenSize.width - (AppSpacing.lg * 2);
+    final baseHeight = contentWidth / (9 / 19.5);
+    final minHeight = screenSize.height * 0.42;
+    final maxHeight = screenSize.height * 0.62;
+    final cardHeight = baseHeight.clamp(minHeight, maxHeight).toDouble();
+
+    return SizedBox(
+      height: cardHeight,
       child: Container(
         padding: const EdgeInsets.all(AppSpacing.lg),
         decoration: BoxDecoration(
