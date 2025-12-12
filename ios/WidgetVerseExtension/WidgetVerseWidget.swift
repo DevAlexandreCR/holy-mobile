@@ -4,9 +4,20 @@ import SwiftUI
 // WidgetKit extension stub. Add this file to the Widget target in Xcode.
 // Replace the App Group ID and key to match the Flutter/iOS shared storage contract.
 private enum SharedConfig {
-    // TODO: Replace with the real App Group ID configured in Apple Developer portal.
-    static let appGroupId = "group.biblewidget.app"
+    static let appGroupId = "group.gorda.holyverso"
     static let widgetVerseKey = "widgetVerse" // Must match Flutter channel.
+}
+
+private enum HolyVersoColors {
+    // Holy Gold
+    static let holyGold = Color(red: 244/255, green: 210/255, blue: 122/255)
+    // Midnight Faith
+    static let midnightFaith = Color(red: 26/255, green: 41/255, blue: 64/255)
+    static let midnightFaithDark = Color(red: 18/255, green: 26/255, blue: 42/255)
+    // Pure White
+    static let pureWhite = Color.white
+    // Morning Light
+    static let morningLight = Color(red: 126/255, green: 169/255, blue: 225/255)
 }
 
 private enum WidgetVersePlaceholder {
@@ -125,50 +136,65 @@ struct WidgetVerseView: View {
 
     var body: some View {
         ZStack {
+            // Fondo con gradiente Midnight Faith
             LinearGradient(
                 colors: [
-                    Color(red: 18/255, green: 26/255, blue: 42/255),
-                    Color(red: 26/255, green: 41/255, blue: 64/255)
+                    HolyVersoColors.midnightFaithDark.opacity(0.9),
+                    HolyVersoColors.midnightFaith.opacity(0.8)
                 ],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
-            VStack(alignment: .leading, spacing: 8) {
-                if entry.isPlaceholder || entry.verse == nil {
+            
+            if entry.isPlaceholder || entry.verse == nil {
+                VStack(alignment: .leading, spacing: 8) {
                     Text(WidgetVersePlaceholder.message)
-                        .font(.subheadline)
-                        .foregroundColor(.white.opacity(0.85))
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(HolyVersoColors.pureWhite.opacity(0.85))
                         .multilineTextAlignment(.leading)
                         .minimumScaleFactor(0.9)
                         .accessibilityLabel("Widget sin datos, abre la app para sincronizar.")
-                } else if let verse = entry.verse {
-                    Text(verse.text)
-                        .font(family == .systemSmall ? .headline : .title3)
-                        .fontWeight(.medium)
-                        .foregroundColor(.white)
-                        .lineLimit(family == .systemSmall ? 4 : 6)
-                        .minimumScaleFactor(0.9)
-                        .accessibilityLabel("Versículo del día")
-
                     Spacer()
-
-                    VStack(alignment: .leading, spacing: 4) {
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+                .padding(12)
+            } else if let verse = entry.verse {
+                // Layout para widget 4x1 (systemSmall)
+                VStack(alignment: .leading, spacing: 0) {
+                    // Verso - ocupa el espacio principal
+                    Text(verse.text)
+                        .font(.system(size: family == .systemSmall ? 11 : 14, weight: .medium))
+                        .foregroundColor(HolyVersoColors.pureWhite)
+                        .lineLimit(family == .systemSmall ? 2 : 4)
+                        .minimumScaleFactor(0.85)
+                        .shadow(color: .black.opacity(0.5), radius: 2, x: 0, y: 1)
+                        .accessibilityLabel("Versículo del día")
+                    
+                    Spacer(minLength: 4)
+                    
+                    // Referencia y versión en la parte inferior
+                    HStack(alignment: .bottom) {
                         Text(verse.reference)
-                            .font(.subheadline)
-                            .fontWeight(.semibold)
-                            .foregroundColor(Color(red: 244/255, green: 210/255, blue: 122/255))
+                            .font(.system(size: family == .systemSmall ? 10 : 12, weight: .regular))
+                            .foregroundColor(HolyVersoColors.holyGold)
                             .lineLimit(1)
                             .minimumScaleFactor(0.8)
-                        Text(verse.versionCode.uppercased())
-                            .font(.caption)
-                            .foregroundColor(Color(red: 126/255, green: 169/255, blue: 225/255))
+                            .shadow(color: HolyVersoColors.holyGold.opacity(0.5), radius: 4, x: 0, y: 0)
+                        
+                        Spacer()
+                        
+                        Text(verse.versionName)
+                            .font(.system(size: family == .systemSmall ? 9 : 10, weight: .regular))
+                            .foregroundColor(HolyVersoColors.pureWhite.opacity(0.6))
                             .lineLimit(1)
+                            .minimumScaleFactor(0.8)
                     }
                 }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+                .padding(12)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-            .padding()
         }
+        .cornerRadius(24)
     }
 }
 
@@ -179,9 +205,9 @@ struct WidgetVerseWidget: Widget {
         StaticConfiguration(kind: kind, provider: WidgetVerseProvider()) { entry in
             WidgetVerseView(entry: entry)
         }
-        .configurationDisplayName("Bible Widget")
-        .description("Muestra el versículo del día según tu versión favorita.")
-        .supportedFamilies([.systemSmall, .systemMedium])
+        .configurationDisplayName("HolyVerso")
+        .description("Luz y Palabra para cada día.")
+        .supportedFamilies([.systemSmall])
     }
 }
 

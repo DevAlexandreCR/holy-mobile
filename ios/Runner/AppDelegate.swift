@@ -3,8 +3,7 @@ import UIKit
 import WidgetKit
 
 private enum WidgetSharedConfig {
-  // TODO: Replace with the real App Group ID configured in the Apple Developer portal.
-  static let appGroupId = "group.biblewidget.app"
+  static let appGroupId = "group.gorda.holyverso"
   static let widgetVerseKey = "widgetVerse" // Must match Flutter + Widget target.
 }
 
