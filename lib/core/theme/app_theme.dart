@@ -1,46 +1,56 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+/// HolyVerso Official Theme
+/// Based on Brand Guidelines and UI/UX specifications
 class AppTheme {
-  static const _seed = Color(0xFFD4A85F); // warm gold accent
-  static const _lightBackground = Color(0xFFF7F1E8);
-  static const _lightSurface = Color(0xFFFDFBF7);
-  static const _darkBackground = Color(0xFF0D111A);
-  static const _darkSurface = Color(0xFF121826);
+  // Holy Verso Brand Colors
+  static const holyGold = Color(0xFFF4D27A);
+  static const midnightFaith = Color(0xFF1A2940);
+  static const midnightFaithDark = Color(0xFF121A2A);
+  static const pureWhite = Color(0xFFFFFFFF);
+  static const morningLight = Color(0xFF7EA9E1);
+  static const softMist = Color(0xFFD7DCE3);
+
+  // Functional colors
+  static const inputBackground = Color(0xFF27241B);
+  static const inputBorder = Color(0xFF544E3B);
+  static const inputPlaceholder = Color(0xFFBAB29C);
+  static const error = Color(0xFFC8943C);
 
   static ThemeData light() {
-    final colorScheme =
-        ColorScheme.fromSeed(
-          seedColor: _seed,
-          brightness: Brightness.light,
-          background: _lightBackground,
-          surface: _lightSurface,
-        ).copyWith(
-          secondary: const Color(0xFF2E6A6A),
-          tertiary: const Color(0xFF8C6C3F),
-          surfaceContainerHighest: const Color(0xFFF0E5D5),
-        );
+    final colorScheme = ColorScheme.light(
+      primary: holyGold,
+      secondary: morningLight,
+      surface: pureWhite,
+      error: error,
+      onPrimary: midnightFaith,
+      onSecondary: pureWhite,
+      onSurface: midnightFaith,
+      onError: pureWhite,
+    );
 
-    return _buildTheme(colorScheme);
+    return _buildTheme(colorScheme, Brightness.light);
   }
 
   static ThemeData dark() {
-    final colorScheme =
-        ColorScheme.fromSeed(
-          seedColor: _seed,
-          brightness: Brightness.dark,
-          background: _darkBackground,
-          surface: _darkSurface,
-        ).copyWith(
-          secondary: const Color(0xFF4FB3B3),
-          tertiary: const Color(0xFFD9B36F),
-          surfaceContainerHighest: const Color(0xFF1A2436),
-        );
+    final colorScheme = ColorScheme.dark(
+      primary: holyGold,
+      secondary: morningLight,
+      surface: midnightFaith,
+      error: error,
+      onPrimary: midnightFaith,
+      onSecondary: pureWhite,
+      onSurface: pureWhite,
+      onError: pureWhite,
+    );
 
-    return _buildTheme(colorScheme);
+    return _buildTheme(colorScheme, Brightness.dark);
   }
 
-  static ThemeData _buildTheme(ColorScheme colorScheme) {
+  static ThemeData _buildTheme(ColorScheme colorScheme, Brightness brightness) {
+    final isDark = brightness == Brightness.dark;
     final textTheme = GoogleFonts.manropeTextTheme().apply(
       bodyColor: colorScheme.onSurface,
       displayColor: colorScheme.onSurface,
