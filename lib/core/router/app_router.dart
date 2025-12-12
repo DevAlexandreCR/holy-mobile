@@ -11,7 +11,15 @@ import 'package:holy_mobile/presentation/screens/splash/splash_screen.dart';
 import 'package:holy_mobile/presentation/screens/verse/verse_of_the_day_screen.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(authControllerProvider);
+  final authState = ref.watch(
+    authControllerProvider.select(
+      (state) => (
+        isLoading: state.isLoading,
+        isAuthenticated: state.isAuthenticated,
+        errorMessage: state.errorMessage,
+      ),
+    ),
+  );
 
   const baseL10n = AppLocalizations(Locale('es'));
 
