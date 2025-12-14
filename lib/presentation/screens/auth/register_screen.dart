@@ -247,12 +247,12 @@ class _LogoHeader extends StatelessWidget {
                 color: AppColors.holyGold.withOpacity(0.35),
               ),
             ),
-            child: Center(
-              child: Padding(
-                padding: const EdgeInsets.all(8),
+            child: Padding(
+              padding: const EdgeInsets.all(3),
+              child: ClipOval(
                 child: Image.asset(
                   'assets/icon/app_icon.png',
-                  fit: BoxFit.contain,
+                  fit: BoxFit.cover,
                 ),
               ),
             ),

@@ -28,18 +28,19 @@ class SplashScreen extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Container(
-              padding: const EdgeInsets.all(14),
+              padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
                 color: colorScheme.onPrimary.withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
               child: SizedBox(
-                height: 42,
-                width: 42,
-                child: Image.asset(
-                  'assets/icon/app_icon.png',
-                  fit: BoxFit.contain,
-                  color: null,
+                height: 48,
+                width: 48,
+                child: ClipOval(
+                  child: Image.asset(
+                    'assets/icon/app_icon.png',
+                    fit: BoxFit.cover,
+                  ),
                 ),
               ),
             ),
