@@ -33,6 +33,16 @@ migrate_working_dir/
 /build/
 /coverage/
 
+# CocoaPods
+**/Pods/
+**/Podfile.lock
+**/ios/Flutter/Debug.xcconfig
+**/ios/Flutter/Release.xcconfig
+**/macos/Flutter/Flutter-Debug.xcconfig
+**/macos/Flutter/Flutter-Release.xcconfig
+**/ios/Runner.xcworkspace/contents.xcworkspacedata
+**/ios/Runner.xcodeproj/project.pbxproj
+
 # Environment variables
 .env.*
 !.env.example
