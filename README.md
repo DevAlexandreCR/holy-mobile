@@ -1,4 +1,4 @@
-# Bible Widget (holy-mobile)
+# HolyVerso (holy-mobile)
 
 Aplicación Flutter que muestra el “Versículo del día”, permite elegir la versión bíblica y sincroniza el verso con widgets nativos en iOS y Android.
 

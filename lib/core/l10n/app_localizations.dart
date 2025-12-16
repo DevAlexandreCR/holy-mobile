@@ -7,10 +7,7 @@ class AppLocalizations {
 
   final Locale locale;
 
-  static const supportedLocales = [
-    Locale('es'),
-    Locale('en'),
-  ];
+  static const supportedLocales = [Locale('es'), Locale('en')];
 
   static const localizationsDelegates = [
     AppLocalizations.delegate,
@@ -96,9 +93,10 @@ class AppLocalizations {
   String get authUnexpectedError => _string('authUnexpectedError');
 
   String _string(String key) {
-    final langCode = supportedLocales.any(
-      (localeOption) => localeOption.languageCode == locale.languageCode,
-    )
+    final langCode =
+        supportedLocales.any(
+          (localeOption) => localeOption.languageCode == locale.languageCode,
+        )
         ? locale.languageCode
         : 'es';
 
@@ -109,7 +107,7 @@ class AppLocalizations {
 
   static const _localizedValues = <String, Map<String, String>>{
     'es': {
-      'appTitle': 'Bible Widget',
+      'appTitle': 'HolyVerso',
       'splashPreparing': 'Preparando tu experiencia...',
       'splashConfigError': 'Error al cargar configuración',
       'splashSessionError': 'No se pudo validar tu sesión',
@@ -157,7 +155,8 @@ class AppLocalizations {
       'settingsTooltip': 'Configuración',
       'shareSubject': 'Versículo de hoy',
       'verseLoadError': 'No pudimos cargar el versículo de hoy.',
-      'verseRequestError': 'No pudimos cargar el versículo. Inténtalo nuevamente.',
+      'verseRequestError':
+          'No pudimos cargar el versículo. Inténtalo nuevamente.',
       'errorRetry': 'Reintentar',
       'settingsTitle': 'Configuración',
       'preferencesTitle': 'Preferencias',
@@ -167,13 +166,15 @@ class AppLocalizations {
       'bibleVersionsSubtitle': 'Selecciona la versión que prefieras leer',
       'versionsUpdateSuccess': 'Versión actualizada.',
       'versionsUpdateError': 'No pudimos guardar tu preferencia.',
-      'versionsLoadError': 'No pudimos cargar las versiones. Inténtalo nuevamente.',
+      'versionsLoadError':
+          'No pudimos cargar las versiones. Inténtalo nuevamente.',
       'versionsEmpty': 'Aún no hay versiones disponibles.',
-      'authRequestFailed': 'No se pudo completar la solicitud. Inténtalo nuevamente.',
+      'authRequestFailed':
+          'No se pudo completar la solicitud. Inténtalo nuevamente.',
       'authUnexpectedError': 'Algo salió mal. Inténtalo nuevamente.',
     },
     'en': {
-      'appTitle': 'Bible Widget',
+      'appTitle': 'HolyVerso',
       'splashPreparing': 'Preparing your experience...',
       'splashConfigError': 'Could not load configuration',
       'splashSessionError': 'Session could not be validated',
@@ -225,7 +226,8 @@ class AppLocalizations {
       'errorRetry': 'Retry',
       'settingsTitle': 'Settings',
       'preferencesTitle': 'Preferences',
-      'preferencesSubtitle': 'Choose your favorite translation for the daily verse.',
+      'preferencesSubtitle':
+          'Choose your favorite translation for the daily verse.',
       'bibleVersionsTitle': 'Bible versions',
       'bibleVersionsSubtitle': 'Select the version you prefer to read',
       'versionsUpdateSuccess': 'Version updated.',
@@ -238,13 +240,15 @@ class AppLocalizations {
   };
 }
 
-class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
+class _AppLocalizationsDelegate
+    extends LocalizationsDelegate<AppLocalizations> {
   const _AppLocalizationsDelegate();
 
   @override
   bool isSupported(Locale locale) {
-    return AppLocalizations.supportedLocales
-        .any((supported) => supported.languageCode == locale.languageCode);
+    return AppLocalizations.supportedLocales.any(
+      (supported) => supported.languageCode == locale.languageCode,
+    );
   }
 
   @override

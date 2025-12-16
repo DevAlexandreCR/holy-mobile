@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:holy_mobile/core/l10n/app_localizations.dart';
+import 'package:holy_mobile/core/theme/app_colors.dart';
+import 'package:holy_mobile/core/theme/app_design_tokens.dart';
+import 'package:holy_mobile/core/theme/app_text_styles.dart';
 
 class SplashScreen extends ConsumerWidget {
   const SplashScreen({
@@ -15,66 +18,150 @@ class SplashScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
     final isError = errorDetails != null;
     final displayMessage = message ?? l10n.splashLoading;
 
     return Scaffold(
-      backgroundColor: colorScheme.primary,
-      body: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: colorScheme.onPrimary.withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: SizedBox(
-                height: 48,
-                width: 48,
-                child: ClipOval(
-                  child: Image.asset(
-                    'assets/icon/app_icon.png',
-                    fit: BoxFit.cover,
+      backgroundColor: AppColors.midnightFaith,
+      body: Stack(
+        children: [
+          const _BackgroundGlow(),
+          Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Container(
+                  height: 80,
+                  width: 80,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: RadialGradient(
+                      colors: [
+                        AppColors.holyGold.withOpacity(0.22),
+                        Colors.transparent,
+                      ],
+                    ),
+                    border: Border.all(
+                      color: AppColors.holyGold.withOpacity(0.4),
+                      width: 2,
+                    ),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(6),
+                    child: ClipOval(
+                      child: Image.asset(
+                        'assets/icon/app_icon.png',
+                        fit: BoxFit.cover,
+                      ),
+                    ),
                   ),
                 ),
-              ),
+                const SizedBox(height: AppSpacing.md),
+                Text(
+                  l10n.appTitle,
+                  style: AppTextStyles.headline2.copyWith(
+                    color: AppColors.pureWhite,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.2,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  displayMessage,
+                  textAlign: TextAlign.center,
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: AppColors.softMist.withOpacity(0.85),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                if (!isError)
+                  CircularProgressIndicator(
+                    color: AppColors.holyGold,
+                    strokeWidth: 3,
+                  ),
+                if (isError) ...[
+                  Icon(
+                    Icons.error_outline,
+                    color: AppColors.error,
+                    size: 48,
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.lg,
+                    ),
+                    child: Text(
+                      errorDetails ?? '',
+                      textAlign: TextAlign.center,
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: AppColors.softMist.withOpacity(0.9),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
             ),
-            const SizedBox(height: 18),
-            Text(
-              l10n.appTitle,
-              style: textTheme.headlineMedium?.copyWith(
-                color: colorScheme.onPrimary,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              displayMessage,
-              textAlign: TextAlign.center,
-              style: textTheme.bodyLarge?.copyWith(
-                color: colorScheme.onPrimary.withOpacity(0.9),
-              ),
-            ),
-            const SizedBox(height: 18),
-            if (!isError) const CircularProgressIndicator(color: Colors.white),
-            if (isError) ...[
-              const Icon(Icons.error_outline, color: Colors.white),
-              const SizedBox(height: 8),
-              Text(
-                errorDetails ?? '',
-                textAlign: TextAlign.center,
-                style: textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.onPrimary.withOpacity(0.9),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BackgroundGlow extends StatelessWidget {
+  const _BackgroundGlow();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            AppColors.midnightFaithDark,
+            AppColors.midnightFaith,
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: Stack(
+        children: [
+          Positioned(
+            top: -120,
+            left: -40,
+            child: Container(
+              width: 240,
+              height: 240,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    AppColors.holyGold.withOpacity(0.16),
+                    Colors.transparent,
+                  ],
                 ),
               ),
-            ],
-          ],
-        ),
+            ),
+          ),
+          Positioned(
+            bottom: -140,
+            right: -60,
+            child: Container(
+              width: 240,
+              height: 240,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    AppColors.morningLight.withOpacity(0.18),
+                    Colors.transparent,
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

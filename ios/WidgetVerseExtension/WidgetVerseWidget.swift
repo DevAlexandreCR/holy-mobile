@@ -21,7 +21,7 @@ private enum HolyVersoColors {
 }
 
 private enum WidgetVersePlaceholder {
-    static let message = "Abre Bible Widget para actualizar el versículo"
+    static let message = "Abre HolyVerso para actualizar el versículo"
 
     static let sample = WidgetVerseModel(
         date: "2024-01-01",
@@ -194,7 +194,6 @@ struct WidgetVerseView: View {
                 endPoint: .bottomTrailing
             )
         }
-        .cornerRadius(24)
     }
 }
 
