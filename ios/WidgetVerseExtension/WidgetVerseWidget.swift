@@ -149,6 +149,7 @@ struct WidgetVerseView: View {
                     Spacer()
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+                .padding(.vertical, isMedium ? 4 : 2)
             } else if let verse = entry.verse {
                 VStack(alignment: .leading, spacing: isMedium ? 4 : 2) {
                     Text(verse.text)
@@ -179,6 +180,7 @@ struct WidgetVerseView: View {
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+                .padding(.vertical, isMedium ? 4 : 2)
             }
         }
         .containerBackground(for: .widget) {
