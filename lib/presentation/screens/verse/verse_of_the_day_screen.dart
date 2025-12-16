@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:holy_mobile/core/l10n/app_localizations.dart';
-import 'package:holy_mobile/core/theme/app_colors.dart';
-import 'package:holy_mobile/core/theme/app_design_tokens.dart';
-import 'package:holy_mobile/core/theme/app_text_styles.dart';
-import 'package:holy_mobile/domain/verse/verse_of_the_day.dart';
-import 'package:holy_mobile/presentation/state/verse/verse_controller.dart';
+import 'package:holyverso/core/l10n/app_localizations.dart';
+import 'package:holyverso/core/theme/app_colors.dart';
+import 'package:holyverso/core/theme/app_design_tokens.dart';
+import 'package:holyverso/core/theme/app_text_styles.dart';
+import 'package:holyverso/domain/verse/verse_of_the_day.dart';
+import 'package:holyverso/presentation/state/verse/verse_controller.dart';
 import 'package:share_plus/share_plus.dart';
 
 class VerseOfTheDayScreen extends ConsumerStatefulWidget {

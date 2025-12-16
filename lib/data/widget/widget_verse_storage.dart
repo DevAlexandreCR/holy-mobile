@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:holy_mobile/domain/widget/widget_verse.dart';
+import 'package:holyverso/domain/widget/widget_verse.dart';
 
 class WidgetVerseStorage {
   WidgetVerseStorage({MethodChannel? channel})

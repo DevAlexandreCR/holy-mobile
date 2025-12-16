@@ -2,11 +2,11 @@ import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:holy_mobile/core/l10n/app_localizations.dart';
-import 'package:holy_mobile/data/bible/bible_repository.dart';
-import 'package:holy_mobile/presentation/state/auth/auth_controller.dart';
-import 'package:holy_mobile/presentation/state/settings/versions_state.dart';
-import 'package:holy_mobile/presentation/state/verse/verse_controller.dart';
+import 'package:holyverso/core/l10n/app_localizations.dart';
+import 'package:holyverso/data/bible/bible_repository.dart';
+import 'package:holyverso/presentation/state/auth/auth_controller.dart';
+import 'package:holyverso/presentation/state/settings/versions_state.dart';
+import 'package:holyverso/presentation/state/verse/verse_controller.dart';
 
 class VersionsController extends Notifier<VersionsState> {
   late final BibleRepository _repository;

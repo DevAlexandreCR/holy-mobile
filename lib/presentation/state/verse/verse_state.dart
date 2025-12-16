@@ -1,4 +1,4 @@
-import 'package:holy_mobile/domain/verse/verse_of_the_day.dart';
+import 'package:holyverso/domain/verse/verse_of_the_day.dart';
 
 class VerseState {
   const VerseState({

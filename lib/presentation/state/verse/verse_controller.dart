@@ -3,12 +3,12 @@ import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:holy_mobile/core/l10n/app_localizations.dart';
-import 'package:holy_mobile/data/verse/verse_repository.dart';
-import 'package:holy_mobile/data/widget/widget_sync_service.dart';
-import 'package:holy_mobile/domain/verse/verse_of_the_day.dart';
-import 'package:holy_mobile/presentation/state/auth/auth_controller.dart';
-import 'package:holy_mobile/presentation/state/verse/verse_state.dart';
+import 'package:holyverso/core/l10n/app_localizations.dart';
+import 'package:holyverso/data/verse/verse_repository.dart';
+import 'package:holyverso/data/widget/widget_sync_service.dart';
+import 'package:holyverso/domain/verse/verse_of_the_day.dart';
+import 'package:holyverso/presentation/state/auth/auth_controller.dart';
+import 'package:holyverso/presentation/state/verse/verse_state.dart';
 
 class VerseController extends Notifier<VerseState> {
   late final VerseRepository _repository;

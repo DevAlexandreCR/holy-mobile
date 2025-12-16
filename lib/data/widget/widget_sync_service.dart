@@ -1,8 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:holy_mobile/data/widget/widget_verse_storage.dart';
-import 'package:holy_mobile/domain/verse/verse_of_the_day.dart';
-import 'package:holy_mobile/domain/widget/widget_verse.dart';
+import 'package:holyverso/data/widget/widget_verse_storage.dart';
+import 'package:holyverso/domain/verse/verse_of_the_day.dart';
+import 'package:holyverso/domain/widget/widget_verse.dart';
 
 class WidgetSyncService {
   WidgetSyncService(this._storage);

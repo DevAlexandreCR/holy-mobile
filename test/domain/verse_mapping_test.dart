@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:holy_mobile/domain/verse/verse_of_the_day.dart';
-import 'package:holy_mobile/domain/widget/widget_verse.dart';
+import 'package:holyverso/domain/verse/verse_of_the_day.dart';
+import 'package:holyverso/domain/widget/widget_verse.dart';
 
 void main() {
   test('maps snake_case payload into VerseOfTheDay', () {

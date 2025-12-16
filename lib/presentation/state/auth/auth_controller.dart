@@ -1,10 +1,10 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:holy_mobile/core/l10n/app_localizations.dart';
-import 'package:holy_mobile/data/auth/auth_repository.dart';
-import 'package:holy_mobile/data/auth/models/auth_payload.dart';
-import 'package:holy_mobile/presentation/state/auth/auth_state.dart';
+import 'package:holyverso/core/l10n/app_localizations.dart';
+import 'package:holyverso/data/auth/auth_repository.dart';
+import 'package:holyverso/data/auth/models/auth_payload.dart';
+import 'package:holyverso/presentation/state/auth/auth_state.dart';
 
 class AuthController extends Notifier<AuthState> {
   late final AuthRepository _repository;

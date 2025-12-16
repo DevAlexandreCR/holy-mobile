@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:holy_mobile/core/theme/app_colors.dart';
-import 'package:holy_mobile/core/theme/app_design_tokens.dart';
+import 'package:holyverso/core/theme/app_colors.dart';
+import 'package:holyverso/core/theme/app_design_tokens.dart';
 
 /// Container for grouping settings or options with translucent background.
 class SectionCard extends StatelessWidget {

@@ -1,14 +1,14 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:holy_mobile/data/auth/models/user.dart';
-import 'package:holy_mobile/data/auth/models/user_settings.dart';
-import 'package:holy_mobile/data/bible/bible_repository.dart';
-import 'package:holy_mobile/data/bible/models/bible_version.dart';
-import 'package:holy_mobile/presentation/state/auth/auth_controller.dart';
-import 'package:holy_mobile/presentation/state/auth/auth_state.dart';
-import 'package:holy_mobile/presentation/state/settings/versions_controller.dart';
-import 'package:holy_mobile/presentation/state/verse/verse_controller.dart';
-import 'package:holy_mobile/presentation/state/verse/verse_state.dart';
+import 'package:holyverso/data/auth/models/user.dart';
+import 'package:holyverso/data/auth/models/user_settings.dart';
+import 'package:holyverso/data/bible/bible_repository.dart';
+import 'package:holyverso/data/bible/models/bible_version.dart';
+import 'package:holyverso/presentation/state/auth/auth_controller.dart';
+import 'package:holyverso/presentation/state/auth/auth_state.dart';
+import 'package:holyverso/presentation/state/settings/versions_controller.dart';
+import 'package:holyverso/presentation/state/verse/verse_controller.dart';
+import 'package:holyverso/presentation/state/verse/verse_state.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

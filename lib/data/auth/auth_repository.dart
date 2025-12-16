@@ -1,9 +1,9 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:holy_mobile/data/auth/auth_api_client.dart';
-import 'package:holy_mobile/data/auth/models/auth_payload.dart';
-import 'package:holy_mobile/data/auth/models/user_settings.dart';
-import 'package:holy_mobile/data/auth/token_storage.dart';
+import 'package:holyverso/data/auth/auth_api_client.dart';
+import 'package:holyverso/data/auth/models/auth_payload.dart';
+import 'package:holyverso/data/auth/models/user_settings.dart';
+import 'package:holyverso/data/auth/token_storage.dart';
 
 class AuthRepository {
   AuthRepository(this._client, this._tokenService);

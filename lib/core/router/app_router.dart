@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:holy_mobile/core/l10n/app_localizations.dart';
-import 'package:holy_mobile/presentation/state/auth/auth_controller.dart';
-import 'package:holy_mobile/presentation/screens/auth/forgot_password_screen.dart';
-import 'package:holy_mobile/presentation/screens/auth/login_screen.dart';
-import 'package:holy_mobile/presentation/screens/auth/register_screen.dart';
-import 'package:holy_mobile/presentation/screens/settings/settings_screen.dart';
-import 'package:holy_mobile/presentation/screens/splash/splash_screen.dart';
-import 'package:holy_mobile/presentation/screens/verse/verse_of_the_day_screen.dart';
+import 'package:holyverso/core/l10n/app_localizations.dart';
+import 'package:holyverso/presentation/state/auth/auth_controller.dart';
+import 'package:holyverso/presentation/screens/auth/forgot_password_screen.dart';
+import 'package:holyverso/presentation/screens/auth/login_screen.dart';
+import 'package:holyverso/presentation/screens/auth/register_screen.dart';
+import 'package:holyverso/presentation/screens/settings/settings_screen.dart';
+import 'package:holyverso/presentation/screens/splash/splash_screen.dart';
+import 'package:holyverso/presentation/screens/verse/verse_of_the_day_screen.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(

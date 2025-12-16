@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:holy_mobile/data/bible/models/bible_version.dart';
-import 'package:holy_mobile/data/network/api_client.dart';
+import 'package:holyverso/data/bible/models/bible_version.dart';
+import 'package:holyverso/data/network/api_client.dart';
 
 class BibleApiClient {
   BibleApiClient(this._dio);

@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:holy_mobile/data/auth/models/user.dart';
-import 'package:holy_mobile/data/auth/models/user_settings.dart';
-import 'package:holy_mobile/data/bible/bible_repository.dart';
-import 'package:holy_mobile/data/bible/bible_api_client.dart';
-import 'package:holy_mobile/data/bible/models/bible_version.dart';
-import 'package:holy_mobile/domain/verse/verse_of_the_day.dart';
-import 'package:holy_mobile/presentation/state/auth/auth_controller.dart';
-import 'package:holy_mobile/presentation/state/auth/auth_state.dart';
-import 'package:holy_mobile/presentation/screens/settings/settings_screen.dart';
-import 'package:holy_mobile/presentation/state/verse/verse_controller.dart';
-import 'package:holy_mobile/presentation/state/verse/verse_state.dart';
-import 'package:holy_mobile/main.dart';
+import 'package:holyverso/data/auth/models/user.dart';
+import 'package:holyverso/data/auth/models/user_settings.dart';
+import 'package:holyverso/data/bible/bible_repository.dart';
+import 'package:holyverso/data/bible/bible_api_client.dart';
+import 'package:holyverso/data/bible/models/bible_version.dart';
+import 'package:holyverso/domain/verse/verse_of_the_day.dart';
+import 'package:holyverso/presentation/state/auth/auth_controller.dart';
+import 'package:holyverso/presentation/state/auth/auth_state.dart';
+import 'package:holyverso/presentation/screens/settings/settings_screen.dart';
+import 'package:holyverso/presentation/state/verse/verse_controller.dart';
+import 'package:holyverso/presentation/state/verse/verse_state.dart';
+import 'package:holyverso/main.dart';
 
 class _FakeAuthController extends AuthController {
   @override

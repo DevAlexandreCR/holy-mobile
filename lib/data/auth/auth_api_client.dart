@@ -1,8 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:holy_mobile/data/auth/models/auth_payload.dart';
-import 'package:holy_mobile/data/auth/models/user_settings.dart';
-import 'package:holy_mobile/data/network/api_client.dart';
+import 'package:holyverso/data/auth/models/auth_payload.dart';
+import 'package:holyverso/data/auth/models/user_settings.dart';
+import 'package:holyverso/data/network/api_client.dart';
 
 class AuthApiClient {
   AuthApiClient(this._dio);

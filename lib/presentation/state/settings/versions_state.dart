@@ -1,4 +1,4 @@
-import 'package:holy_mobile/data/bible/models/bible_version.dart';
+import 'package:holyverso/data/bible/models/bible_version.dart';
 
 class VersionsState {
   const VersionsState({

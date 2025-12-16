@@ -1,5 +1,5 @@
-import 'package:holy_mobile/data/auth/models/user.dart';
-import 'package:holy_mobile/data/auth/models/user_settings.dart';
+import 'package:holyverso/data/auth/models/user.dart';
+import 'package:holyverso/data/auth/models/user_settings.dart';
 
 class AuthState {
   const AuthState({

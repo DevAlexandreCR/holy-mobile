@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:holy_mobile/core/l10n/app_localizations.dart';
-import 'package:holy_mobile/core/theme/app_theme.dart';
-import 'package:holy_mobile/domain/verse/verse_of_the_day.dart';
-import 'package:holy_mobile/presentation/screens/verse/verse_of_the_day_screen.dart';
-import 'package:holy_mobile/presentation/state/verse/verse_controller.dart';
-import 'package:holy_mobile/presentation/state/verse/verse_state.dart';
+import 'package:holyverso/core/l10n/app_localizations.dart';
+import 'package:holyverso/core/theme/app_theme.dart';
+import 'package:holyverso/domain/verse/verse_of_the_day.dart';
+import 'package:holyverso/presentation/screens/verse/verse_of_the_day_screen.dart';
+import 'package:holyverso/presentation/state/verse/verse_controller.dart';
+import 'package:holyverso/presentation/state/verse/verse_state.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

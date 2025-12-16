@@ -9,8 +9,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
-import 'package:holy_mobile/core/router/app_router.dart';
-import 'package:holy_mobile/main.dart';
+import 'package:holyverso/core/router/app_router.dart';
+import 'package:holyverso/main.dart';
 
 void main() {
   testWidgets('boots app with injected router', (WidgetTester tester) async {

@@ -3,16 +3,16 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:holy_mobile/core/l10n/app_localizations.dart';
-import 'package:holy_mobile/core/theme/app_colors.dart';
-import 'package:holy_mobile/core/theme/app_design_tokens.dart';
-import 'package:holy_mobile/core/theme/app_text_styles.dart';
-import 'package:holy_mobile/data/bible/models/bible_version.dart';
-import 'package:holy_mobile/presentation/state/auth/auth_controller.dart';
-import 'package:holy_mobile/presentation/state/settings/versions_controller.dart';
-import 'package:holy_mobile/presentation/state/settings/versions_state.dart';
-import 'package:holy_mobile/presentation/widgets/section_card.dart';
-import 'package:holy_mobile/presentation/widgets/setting_tile.dart';
+import 'package:holyverso/core/l10n/app_localizations.dart';
+import 'package:holyverso/core/theme/app_colors.dart';
+import 'package:holyverso/core/theme/app_design_tokens.dart';
+import 'package:holyverso/core/theme/app_text_styles.dart';
+import 'package:holyverso/data/bible/models/bible_version.dart';
+import 'package:holyverso/presentation/state/auth/auth_controller.dart';
+import 'package:holyverso/presentation/state/settings/versions_controller.dart';
+import 'package:holyverso/presentation/state/settings/versions_state.dart';
+import 'package:holyverso/presentation/widgets/section_card.dart';
+import 'package:holyverso/presentation/widgets/setting_tile.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});

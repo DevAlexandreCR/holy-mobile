@@ -1,9 +1,9 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:holy_mobile/core/config/app_config.dart';
-import 'package:holy_mobile/data/auth/token_storage.dart';
-import 'package:holy_mobile/presentation/state/auth/auth_controller.dart';
+import 'package:holyverso/core/config/app_config.dart';
+import 'package:holyverso/data/auth/token_storage.dart';
+import 'package:holyverso/presentation/state/auth/auth_controller.dart';
 
 final dioProvider = Provider<Dio>((ref) {
   final config = ref.watch(appConfigProvider);
