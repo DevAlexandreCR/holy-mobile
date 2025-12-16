@@ -6,11 +6,7 @@ import 'package:holy_mobile/core/theme/app_design_tokens.dart';
 import 'package:holy_mobile/core/theme/app_text_styles.dart';
 
 class SplashScreen extends ConsumerWidget {
-  const SplashScreen({
-    super.key,
-    this.message,
-    this.errorDetails,
-  });
+  const SplashScreen({super.key, this.message, this.errorDetails});
 
   final String? message;
   final String? errorDetails;
@@ -81,11 +77,7 @@ class SplashScreen extends ConsumerWidget {
                     strokeWidth: 3,
                   ),
                 if (isError) ...[
-                  Icon(
-                    Icons.error_outline,
-                    color: AppColors.error,
-                    size: 48,
-                  ),
+                  Icon(Icons.error_outline, color: AppColors.error, size: 48),
                   const SizedBox(height: AppSpacing.sm),
                   Padding(
                     padding: const EdgeInsets.symmetric(
@@ -117,10 +109,7 @@ class _BackgroundGlow extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            AppColors.midnightFaithDark,
-            AppColors.midnightFaith,
-          ],
+          colors: [AppColors.midnightFaithDark, AppColors.midnightFaith],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
