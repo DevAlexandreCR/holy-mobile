@@ -149,12 +149,11 @@ struct WidgetVerseView: View {
                     Spacer()
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-                .padding(isMedium ? 16 : 12)
             } else if let verse = entry.verse {
-                VStack(alignment: .leading, spacing: isMedium ? 10 : 6) {
+                VStack(alignment: .leading, spacing: isMedium ? 4 : 2) {
                     Text(verse.text)
                         .font(.system(size: isMedium ? 15 : 12, weight: .medium))
-                        .foregroundColor(HolyVersoColors.pureWhite)
+                        .foregroundColor(HolyVersoColors.pureWhite.opacity(0.85))
                         .multilineTextAlignment(.leading)
                         .lineLimit(nil) // Mostrar todas las líneas posibles, truncar solo si el contenedor se queda corto.
                         .truncationMode(.tail)
@@ -162,7 +161,7 @@ struct WidgetVerseView: View {
                         .shadow(color: .black.opacity(0.5), radius: 2, x: 0, y: 1)
                         .accessibilityLabel("Versículo del día")
 
-                    HStack(alignment: .bottom, spacing: 6) {
+                    HStack(alignment: .bottom, spacing: nil) {
                         Text(verse.reference)
                             .font(.system(size: isMedium ? 12 : 10, weight: .regular))
                             .foregroundColor(HolyVersoColors.holyGold)
@@ -180,7 +179,6 @@ struct WidgetVerseView: View {
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-                .padding(isMedium ? 18 : 12)
             }
         }
         .containerBackground(for: .widget) {
