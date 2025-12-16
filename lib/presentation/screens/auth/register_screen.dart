@@ -95,7 +95,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     Text(
                       l10n.registerSubtitle,
                       style: AppTextStyles.bodyMedium.copyWith(
-                        color: AppColors.softMist.withOpacity(0.85),
+                        color: AppColors.softMist.withValues(alpha: 0.85),
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -154,7 +154,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           _obscurePassword
                               ? Icons.visibility_off_outlined
                               : Icons.visibility_outlined,
-                          color: AppColors.softMist.withOpacity(0.9),
+                          color: AppColors.softMist.withValues(alpha: 0.9),
                         ),
                       ),
                       validator: (value) {
@@ -184,7 +184,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           _obscureConfirmPassword
                               ? Icons.visibility_off_outlined
                               : Icons.visibility_outlined,
-                          color: AppColors.softMist.withOpacity(0.9),
+                          color: AppColors.softMist.withValues(alpha: 0.9),
                         ),
                       ),
                       validator: (value) {
@@ -239,12 +239,12 @@ class _LogoHeader extends StatelessWidget {
               shape: BoxShape.circle,
               gradient: RadialGradient(
                 colors: [
-                  AppColors.holyGold.withOpacity(0.18),
+                  AppColors.holyGold.withValues(alpha: 0.18),
                   Colors.transparent,
                 ],
               ),
               border: Border.all(
-                color: AppColors.holyGold.withOpacity(0.35),
+                color: AppColors.holyGold.withValues(alpha: 0.35),
               ),
             ),
             child: Padding(
@@ -288,10 +288,10 @@ class _AuthToggle extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: AppColors.pureWhite.withOpacity(0.06),
+        color: AppColors.pureWhite.withValues(alpha: 0.06),
         borderRadius: AppBorderRadius.button,
         border: Border.all(
-          color: AppColors.pureWhite.withOpacity(0.08),
+          color: AppColors.pureWhite.withValues(alpha: 0.08),
         ),
       ),
       child: Row(
@@ -332,7 +332,7 @@ class _AuthToggleButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final background = isActive
         ? AppColors.holyGold
-        : AppColors.pureWhite.withOpacity(0.02);
+        : AppColors.pureWhite.withValues(alpha: 0.02);
 
     return GestureDetector(
       onTap: onTap,
@@ -387,7 +387,7 @@ class _BackgroundGlow extends StatelessWidget {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    AppColors.holyGold.withOpacity(0.16),
+                    AppColors.holyGold.withValues(alpha: 0.16),
                     Colors.transparent,
                   ],
                 ),
@@ -404,7 +404,7 @@ class _BackgroundGlow extends StatelessWidget {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    AppColors.morningLight.withOpacity(0.18),
+                    AppColors.morningLight.withValues(alpha: 0.18),
                     Colors.transparent,
                   ],
                 ),

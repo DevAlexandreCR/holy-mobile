@@ -34,12 +34,12 @@ class SplashScreen extends ConsumerWidget {
                     shape: BoxShape.circle,
                     gradient: RadialGradient(
                       colors: [
-                        AppColors.holyGold.withOpacity(0.22),
+                        AppColors.holyGold.withValues(alpha: 0.22),
                         Colors.transparent,
                       ],
                     ),
                     border: Border.all(
-                      color: AppColors.holyGold.withOpacity(0.4),
+                      color: AppColors.holyGold.withValues(alpha: 0.4),
                       width: 2,
                     ),
                   ),
@@ -67,7 +67,7 @@ class SplashScreen extends ConsumerWidget {
                   displayMessage,
                   textAlign: TextAlign.center,
                   style: AppTextStyles.bodyMedium.copyWith(
-                    color: AppColors.softMist.withOpacity(0.85),
+                    color: AppColors.softMist.withValues(alpha: 0.85),
                   ),
                 ),
                 const SizedBox(height: AppSpacing.lg),
@@ -87,7 +87,7 @@ class SplashScreen extends ConsumerWidget {
                       errorDetails ?? '',
                       textAlign: TextAlign.center,
                       style: AppTextStyles.bodySmall.copyWith(
-                        color: AppColors.softMist.withOpacity(0.9),
+                        color: AppColors.softMist.withValues(alpha: 0.9),
                       ),
                     ),
                   ),
@@ -126,7 +126,7 @@ class _BackgroundGlow extends StatelessWidget {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    AppColors.holyGold.withOpacity(0.16),
+                    AppColors.holyGold.withValues(alpha: 0.16),
                     Colors.transparent,
                   ],
                 ),
@@ -143,7 +143,7 @@ class _BackgroundGlow extends StatelessWidget {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    AppColors.morningLight.withOpacity(0.18),
+                    AppColors.morningLight.withValues(alpha: 0.18),
                     Colors.transparent,
                   ],
                 ),

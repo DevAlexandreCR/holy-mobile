@@ -36,7 +36,7 @@ class AppShadows {
   // Soft shadow for cards
   static List<BoxShadow> get cardShadow => [
     BoxShadow(
-      color: Colors.black.withOpacity(0.1),
+      color: Colors.black.withValues(alpha: 0.1),
       blurRadius: 30,
       offset: const Offset(0, 4),
     ),
@@ -45,12 +45,12 @@ class AppShadows {
   // Gold glow for buttons
   static List<BoxShadow> get goldGlow => [
     BoxShadow(
-      color: const Color(0xFFF4D27A).withOpacity(0.3),
+      color: const Color(0xFFF4D27A).withValues(alpha: 0.3),
       blurRadius: 15,
       spreadRadius: 0,
     ),
     BoxShadow(
-      color: const Color(0xFFF4D27A).withOpacity(0.2),
+      color: const Color(0xFFF4D27A).withValues(alpha: 0.2),
       blurRadius: 25,
       spreadRadius: 0,
     ),
@@ -59,7 +59,7 @@ class AppShadows {
   // Text shadow for verse
   static List<Shadow> get textGlow => [
     Shadow(
-      color: Colors.black.withOpacity(0.5),
+      color: Colors.black.withValues(alpha: 0.5),
       blurRadius: 2,
       offset: const Offset(0, 1),
     ),

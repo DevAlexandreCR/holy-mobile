@@ -55,7 +55,7 @@ class SettingTile extends StatelessWidget {
                     Text(
                       subtitle!,
                       style: AppTextStyles.bodySmall.copyWith(
-                        color: AppColors.softMist.withOpacity(0.8),
+                        color: AppColors.softMist.withValues(alpha: 0.8),
                       ),
                     ),
                   ],
@@ -65,7 +65,7 @@ class SettingTile extends StatelessWidget {
             trailing ??
                 Icon(
                   Icons.chevron_right,
-                  color: AppColors.softMist.withOpacity(0.8),
+                  color: AppColors.softMist.withValues(alpha: 0.8),
                 ),
           ],
         ),

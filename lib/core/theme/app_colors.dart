@@ -65,8 +65,8 @@ class AppColors {
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
     colors: [
-      midnightFaithDark.withOpacity(0.9),
-      midnightFaith.withOpacity(0.8),
+      midnightFaithDark.withValues(alpha: 0.9),
+      midnightFaith.withValues(alpha: 0.8),
     ],
   );
 }

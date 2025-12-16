@@ -72,7 +72,7 @@ class _VerseOfTheDayScreenState extends ConsumerState<VerseOfTheDayScreen> {
             icon: Icon(
               Icons.ios_share,
               color: verse == null
-                  ? AppColors.softMist.withOpacity(0.4)
+                  ? AppColors.softMist.withValues(alpha: 0.4)
                   : AppColors.pureWhite,
             ),
           ),
@@ -147,10 +147,10 @@ class _Header extends StatelessWidget {
             vertical: AppSpacing.sm,
           ),
           decoration: BoxDecoration(
-            color: AppColors.pureWhite.withOpacity(0.06),
+            color: AppColors.pureWhite.withValues(alpha: 0.06),
             borderRadius: AppBorderRadius.button,
             border: Border.all(
-              color: AppColors.pureWhite.withOpacity(0.1),
+              color: AppColors.pureWhite.withValues(alpha: 0.1),
             ),
           ),
           child: Row(
@@ -176,7 +176,7 @@ class _Header extends StatelessWidget {
         Text(
           l10n.verseSubtitle,
           style: AppTextStyles.bodyLarge.copyWith(
-            color: AppColors.softMist.withOpacity(0.85),
+            color: AppColors.softMist.withValues(alpha: 0.85),
           ),
         ),
         if (verse != null && verse!.date.isNotEmpty) ...[
@@ -184,7 +184,7 @@ class _Header extends StatelessWidget {
           Text(
             verse!.date,
             style: AppTextStyles.bodySmall.copyWith(
-              color: AppColors.softMist.withOpacity(0.7),
+              color: AppColors.softMist.withValues(alpha: 0.7),
             ),
           ),
         ],
@@ -226,7 +226,7 @@ class _VerseCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppBorderRadius.xl),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.35),
+              color: Colors.black.withValues(alpha: 0.35),
               blurRadius: 34,
               offset: const Offset(0, 20),
             ),
@@ -254,13 +254,13 @@ class _VerseCard extends StatelessWidget {
                         : Icons.favorite_border,
                     color: isFavorite
                         ? AppColors.holyGold
-                        : AppColors.pureWhite.withOpacity(0.85),
+                        : AppColors.pureWhite.withValues(alpha: 0.85),
                     onPressed: onToggleFavorite,
                   ),
                   const SizedBox(width: AppSpacing.sm),
                   _CircleIconButton(
                     icon: Icons.ios_share,
-                    color: AppColors.pureWhite.withOpacity(0.85),
+                    color: AppColors.pureWhite.withValues(alpha: 0.85),
                     onPressed: onShare,
                   ),
                 ],
@@ -292,10 +292,10 @@ class _VerseContent extends StatelessWidget {
               vertical: AppSpacing.xs,
             ),
             decoration: BoxDecoration(
-              color: AppColors.pureWhite.withOpacity(0.06),
+              color: AppColors.pureWhite.withValues(alpha: 0.06),
               borderRadius: AppBorderRadius.button,
               border: Border.all(
-                color: AppColors.pureWhite.withOpacity(0.08),
+                color: AppColors.pureWhite.withValues(alpha: 0.08),
               ),
             ),
             child: Text(
@@ -328,7 +328,7 @@ class _VerseContent extends StatelessWidget {
                   style: AppTextStyles.reference.copyWith(
                     shadows: [
                       Shadow(
-                        color: AppColors.holyGold.withOpacity(0.5),
+                        color: AppColors.holyGold.withValues(alpha: 0.5),
                         blurRadius: 10,
                       ),
                     ],
@@ -358,10 +358,10 @@ class _CircleIconButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.pureWhite.withOpacity(0.08),
+        color: AppColors.pureWhite.withValues(alpha: 0.08),
         shape: BoxShape.circle,
         border: Border.all(
-          color: AppColors.pureWhite.withOpacity(0.1),
+          color: AppColors.pureWhite.withValues(alpha: 0.1),
         ),
       ),
       child: IconButton(
@@ -385,9 +385,9 @@ class _ErrorPill extends StatelessWidget {
         vertical: AppSpacing.sm,
       ),
       decoration: BoxDecoration(
-        color: AppColors.error.withOpacity(0.12),
+        color: AppColors.error.withValues(alpha: 0.12),
         borderRadius: AppBorderRadius.card,
-        border: Border.all(color: AppColors.error.withOpacity(0.4)),
+        border: Border.all(color: AppColors.error.withValues(alpha: 0.4)),
       ),
       child: Row(
         children: [
@@ -418,7 +418,7 @@ class _SkeletonPlaceholder extends StatelessWidget {
           height: 18,
           width: 120,
           decoration: BoxDecoration(
-            color: AppColors.pureWhite.withOpacity(0.06),
+            color: AppColors.pureWhite.withValues(alpha: 0.06),
             borderRadius: AppBorderRadius.button,
           ),
         ),
@@ -450,7 +450,7 @@ class _EmptyState extends StatelessWidget {
         Icon(
           Icons.info_outline,
           size: 48,
-          color: AppColors.holyGold.withOpacity(0.8),
+          color: AppColors.holyGold.withValues(alpha: 0.8),
         ),
         const SizedBox(height: AppSpacing.md),
         Text(
@@ -465,7 +465,7 @@ class _EmptyState extends StatelessWidget {
         Text(
           'Configura tus versiones de la Biblia en Ajustes para ver el versículo del día',
           style: AppTextStyles.bodyMedium.copyWith(
-            color: AppColors.softMist.withOpacity(0.8),
+            color: AppColors.softMist.withValues(alpha: 0.8),
           ),
           textAlign: TextAlign.center,
         ),
@@ -495,7 +495,7 @@ class _ShimmerBlock extends StatelessWidget {
       height: height,
       width: width,
       decoration: BoxDecoration(
-        color: AppColors.pureWhite.withOpacity(0.06),
+        color: AppColors.pureWhite.withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(10),
       ),
     );
@@ -530,7 +530,7 @@ class _VerseBackground extends StatelessWidget {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    AppColors.holyGold.withOpacity(0.18),
+                    AppColors.holyGold.withValues(alpha: 0.18),
                     Colors.transparent,
                   ],
                 ),
@@ -547,7 +547,7 @@ class _VerseBackground extends StatelessWidget {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    AppColors.morningLight.withOpacity(0.16),
+                    AppColors.morningLight.withValues(alpha: 0.16),
                     Colors.transparent,
                   ],
                 ),

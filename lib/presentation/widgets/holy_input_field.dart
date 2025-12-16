@@ -58,18 +58,18 @@ class HolyInputField extends StatelessWidget {
         filled: true,
         fillColor: AppColors.inputBackground,
         labelStyle: AppTextStyles.bodySmall.copyWith(
-          color: AppColors.softMist.withOpacity(0.8),
+          color: AppColors.softMist.withValues(alpha: 0.8),
           letterSpacing: 0.2,
         ),
         hintStyle: AppTextStyles.bodyMedium.copyWith(
-          color: AppColors.inputPlaceholder.withOpacity(0.8),
+          color: AppColors.inputPlaceholder.withValues(alpha: 0.8),
         ),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.md,
           vertical: AppSpacing.sm + 2,
         ),
-        border: _buildBorder(AppColors.inputBorder.withOpacity(0.8)),
-        enabledBorder: _buildBorder(AppColors.inputBorder.withOpacity(0.6)),
+        border: _buildBorder(AppColors.inputBorder.withValues(alpha: 0.8)),
+        enabledBorder: _buildBorder(AppColors.inputBorder.withValues(alpha: 0.6)),
         focusedBorder: _buildBorder(AppColors.holyGold, width: 1.2),
         errorBorder: _buildBorder(AppColors.error),
         focusedErrorBorder: _buildBorder(AppColors.error, width: 1.2),

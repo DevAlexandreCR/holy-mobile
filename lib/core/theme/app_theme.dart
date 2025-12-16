@@ -49,7 +49,6 @@ class AppTheme {
   }
 
   static ThemeData _buildTheme(ColorScheme colorScheme, Brightness brightness) {
-    final isDark = brightness == Brightness.dark;
     final textTheme = GoogleFonts.manropeTextTheme().apply(
       bodyColor: colorScheme.onSurface,
       displayColor: colorScheme.onSurface,

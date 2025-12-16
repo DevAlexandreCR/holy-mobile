@@ -44,14 +44,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ? l10n.versionsUpdateSuccess
         : authState.errorMessage ?? l10n.versionsUpdateError;
 
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
-  BibleVersion? _selectedVersion(
-    VersionsState versionsState,
-    int? selectedId,
-  ) {
+  BibleVersion? _selectedVersion(VersionsState versionsState, int? selectedId) {
     if (selectedId == null) return null;
     for (final version in versionsState.versions) {
       if (version.id == selectedId) return version;
@@ -61,7 +59,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   AppBar _buildAppBar() {
     return AppBar(
-      backgroundColor: AppColors.midnightFaith.withOpacity(0.82),
+      backgroundColor: AppColors.midnightFaith.withValues(alpha: 0.82),
       elevation: 0,
       centerTitle: true,
       leading: IconButton(
@@ -95,7 +93,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       child: Text(
         text.toUpperCase(),
         style: AppTextStyles.labelSmall.copyWith(
-          color: AppColors.softMist.withOpacity(0.6),
+          color: AppColors.softMist.withValues(alpha: 0.6),
           letterSpacing: 1.2,
         ),
       ),
@@ -115,12 +113,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       builder: (sheetContext) {
         return Container(
           decoration: BoxDecoration(
-            color: AppColors.midnightFaith.withOpacity(0.98),
+            color: AppColors.midnightFaith.withValues(alpha: 0.98),
             borderRadius: const BorderRadius.vertical(
               top: Radius.circular(AppBorderRadius.lg),
             ),
             border: Border.all(
-              color: AppColors.pureWhite.withOpacity(0.08),
+              color: AppColors.pureWhite.withValues(alpha: 0.08),
             ),
           ),
           padding: const EdgeInsets.fromLTRB(
@@ -140,7 +138,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     width: 46,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: AppColors.pureWhite.withOpacity(0.2),
+                      color: AppColors.pureWhite.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(99),
                     ),
                   ),
@@ -157,7 +155,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 Text(
                   l10n.bibleVersionsSubtitle,
                   style: AppTextStyles.bodySmall.copyWith(
-                    color: AppColors.softMist.withOpacity(0.8),
+                    color: AppColors.softMist.withValues(alpha: 0.8),
                   ),
                 ),
                 const SizedBox(height: AppSpacing.md),
@@ -178,8 +176,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 else if (versionsState.hasError &&
                     versionsState.versions.isEmpty)
                   _ErrorPill(
-                    message: versionsState.errorMessage ??
-                        l10n.versionsLoadError,
+                    message:
+                        versionsState.errorMessage ?? l10n.versionsLoadError,
                   )
                 else
                   ConstrainedBox(
@@ -202,7 +200,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           },
                         );
                       },
-                      separatorBuilder: (_, __) =>
+                      separatorBuilder: (context, index) =>
                           const SizedBox(height: AppSpacing.sm),
                       itemCount: versionsState.versions.length,
                     ),
@@ -221,8 +219,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final authState = ref.watch(authControllerProvider);
     final isUpdating = authState.isUpdatingSettings;
     final l10n = context.l10n;
-    final selectedVersion =
-        _selectedVersion(versionsState, authState.preferredVersionId);
+    final selectedVersion = _selectedVersion(
+      versionsState,
+      authState.preferredVersionId,
+    );
     final versionSubtitle = versionsState.isLoading && selectedVersion == null
         ? l10n.splashLoading
         : selectedVersion?.name ?? l10n.versionsEmpty;
@@ -263,10 +263,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         onTap: versionsState.isLoading
                             ? null
                             : () => _openVersionsSheet(
-                                  versionsState: versionsState,
-                                  selectedId: authState.preferredVersionId,
-                                  isUpdating: isUpdating,
-                                ),
+                                versionsState: versionsState,
+                                selectedId: authState.preferredVersionId,
+                                isUpdating: isUpdating,
+                              ),
                       ),
                       SettingTile(
                         icon: Icons.language,
@@ -275,7 +275,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         trailing: Text(
                           'ES',
                           style: AppTextStyles.labelMedium.copyWith(
-                            color: AppColors.softMist.withOpacity(0.9),
+                            color: AppColors.softMist.withValues(alpha: 0.9),
                             fontWeight: FontWeight.w700,
                           ),
                         ),
@@ -300,7 +300,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     Padding(
                       padding: const EdgeInsets.only(top: AppSpacing.sm),
                       child: _ErrorPill(
-                        message: versionsState.errorMessage ??
+                        message:
+                            versionsState.errorMessage ??
                             l10n.versionsLoadError,
                       ),
                     ),
@@ -314,12 +315,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         subtitle: 'Recibe el versículo al iniciar el día',
                         trailing: Switch.adaptive(
                           value: _verseNotificationEnabled,
-                          activeColor: AppColors.holyGold,
-                          activeTrackColor:
-                              AppColors.holyGold.withOpacity(0.3),
-                          onChanged: (value) => setState(
-                            () => _verseNotificationEnabled = value,
+                          activeThumbColor: AppColors.holyGold,
+                          activeTrackColor: AppColors.holyGold.withValues(
+                            alpha: 0.3,
                           ),
+                          onChanged: (value) =>
+                              setState(() => _verseNotificationEnabled = value),
                         ),
                         onTap: () => setState(
                           () => _verseNotificationEnabled =
@@ -332,9 +333,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         subtitle: 'Programa alertas suaves para orar',
                         trailing: Switch.adaptive(
                           value: _reminderEnabled,
-                          activeColor: AppColors.holyGold,
-                          activeTrackColor:
-                              AppColors.holyGold.withOpacity(0.3),
+                          activeThumbColor: AppColors.holyGold,
+                          activeTrackColor: AppColors.holyGold.withValues(
+                            alpha: 0.3,
+                          ),
                           onChanged: (value) =>
                               setState(() => _reminderEnabled = value),
                         ),
@@ -354,14 +356,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         title: 'Cerrar sesión',
                         trailing: Icon(
                           Icons.chevron_right,
-                          color: AppColors.softMist.withOpacity(0.8),
+                          color: AppColors.softMist.withValues(alpha: 0.8),
                         ),
                         onTap: () async {
+                          final goRouter = GoRouter.of(context);
                           await ref
                               .read(authControllerProvider.notifier)
                               .logout();
                           if (!mounted) return;
-                          context.go('/login');
+                          goRouter.go('/login');
                         },
                       ),
                     ],
@@ -377,10 +380,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 }
 
 class _VersionTrailing extends StatelessWidget {
-  const _VersionTrailing({
-    required this.version,
-    required this.isUpdating,
-  });
+  const _VersionTrailing({required this.version, required this.isUpdating});
 
   final BibleVersion? version;
   final bool isUpdating;
@@ -404,13 +404,13 @@ class _VersionTrailing extends StatelessWidget {
         Text(
           version != null ? version!.apiCode.toUpperCase() : '--',
           style: AppTextStyles.labelMedium.copyWith(
-            color: AppColors.softMist.withOpacity(0.9),
+            color: AppColors.softMist.withValues(alpha: 0.9),
           ),
         ),
         const SizedBox(width: AppSpacing.sm),
         Icon(
           Icons.chevron_right,
-          color: AppColors.softMist.withOpacity(0.8),
+          color: AppColors.softMist.withValues(alpha: 0.8),
         ),
       ],
     );
@@ -430,9 +430,9 @@ class _ErrorPill extends StatelessWidget {
         vertical: AppSpacing.sm,
       ),
       decoration: BoxDecoration(
-        color: AppColors.error.withOpacity(0.12),
+        color: AppColors.error.withValues(alpha: 0.12),
         borderRadius: AppBorderRadius.card,
-        border: Border.all(color: AppColors.error.withOpacity(0.4)),
+        border: Border.all(color: AppColors.error.withValues(alpha: 0.4)),
       ),
       child: Row(
         children: [
@@ -467,8 +467,9 @@ class _VersionOption extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final borderColor =
-        selected ? AppColors.holyGold : AppColors.softMist.withOpacity(0.2);
+    final borderColor = selected
+        ? AppColors.holyGold
+        : AppColors.softMist.withValues(alpha: 0.2);
 
     return InkWell(
       onTap: disabled ? null : onTap,
@@ -480,12 +481,12 @@ class _VersionOption extends StatelessWidget {
           gradient: LinearGradient(
             colors: selected
                 ? [
-                    AppColors.holyGold.withOpacity(0.14),
-                    AppColors.pureWhite.withOpacity(0.04),
+                    AppColors.holyGold.withValues(alpha: 0.14),
+                    AppColors.pureWhite.withValues(alpha: 0.04),
                   ]
                 : [
-                    AppColors.pureWhite.withOpacity(0.05),
-                    AppColors.pureWhite.withOpacity(0.02),
+                    AppColors.pureWhite.withValues(alpha: 0.05),
+                    AppColors.pureWhite.withValues(alpha: 0.02),
                   ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -499,10 +500,7 @@ class _VersionOption extends StatelessWidget {
               width: 24,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border: Border.all(
-                  color: borderColor,
-                  width: 2,
-                ),
+                border: Border.all(color: borderColor, width: 2),
               ),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
@@ -529,7 +527,7 @@ class _VersionOption extends StatelessWidget {
                   Text(
                     '${version.apiCode.toUpperCase()} • ${version.language.toUpperCase()}',
                     style: AppTextStyles.bodySmall.copyWith(
-                      color: AppColors.softMist.withOpacity(0.8),
+                      color: AppColors.softMist.withValues(alpha: 0.8),
                     ),
                   ),
                 ],
@@ -539,7 +537,7 @@ class _VersionOption extends StatelessWidget {
               selected ? Icons.check_circle : Icons.chevron_right,
               color: selected
                   ? AppColors.holyGold
-                  : AppColors.softMist.withOpacity(0.8),
+                  : AppColors.softMist.withValues(alpha: 0.8),
             ),
           ],
         ),
@@ -556,10 +554,7 @@ class _SettingsBackground extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            AppColors.midnightFaithDark,
-            AppColors.midnightFaith,
-          ],
+          colors: [AppColors.midnightFaithDark, AppColors.midnightFaith],
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
         ),
@@ -576,7 +571,7 @@ class _SettingsBackground extends StatelessWidget {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    AppColors.holyGold.withOpacity(0.18),
+                    AppColors.holyGold.withValues(alpha: 0.18),
                     Colors.transparent,
                   ],
                 ),
@@ -593,7 +588,7 @@ class _SettingsBackground extends StatelessWidget {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    AppColors.morningLight.withOpacity(0.18),
+                    AppColors.morningLight.withValues(alpha: 0.18),
                     Colors.transparent,
                   ],
                 ),

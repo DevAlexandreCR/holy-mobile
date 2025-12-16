@@ -22,7 +22,7 @@ class SectionCard extends StatelessWidget {
     final divider = Divider(
       height: 1,
       thickness: 1,
-      color: Colors.white.withOpacity(0.1),
+      color: Colors.white.withValues(alpha: 0.1),
     );
 
     final content = addDividers && children.length > 1
@@ -33,10 +33,10 @@ class SectionCard extends StatelessWidget {
       width: double.infinity,
       padding: padding,
       decoration: BoxDecoration(
-        color: AppColors.pureWhite.withOpacity(0.05),
+        color: AppColors.pureWhite.withValues(alpha: 0.05),
         borderRadius: AppBorderRadius.card,
         border: Border.all(
-          color: AppColors.pureWhite.withOpacity(0.06),
+          color: AppColors.pureWhite.withValues(alpha: 0.06),
         ),
         boxShadow: showShadow ? AppShadows.cardShadow : null,
       ),
