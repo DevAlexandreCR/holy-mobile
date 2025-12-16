@@ -16,11 +16,7 @@ class AuthApiClient {
   }) async {
     final response = await _dio.post(
       '/auth/register',
-      data: {
-        'name': name,
-        'email': email,
-        'password': password,
-      },
+      data: {'name': name, 'email': email, 'password': password},
     );
 
     return AuthPayload.fromMap(response.data as Map<String, dynamic>);
@@ -32,20 +28,14 @@ class AuthApiClient {
   }) async {
     final response = await _dio.post(
       '/auth/login',
-      data: {
-        'email': email,
-        'password': password,
-      },
+      data: {'email': email, 'password': password},
     );
 
     return AuthPayload.fromMap(response.data as Map<String, dynamic>);
   }
 
   Future<void> forgotPassword({required String email}) {
-    return _dio.post(
-      '/auth/forgot-password',
-      data: {'email': email},
-    );
+    return _dio.post('/auth/forgot-password', data: {'email': email});
   }
 
   Future<void> resetPassword({
@@ -54,10 +44,7 @@ class AuthApiClient {
   }) {
     return _dio.post(
       '/auth/reset-password',
-      data: {
-        'token': token,
-        'password': newPassword,
-      },
+      data: {'token': token, 'password': newPassword},
     );
   }
 
@@ -70,6 +57,17 @@ class AuthApiClient {
     final response = await _dio.put(
       '/user/settings/version',
       data: {'version_id': versionId},
+    );
+
+    final rawData = response.data;
+    final data = rawData is Map ? rawData['data'] ?? rawData : rawData;
+    return UserSettings.fromMap(Map<String, dynamic>.from(data as Map));
+  }
+
+  Future<UserSettings> updateWidgetFontSize(String fontSize) async {
+    final response = await _dio.put(
+      '/user/settings/widget-font-size',
+      data: {'widget_font_size': fontSize},
     );
 
     final rawData = response.data;

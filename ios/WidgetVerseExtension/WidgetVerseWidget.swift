@@ -28,7 +28,8 @@ private enum WidgetVersePlaceholder {
         versionCode: "RVR1960",
         versionName: "Reina-Valera 1960",
         reference: "Juan 3:16",
-        text: "Porque de tal manera amó Dios al mundo, que ha dado a su Hijo unigénito."
+        text: "Porque de tal manera amó Dios al mundo, que ha dado a su Hijo unigénito.",
+        fontSize: 16.0
     )
 }
 
@@ -38,6 +39,7 @@ struct WidgetVerseModel: Codable {
     let versionName: String
     let reference: String
     let text: String
+    let fontSize: Double
 
     enum CodingKeys: String, CodingKey {
         case date
@@ -45,6 +47,7 @@ struct WidgetVerseModel: Codable {
         case versionName = "version_name"
         case reference
         case text
+        case fontSize = "font_size"
         case camelVersionCode = "versionCode"
         case camelVersionName = "versionName"
     }
@@ -54,13 +57,15 @@ struct WidgetVerseModel: Codable {
         versionCode: String,
         versionName: String,
         reference: String,
-        text: String
+        text: String,
+        fontSize: Double = 16.0
     ) {
         self.date = date
         self.versionCode = versionCode
         self.versionName = versionName
         self.reference = reference
         self.text = text
+        self.fontSize = fontSize
     }
 
     init(from decoder: Decoder) throws {
@@ -74,6 +79,7 @@ struct WidgetVerseModel: Codable {
             ?? ""
         reference = try container.decodeIfPresent(String.self, forKey: .reference) ?? ""
         text = try container.decodeIfPresent(String.self, forKey: .text) ?? ""
+        fontSize = try container.decodeIfPresent(Double.self, forKey: .fontSize) ?? 16.0
     }
 
     func encode(to encoder: Encoder) throws {
@@ -83,6 +89,7 @@ struct WidgetVerseModel: Codable {
         try container.encode(versionName, forKey: .versionName)
         try container.encode(reference, forKey: .reference)
         try container.encode(text, forKey: .text)
+        try container.encode(fontSize, forKey: .fontSize)
     }
 }
 
@@ -153,7 +160,7 @@ struct WidgetVerseView: View {
             } else if let verse = entry.verse {
                 VStack(alignment: .leading, spacing: isMedium ? 4 : 2) {
                     Text(verse.text)
-                        .font(.system(size: isMedium ? 15 : 12, weight: .medium))
+                        .font(.system(size: CGFloat(verse.fontSize), weight: .medium))
                         .foregroundColor(HolyVersoColors.pureWhite.opacity(0.85))
                         .multilineTextAlignment(.leading)
                         .lineLimit(nil) // Mostrar todas las líneas posibles, truncar solo si el contenedor se queda corto.

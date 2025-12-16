@@ -16,7 +16,11 @@ class AuthRepository {
     required String email,
     required String password,
   }) async {
-    final payload = await _client.register(name: name, email: email, password: password);
+    final payload = await _client.register(
+      name: name,
+      email: email,
+      password: password,
+    );
     await _persistToken(payload.accessToken);
     return payload;
   }
@@ -70,6 +74,10 @@ class AuthRepository {
 
   Future<UserSettings> updatePreferredVersion(int versionId) {
     return _client.updatePreferredVersion(versionId);
+  }
+
+  Future<UserSettings> updateWidgetFontSize(String fontSize) {
+    return _client.updateWidgetFontSize(fontSize);
   }
 
   Future<void> _persistToken(String? token) async {

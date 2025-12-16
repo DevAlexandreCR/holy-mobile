@@ -4,7 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:holyverso/core/l10n/app_localizations.dart';
 import 'package:holyverso/data/auth/auth_repository.dart';
 import 'package:holyverso/data/auth/models/auth_payload.dart';
+import 'package:holyverso/data/auth/models/user_settings.dart';
 import 'package:holyverso/presentation/state/auth/auth_state.dart';
+import 'package:holyverso/presentation/state/verse/verse_controller.dart';
 
 class AuthController extends Notifier<AuthState> {
   late final AuthRepository _repository;
@@ -144,6 +146,30 @@ class AuthController extends Notifier<AuthState> {
         settings: updatedSettings,
         isUpdatingSettings: false,
       );
+      return true;
+    } catch (error) {
+      state = state.copyWith(
+        isUpdatingSettings: false,
+        errorMessage: _mapError(error),
+      );
+      return false;
+    }
+  }
+
+  Future<bool> updateWidgetFontSize(WidgetFontSize fontSize) async {
+    state = state.copyWith(isUpdatingSettings: true, clearError: true);
+    try {
+      final updatedSettings = await _repository.updateWidgetFontSize(
+        fontSize.toApiString(),
+      );
+      state = state.copyWith(
+        settings: updatedSettings,
+        isUpdatingSettings: false,
+      );
+
+      // Recargar el verso para actualizar el widget con el nuevo tamaño
+      ref.read(verseControllerProvider.notifier).loadVerse(forceRefresh: true);
+
       return true;
     } catch (error) {
       state = state.copyWith(

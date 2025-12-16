@@ -51,6 +51,9 @@ class BibleWidgetProvider : AppWidgetProvider() {
             views.setTextViewText(R.id.widget_verse_text, verse.text)
             views.setTextViewText(R.id.widget_reference, verse.reference)
             views.setTextViewText(R.id.widget_version, verse.versionName)
+            
+            // Aplicar tamaño de fuente dinámico
+            views.setFloat(R.id.widget_verse_text, "setTextSize", verse.fontSize)
         } else {
             views.setTextViewText(R.id.widget_verse_text, "Tap to open HolyVerso")
             views.setTextViewText(R.id.widget_reference, "Verse of the day")
@@ -91,7 +94,8 @@ class BibleWidgetProvider : AppWidgetProvider() {
                 versionCode = obj.getString("version_code"),
                 versionName = obj.getString("version_name"),
                 reference = obj.getString("reference"),
-                text = obj.getString("text")
+                text = obj.getString("text"),
+                fontSize = obj.optDouble("font_size", 16.0).toFloat()
             )
         } catch (e: Exception) {
             null
@@ -104,5 +108,6 @@ data class WidgetVerse(
     val versionCode: String,
     val versionName: String,
     val reference: String,
-    val text: String
+    val text: String,
+    val fontSize: Float = 16f
 )

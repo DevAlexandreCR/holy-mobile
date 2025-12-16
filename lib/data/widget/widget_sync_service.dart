@@ -9,8 +9,14 @@ class WidgetSyncService {
 
   final WidgetVerseStorage _storage;
 
-  Future<void> syncLatestVerse(VerseOfTheDay verse) async {
-    final widgetVerse = WidgetVerse.fromVerseOfTheDay(verse);
+  Future<void> syncLatestVerse(
+    VerseOfTheDay verse, {
+    double fontSize = 16.0,
+  }) async {
+    final widgetVerse = WidgetVerse.fromVerseOfTheDay(
+      verse,
+      fontSize: fontSize,
+    );
     try {
       await _storage.saveVerse(widgetVerse);
       await _storage.refreshWidgets();

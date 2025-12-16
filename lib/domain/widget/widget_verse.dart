@@ -9,6 +9,7 @@ class WidgetVerse {
     required this.versionName,
     required this.reference,
     required this.text,
+    this.fontSize = 16.0,
   });
 
   final String date;
@@ -16,6 +17,7 @@ class WidgetVerse {
   final String versionName;
   final String reference;
   final String text;
+  final double fontSize;
 
   Map<String, dynamic> toJson() {
     return {
@@ -24,26 +26,38 @@ class WidgetVerse {
       'version_name': versionName,
       'reference': reference,
       'text': text,
+      'font_size': fontSize,
     };
   }
 
   factory WidgetVerse.fromJson(Map<String, dynamic> json) {
     return WidgetVerse(
       date: json['date'] as String? ?? '',
-      versionCode: json['version_code'] as String? ?? json['versionCode'] as String? ?? '',
-      versionName: json['version_name'] as String? ?? json['versionName'] as String? ?? '',
+      versionCode:
+          json['version_code'] as String? ??
+          json['versionCode'] as String? ??
+          '',
+      versionName:
+          json['version_name'] as String? ??
+          json['versionName'] as String? ??
+          '',
       reference: json['reference'] as String? ?? '',
       text: json['text'] as String? ?? '',
+      fontSize: (json['font_size'] as num?)?.toDouble() ?? 16.0,
     );
   }
 
-  factory WidgetVerse.fromVerseOfTheDay(VerseOfTheDay verse) {
+  factory WidgetVerse.fromVerseOfTheDay(
+    VerseOfTheDay verse, {
+    double fontSize = 16.0,
+  }) {
     return WidgetVerse(
       date: verse.date,
       versionCode: verse.versionCode,
       versionName: verse.versionName,
       reference: verse.reference,
       text: verse.text,
+      fontSize: fontSize,
     );
   }
 

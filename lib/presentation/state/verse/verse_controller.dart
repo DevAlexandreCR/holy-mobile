@@ -58,7 +58,9 @@ class VerseController extends Notifier<VerseState> {
   }
 
   Future<void> _handleAfterFetch(VerseOfTheDay verse) async {
-    await _widgetSyncService.syncLatestVerse(verse);
+    final authState = ref.read(authControllerProvider);
+    final fontSize = authState.settings?.widgetFontSize.size ?? 16.0;
+    await _widgetSyncService.syncLatestVerse(verse, fontSize: fontSize);
   }
 
   String _mapError(Object error) {

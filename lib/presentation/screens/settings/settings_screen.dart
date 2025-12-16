@@ -7,6 +7,7 @@ import 'package:holyverso/core/l10n/app_localizations.dart';
 import 'package:holyverso/core/theme/app_colors.dart';
 import 'package:holyverso/core/theme/app_design_tokens.dart';
 import 'package:holyverso/core/theme/app_text_styles.dart';
+import 'package:holyverso/data/auth/models/user_settings.dart';
 import 'package:holyverso/data/bible/models/bible_version.dart';
 import 'package:holyverso/presentation/state/auth/auth_controller.dart';
 import 'package:holyverso/presentation/state/settings/versions_controller.dart';
@@ -96,6 +97,120 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           color: AppColors.softMist.withValues(alpha: 0.6),
           letterSpacing: 1.2,
         ),
+      ),
+    );
+  }
+
+  String _getFontSizeLabel(WidgetFontSize size) {
+    return switch (size) {
+      WidgetFontSize.small => 'Pequeño',
+      WidgetFontSize.medium => 'Mediano',
+      WidgetFontSize.large => 'Grande',
+      WidgetFontSize.extraLarge => 'Muy Grande',
+    };
+  }
+
+  void _openFontSizeSheet({
+    required WidgetFontSize selectedSize,
+    required bool isUpdating,
+  }) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (sheetContext) {
+        return Container(
+          decoration: BoxDecoration(
+            color: AppColors.midnightFaith.withValues(alpha: 0.98),
+            borderRadius: const BorderRadius.vertical(
+              top: Radius.circular(AppBorderRadius.lg),
+            ),
+            border: Border.all(
+              color: AppColors.pureWhite.withValues(alpha: 0.08),
+            ),
+          ),
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            AppSpacing.md,
+            AppSpacing.lg,
+            AppSpacing.lg,
+          ),
+          child: SafeArea(
+            top: false,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 46,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: AppColors.pureWhite.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(99),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                Text(
+                  'Tamaño de letra del widget',
+                  style: AppTextStyles.labelLarge.copyWith(
+                    color: AppColors.pureWhite,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  'Selecciona el tamaño de letra para el versículo en el widget',
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: AppColors.softMist.withValues(alpha: 0.8),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                ListView.separated(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemBuilder: (_, index) {
+                    final size = WidgetFontSize.values[index];
+                    final isSelected = size == selectedSize;
+                    return _FontSizeOption(
+                      size: size,
+                      label: _getFontSizeLabel(size),
+                      selected: isSelected,
+                      disabled: isUpdating,
+                      onTap: () {
+                        Navigator.of(sheetContext).pop();
+                        _onChangeFontSize(size);
+                      },
+                    );
+                  },
+                  separatorBuilder: (context, index) =>
+                      const SizedBox(height: AppSpacing.sm),
+                  itemCount: WidgetFontSize.values.length,
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _onChangeFontSize(WidgetFontSize size) async {
+    final success = await ref
+        .read(authControllerProvider.notifier)
+        .updateWidgetFontSize(size);
+
+    if (!mounted) return;
+
+    final message = success
+        ? 'Tamaño de letra actualizado'
+        : 'Error al actualizar el tamaño de letra';
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: success ? AppColors.holyGold : Colors.red,
       ),
     );
   }
@@ -265,6 +380,29 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             : () => _openVersionsSheet(
                                 versionsState: versionsState,
                                 selectedId: authState.preferredVersionId,
+                                isUpdating: isUpdating,
+                              ),
+                      ),
+                      SettingTile(
+                        icon: Icons.format_size,
+                        title: 'Tamaño de letra del widget',
+                        subtitle: 'Ajusta el tamaño del texto del verso',
+                        trailing: Text(
+                          _getFontSizeLabel(
+                            authState.settings?.widgetFontSize ??
+                                WidgetFontSize.large,
+                          ),
+                          style: AppTextStyles.labelMedium.copyWith(
+                            color: AppColors.softMist.withValues(alpha: 0.9),
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        onTap: isUpdating
+                            ? null
+                            : () => _openFontSizeSheet(
+                                selectedSize:
+                                    authState.settings?.widgetFontSize ??
+                                    WidgetFontSize.large,
                                 isUpdating: isUpdating,
                               ),
                       ),
@@ -596,6 +734,104 @@ class _SettingsBackground extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _FontSizeOption extends StatelessWidget {
+  const _FontSizeOption({
+    required this.size,
+    required this.label,
+    required this.selected,
+    required this.disabled,
+    required this.onTap,
+  });
+
+  final WidgetFontSize size;
+  final String label;
+  final bool selected;
+  final bool disabled;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final borderColor = selected
+        ? AppColors.holyGold
+        : AppColors.pureWhite.withValues(alpha: 0.1);
+
+    return InkWell(
+      onTap: disabled ? null : onTap,
+      borderRadius: AppBorderRadius.input,
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        decoration: BoxDecoration(
+          borderRadius: AppBorderRadius.input,
+          gradient: LinearGradient(
+            colors: selected
+                ? [
+                    AppColors.holyGold.withValues(alpha: 0.14),
+                    AppColors.pureWhite.withValues(alpha: 0.04),
+                  ]
+                : [
+                    AppColors.pureWhite.withValues(alpha: 0.05),
+                    AppColors.pureWhite.withValues(alpha: 0.02),
+                  ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          border: Border.all(color: borderColor),
+        ),
+        child: Row(
+          children: [
+            Container(
+              height: 24,
+              width: 24,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: borderColor, width: 2),
+              ),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                margin: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: selected ? AppColors.holyGold : Colors.transparent,
+                ),
+              ),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: AppTextStyles.labelLarge.copyWith(
+                      color: AppColors.pureWhite,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Ejemplo de verso',
+                    style: TextStyle(
+                      fontSize: size.size,
+                      color: AppColors.softMist.withValues(alpha: 0.8),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              selected ? Icons.check_circle : Icons.chevron_right,
+              color: selected
+                  ? AppColors.holyGold
+                  : AppColors.softMist.withValues(alpha: 0.8),
+            ),
+          ],
+        ),
       ),
     );
   }
