@@ -20,15 +20,11 @@ void main() {
       text: 'Porque de tal manera amó Dios al mundo...',
     );
 
-    final fakeController = _FakeVerseController(
-      VerseState(verse: verse),
-    );
+    final fakeController = _FakeVerseController(VerseState(verse: verse));
 
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [
-          verseControllerProvider.overrideWith(() => fakeController),
-        ],
+        overrides: [verseControllerProvider.overrideWith(() => fakeController)],
         child: MaterialApp(
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
@@ -45,8 +41,8 @@ void main() {
     expect(find.textContaining(verse.text), findsOneWidget);
     expect(find.text(verse.reference), findsOneWidget);
     expect(find.textContaining(verse.versionName), findsOneWidget);
-    expect(find.text('Actualizar'), findsOneWidget);
-    expect(find.text('Compartir'), findsOneWidget);
+    expect(find.byIcon(Icons.favorite_border), findsOneWidget);
+    expect(find.byIcon(Icons.ios_share), findsAtLeastNWidgets(1));
     expect(fakeController.loadCalls, 1);
   });
 }
