@@ -134,18 +134,10 @@ struct WidgetVerseView: View {
 
     let entry: WidgetVerseEntry
 
+    private var isMedium: Bool { family == .systemMedium }
+
     var body: some View {
-        ZStack {
-            // Fondo con gradiente Midnight Faith
-            LinearGradient(
-                colors: [
-                    HolyVersoColors.midnightFaithDark.opacity(0.9),
-                    HolyVersoColors.midnightFaith.opacity(0.8)
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            
+        ZStack(alignment: .leading) {
             if entry.isPlaceholder || entry.verse == nil {
                 VStack(alignment: .leading, spacing: 8) {
                     Text(WidgetVersePlaceholder.message)
@@ -157,42 +149,50 @@ struct WidgetVerseView: View {
                     Spacer()
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-                .padding(12)
+                .padding(isMedium ? 16 : 12)
             } else if let verse = entry.verse {
-                // Layout para widget 4x1 (systemSmall)
-                VStack(alignment: .leading, spacing: 0) {
-                    // Verso - ocupa el espacio principal
+                VStack(alignment: .leading, spacing: isMedium ? 10 : 6) {
                     Text(verse.text)
-                        .font(.system(size: family == .systemSmall ? 11 : 14, weight: .medium))
+                        .font(.system(size: isMedium ? 15 : 12, weight: .medium))
                         .foregroundColor(HolyVersoColors.pureWhite)
-                        .lineLimit(family == .systemSmall ? 2 : 4)
-                        .minimumScaleFactor(0.85)
+                        .multilineTextAlignment(.leading)
+                        .lineLimit(nil) // Mostrar todas las líneas posibles, truncar solo si el contenedor se queda corto.
+                        .truncationMode(.tail)
+                        .layoutPriority(1) // Dar prioridad a ocupar altura disponible.
                         .shadow(color: .black.opacity(0.5), radius: 2, x: 0, y: 1)
                         .accessibilityLabel("Versículo del día")
-                    
-                    Spacer(minLength: 4)
-                    
-                    // Referencia y versión en la parte inferior
-                    HStack(alignment: .bottom) {
+
+                    HStack(alignment: .bottom, spacing: 6) {
                         Text(verse.reference)
-                            .font(.system(size: family == .systemSmall ? 10 : 12, weight: .regular))
+                            .font(.system(size: isMedium ? 12 : 10, weight: .regular))
                             .foregroundColor(HolyVersoColors.holyGold)
                             .lineLimit(1)
                             .minimumScaleFactor(0.8)
                             .shadow(color: HolyVersoColors.holyGold.opacity(0.5), radius: 4, x: 0, y: 0)
-                        
+
                         Spacer()
-                        
+
                         Text(verse.versionName)
-                            .font(.system(size: family == .systemSmall ? 9 : 10, weight: .regular))
+                            .font(.system(size: isMedium ? 11 : 9, weight: .regular))
                             .foregroundColor(HolyVersoColors.pureWhite.opacity(0.6))
                             .lineLimit(1)
                             .minimumScaleFactor(0.8)
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-                .padding(12)
+                .padding(isMedium ? 18 : 12)
             }
+        }
+        .containerBackground(for: .widget) {
+            // Fondo compatible con iOS 17+/18 para evitar el aviso de containerBackground.
+            LinearGradient(
+                colors: [
+                    HolyVersoColors.midnightFaithDark.opacity(0.9),
+                    HolyVersoColors.midnightFaith.opacity(0.8)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
         }
         .cornerRadius(24)
     }
@@ -207,7 +207,7 @@ struct WidgetVerseWidget: Widget {
         }
         .configurationDisplayName("HolyVerso")
         .description("Luz y Palabra para cada día.")
-        .supportedFamilies([.systemSmall])
+        .supportedFamilies([.systemSmall, .systemMedium])
     }
 }
 
@@ -229,6 +229,14 @@ struct WidgetVerseWidget_Previews: PreviewProvider {
                 )
             )
                 .previewContext(WidgetPreviewContext(family: .systemSmall))
+            WidgetVerseView(
+                entry: WidgetVerseEntry(
+                    date: Date(),
+                    verse: WidgetVersePlaceholder.sample,
+                    isPlaceholder: false
+                )
+            )
+                .previewContext(WidgetPreviewContext(family: .systemMedium))
             WidgetVerseView(
                 entry: WidgetVerseEntry(
                     date: Date(),
