@@ -1,6 +1,9 @@
 import Flutter
 import UIKit
 import WidgetKit
+#if os(iOS)
+import BackgroundTasks
+#endif
 
 private enum WidgetSharedConfig {
   static let appGroupId = "group.gorda.holyverso"
@@ -14,6 +17,14 @@ private enum WidgetSharedConfig {
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
     GeneratedPluginRegistrant.register(with: self)
+    
+    // Registrar y programar la tarea de background para verse diario
+    #if os(iOS)
+    if #available(iOS 13.0, *) {
+      DailyVerseFetchTask.shared.registerBackgroundTask()
+      DailyVerseFetchTask.shared.scheduleNextFetch()
+    }
+    #endif
 
     if let controller = window?.rootViewController as? FlutterViewController {
       let channel = FlutterMethodChannel(
@@ -62,6 +73,67 @@ private enum WidgetSharedConfig {
           }
           result(nil)
 
+        default:
+          result(FlutterMethodNotImplemented)
+        }
+      }
+      
+      // Channel para guardar JWT token en App Group compartido
+      let authChannel = FlutterMethodChannel(
+        name: "bible_widget/auth",
+        binaryMessenger: controller.binaryMessenger
+      )
+      
+      authChannel.setMethodCallHandler { call, result in
+        guard let sharedDefaults = UserDefaults(suiteName: WidgetSharedConfig.appGroupId) else {
+          result(
+            FlutterError(
+              code: "APP_GROUP_MISSING",
+              message: "App Group not configured",
+              details: nil
+            )
+          )
+          return
+        }
+        
+        switch call.method {
+        case "saveJwtToken":
+          guard let token = call.arguments as? String else {
+            result(
+              FlutterError(
+                code: "INVALID_ARGUMENT",
+                message: "Expected JWT token string",
+                details: nil
+              )
+            )
+            return
+          }
+          
+          sharedDefaults.set(token, forKey: "jwt_token")
+          sharedDefaults.synchronize()
+          result(nil)
+          
+        case "clearJwtToken":
+          sharedDefaults.removeObject(forKey: "jwt_token")
+          sharedDefaults.synchronize()
+          result(nil)
+          
+        case "setApiUrl":
+          guard let apiUrl = call.arguments as? String else {
+            result(
+              FlutterError(
+                code: "INVALID_ARGUMENT",
+                message: "Expected API URL string",
+                details: nil
+              )
+            )
+            return
+          }
+          
+          sharedDefaults.set(apiUrl, forKey: "api_url")
+          sharedDefaults.synchronize()
+          result(nil)
+          
         default:
           result(FlutterMethodNotImplemented)
         }

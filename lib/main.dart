@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:holyverso/core/l10n/app_localizations.dart';
 import 'package:holyverso/core/router/app_router.dart';
 import 'package:holyverso/core/theme/app_theme.dart';
+import 'package:holyverso/data/auth/token_storage.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -12,6 +13,11 @@ Future<void> main() async {
   // Load .env file before app starts
   final envFile = kReleaseMode ? '.env.production' : '.env.development';
   await dotenv.load(fileName: envFile);
+
+  // Inicializar configuración nativa con la API_URL del .env
+  final apiUrl = dotenv.get('API_URL', fallback: 'https://api.holyverso.com');
+  final authTokenService = AuthTokenService();
+  await authTokenService.initializeNativeConfig(apiUrl);
 
   runApp(const ProviderScope(child: HolyVersoApp()));
 }

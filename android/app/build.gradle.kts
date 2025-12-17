@@ -41,6 +41,8 @@ android {
 
 dependencies {
     implementation("androidx.work:work-runtime-ktx:2.9.0")
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("org.json:json:20230227")
 }
 
 flutter {
