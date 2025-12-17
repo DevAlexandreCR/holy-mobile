@@ -1,4 +1,3 @@
-#if os(iOS)
 import Foundation
 import BackgroundTasks
 import WidgetKit
@@ -172,4 +171,3 @@ class DailyVerseFetchTask {
         return "https://api.holyverso.com"
     }
 }
-#endif

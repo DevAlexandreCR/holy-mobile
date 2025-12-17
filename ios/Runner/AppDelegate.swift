@@ -1,9 +1,7 @@
 import Flutter
 import UIKit
 import WidgetKit
-#if os(iOS)
 import BackgroundTasks
-#endif
 
 private enum WidgetSharedConfig {
   static let appGroupId = "group.gorda.holyverso"
@@ -18,13 +16,11 @@ private enum WidgetSharedConfig {
   ) -> Bool {
     GeneratedPluginRegistrant.register(with: self)
     
-    // Registrar y programar la tarea de background para verse diario
-    #if os(iOS)
+    // Registrar y programar la tarea de background para verso diario
     if #available(iOS 13.0, *) {
       DailyVerseFetchTask.shared.registerBackgroundTask()
       DailyVerseFetchTask.shared.scheduleNextFetch()
     }
-    #endif
 
     if let controller = window?.rootViewController as? FlutterViewController {
       let channel = FlutterMethodChannel(
