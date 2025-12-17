@@ -1,15 +1,12 @@
 import Flutter
 import UIKit
-// import WidgetKit  // Desactivado temporalmente - requiere Apple Developer Program
-// import BackgroundTasks
+import WidgetKit
+import BackgroundTasks
 
-// Desactivado temporalmente hasta que se active la cuenta de desarrollador
-/*
 private enum WidgetSharedConfig {
   static let appGroupId = "group.gorda.holyverso"
   static let widgetVerseKey = "widgetVerse" // Must match Flutter + Widget target.
 }
-*/
 
 @main
 @objc class AppDelegate: FlutterAppDelegate {
@@ -19,20 +16,13 @@ private enum WidgetSharedConfig {
   ) -> Bool {
     GeneratedPluginRegistrant.register(with: self)
     
-    // WIDGET DESACTIVADO - Requiere Apple Developer Program
-    /*
     // Registrar y programar la tarea de background para verso diario
     if #available(iOS 13.0, *) {
       DailyVerseFetchTask.shared.registerBackgroundTask()
       DailyVerseFetchTask.shared.scheduleNextFetch()
     }
-    */
 
     if let controller = window?.rootViewController as? FlutterViewController {
-      // CANALES DE WIDGET DESACTIVADOS - Requieren Apple Developer Program
-      // Los canales se reactivarán cuando la cuenta de desarrollador esté lista
-      
-      /*
       let channel = FlutterMethodChannel(
         name: "bible_widget/shared_verse",
         binaryMessenger: controller.binaryMessenger
@@ -144,7 +134,6 @@ private enum WidgetSharedConfig {
           result(FlutterMethodNotImplemented)
         }
       }
-      */
     }
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
