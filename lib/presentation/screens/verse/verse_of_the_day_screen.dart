@@ -34,12 +34,16 @@ class _VerseOfTheDayScreenState extends ConsumerState<VerseOfTheDayScreen> {
         .loadVerse(forceRefresh: true);
   }
 
-  void _onShare(VerseOfTheDay verse) {
+  void _onShare(VerseOfTheDay verse, Rect? sharePositionOrigin) {
     final l10n = context.l10n;
     final shareText =
         '"${verse.text}"\n${verse.reference}\n${verse.versionName} '
         '(${verse.displayVersionCode})';
-    Share.share(shareText, subject: l10n.shareSubject);
+    Share.share(
+      shareText,
+      subject: l10n.shareSubject,
+      sharePositionOrigin: sharePositionOrigin,
+    );
   }
 
   void _toggleFavorite() {
@@ -66,15 +70,27 @@ class _VerseOfTheDayScreenState extends ConsumerState<VerseOfTheDayScreen> {
           ),
         ),
         actions: [
-          IconButton(
-            tooltip: l10n.shareTooltip,
-            onPressed: verse == null ? null : () => _onShare(verse),
-            icon: Icon(
-              Icons.ios_share,
-              color: verse == null
-                  ? AppColors.softMist.withValues(alpha: 0.4)
-                  : AppColors.pureWhite,
-            ),
+          Builder(
+            builder: (BuildContext context) {
+              return IconButton(
+                tooltip: l10n.shareTooltip,
+                onPressed: verse == null
+                    ? null
+                    : () {
+                        final box = context.findRenderObject() as RenderBox?;
+                        final sharePositionOrigin = box == null
+                            ? null
+                            : box.localToGlobal(Offset.zero) & box.size;
+                        _onShare(verse, sharePositionOrigin);
+                      },
+                icon: Icon(
+                  Icons.ios_share,
+                  color: verse == null
+                      ? AppColors.softMist.withValues(alpha: 0.4)
+                      : AppColors.pureWhite,
+                ),
+              );
+            },
           ),
           IconButton(
             tooltip: l10n.settingsTooltip,
@@ -110,14 +126,15 @@ class _VerseOfTheDayScreenState extends ConsumerState<VerseOfTheDayScreen> {
                     isLoading: verseState.isLoading,
                     isFavorite: _isFavorite,
                     onToggleFavorite: _toggleFavorite,
-                    onShare: verse == null ? null : () => _onShare(verse),
+                    onShare: verse == null
+                        ? null
+                        : (rect) => _onShare(verse, rect),
                   ),
                   if (verseState.hasError)
                     Padding(
                       padding: const EdgeInsets.only(top: AppSpacing.md),
                       child: _ErrorPill(
-                        message:
-                            verseState.errorMessage ?? l10n.verseLoadError,
+                        message: verseState.errorMessage ?? l10n.verseLoadError,
                       ),
                     ),
                 ],
@@ -206,7 +223,7 @@ class _VerseCard extends StatelessWidget {
   final bool isLoading;
   final bool isFavorite;
   final VoidCallback onToggleFavorite;
-  final VoidCallback? onShare;
+  final void Function(Rect?)? onShare;
 
   @override
   Widget build(BuildContext context) {
@@ -239,8 +256,8 @@ class _VerseCard extends StatelessWidget {
               child: verse != null
                   ? _VerseContent(verse: verse!)
                   : isLoading
-                      ? _SkeletonPlaceholder()
-                      : const _EmptyState(),
+                  ? _SkeletonPlaceholder()
+                  : const _EmptyState(),
             ),
             Positioned(
               bottom: AppSpacing.md,
@@ -249,19 +266,30 @@ class _VerseCard extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   _CircleIconButton(
-                    icon: isFavorite
-                        ? Icons.favorite
-                        : Icons.favorite_border,
+                    icon: isFavorite ? Icons.favorite : Icons.favorite_border,
                     color: isFavorite
                         ? AppColors.holyGold
                         : AppColors.pureWhite.withValues(alpha: 0.85),
                     onPressed: onToggleFavorite,
                   ),
                   const SizedBox(width: AppSpacing.sm),
-                  _CircleIconButton(
-                    icon: Icons.ios_share,
-                    color: AppColors.pureWhite.withValues(alpha: 0.85),
-                    onPressed: onShare,
+                  Builder(
+                    builder: (BuildContext context) {
+                      return _CircleIconButton(
+                        icon: Icons.ios_share,
+                        color: AppColors.pureWhite.withValues(alpha: 0.85),
+                        onPressed: onShare == null
+                            ? null
+                            : () {
+                                final box =
+                                    context.findRenderObject() as RenderBox?;
+                                final sharePositionOrigin = box == null
+                                    ? null
+                                    : box.localToGlobal(Offset.zero) & box.size;
+                                onShare!(sharePositionOrigin);
+                              },
+                      );
+                    },
                   ),
                 ],
               ),
@@ -360,9 +388,7 @@ class _CircleIconButton extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.pureWhite.withValues(alpha: 0.08),
         shape: BoxShape.circle,
-        border: Border.all(
-          color: AppColors.pureWhite.withValues(alpha: 0.1),
-        ),
+        border: Border.all(color: AppColors.pureWhite.withValues(alpha: 0.1)),
       ),
       child: IconButton(
         onPressed: onPressed,
@@ -481,10 +507,7 @@ class _EmptyState extends StatelessWidget {
 }
 
 class _ShimmerBlock extends StatelessWidget {
-  const _ShimmerBlock({
-    required this.height,
-    required this.width,
-  });
+  const _ShimmerBlock({required this.height, required this.width});
 
   final double height;
   final double width;
@@ -510,10 +533,7 @@ class _VerseBackground extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            AppColors.midnightFaithDark,
-            AppColors.midnightFaith,
-          ],
+          colors: [AppColors.midnightFaithDark, AppColors.midnightFaith],
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
         ),
