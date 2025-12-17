@@ -69,7 +69,9 @@ class HolyInputField extends StatelessWidget {
           vertical: AppSpacing.sm + 2,
         ),
         border: _buildBorder(AppColors.inputBorder.withValues(alpha: 0.8)),
-        enabledBorder: _buildBorder(AppColors.inputBorder.withValues(alpha: 0.6)),
+        enabledBorder: _buildBorder(
+          AppColors.inputBorder.withValues(alpha: 0.6),
+        ),
         focusedBorder: _buildBorder(AppColors.holyGold, width: 1.2),
         errorBorder: _buildBorder(AppColors.error),
         focusedErrorBorder: _buildBorder(AppColors.error, width: 1.2),

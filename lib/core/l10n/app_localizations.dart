@@ -91,6 +91,7 @@ class AppLocalizations {
 
   String get authRequestFailed => _string('authRequestFailed');
   String get authUnexpectedError => _string('authUnexpectedError');
+  String get authInvalidCredentials => _string('authInvalidCredentials');
 
   String _string(String key) {
     final langCode =
@@ -172,6 +173,8 @@ class AppLocalizations {
       'authRequestFailed':
           'No se pudo completar la solicitud. Inténtalo nuevamente.',
       'authUnexpectedError': 'Algo salió mal. Inténtalo nuevamente.',
+      'authInvalidCredentials':
+          'Correo o contraseña incorrectos. Verifica tus datos.',
     },
     'en': {
       'appTitle': 'HolyVerso',
@@ -236,6 +239,8 @@ class AppLocalizations {
       'versionsEmpty': 'No versions available yet.',
       'authRequestFailed': 'Request could not be completed. Please try again.',
       'authUnexpectedError': 'Something went wrong. Please try again.',
+      'authInvalidCredentials':
+          'Incorrect email or password. Please check your credentials.',
     },
   };
 }

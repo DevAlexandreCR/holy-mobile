@@ -192,10 +192,28 @@ class AuthController extends Notifier<AuthState> {
 
   String _mapError(Object error) {
     if (error is DioException) {
+      final statusCode = error.response?.statusCode;
       final data = error.response?.data;
-      final responseMessage = data is Map && data['message'] is String
-          ? data['message'] as String
-          : null;
+
+      // El backend devuelve errores en data['error']['message']
+      String? responseMessage;
+      if (data is Map) {
+        if (data['error'] is Map && data['error']['message'] is String) {
+          responseMessage = data['error']['message'] as String;
+        } else if (data['message'] is String) {
+          responseMessage = data['message'] as String;
+        }
+      }
+
+      // Si es un 401 con mensaje de credenciales, usar mensaje específico
+      if (statusCode == 401 && responseMessage != null) {
+        if (responseMessage.toLowerCase().contains('invalid') &&
+            (responseMessage.toLowerCase().contains('email') ||
+                responseMessage.toLowerCase().contains('password'))) {
+          return _l10n.authInvalidCredentials;
+        }
+      }
+
       return responseMessage ?? error.message ?? _l10n.authRequestFailed;
     }
 

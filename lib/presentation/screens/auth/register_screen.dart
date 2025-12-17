@@ -49,13 +49,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
     if (success) {
       context.go('/verse');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.l10n.accountCreated)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(context.l10n.accountCreated)));
     } else if (state.errorMessage != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(state.errorMessage!)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(state.errorMessage!)));
     }
   }
 
@@ -102,8 +102,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     const SizedBox(height: AppSpacing.lg),
                     _AuthToggle(
                       active: 'register',
-                      onLogin:
-                          state.isLoading ? null : () => context.go('/login'),
+                      onLogin: state.isLoading
+                          ? null
+                          : () => context.go('/login'),
                       onRegister: () {},
                     ),
                     const SizedBox(height: AppSpacing.lg),
@@ -202,8 +203,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     ),
                     const SizedBox(height: AppSpacing.md),
                     TextButton(
-                      onPressed:
-                          state.isLoading ? null : () => context.go('/login'),
+                      onPressed: state.isLoading
+                          ? null
+                          : () => context.go('/login'),
                       style: TextButton.styleFrom(
                         foregroundColor: AppColors.holyGold,
                         textStyle: AppTextStyles.bodyMedium.copyWith(
@@ -290,9 +292,7 @@ class _AuthToggle extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.pureWhite.withValues(alpha: 0.06),
         borderRadius: AppBorderRadius.button,
-        border: Border.all(
-          color: AppColors.pureWhite.withValues(alpha: 0.08),
-        ),
+        border: Border.all(color: AppColors.pureWhite.withValues(alpha: 0.08)),
       ),
       child: Row(
         children: [
@@ -338,9 +338,7 @@ class _AuthToggleButton extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(
-          vertical: AppSpacing.sm,
-        ),
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
         decoration: BoxDecoration(
           color: background,
           borderRadius: AppBorderRadius.button,
@@ -367,10 +365,7 @@ class _BackgroundGlow extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            AppColors.midnightFaithDark,
-            AppColors.midnightFaith,
-          ],
+          colors: [AppColors.midnightFaithDark, AppColors.midnightFaith],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
