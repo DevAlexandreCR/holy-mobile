@@ -31,7 +31,7 @@ class VerseImageCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final verseFontSize = _calculateFontSize();
     final referenceFontSize = _calculateReferenceFontSize();
-    
+
     return Container(
       width: 1080,
       height: 1920,
@@ -152,7 +152,9 @@ class VerseImageCard extends StatelessWidget {
                                   letterSpacing: 0.2,
                                   shadows: [
                                     Shadow(
-                                      color: Colors.black.withValues(alpha: 0.3),
+                                      color: Colors.black.withValues(
+                                        alpha: 0.3,
+                                      ),
                                       blurRadius: 6,
                                       offset: const Offset(0, 2),
                                     ),
@@ -171,7 +173,9 @@ class VerseImageCard extends StatelessWidget {
                                   letterSpacing: 0.5,
                                   shadows: [
                                     Shadow(
-                                      color: AppColors.holyGold.withValues(alpha: 0.4),
+                                      color: AppColors.holyGold.withValues(
+                                        alpha: 0.4,
+                                      ),
                                       blurRadius: 10,
                                     ),
                                   ],
@@ -192,10 +196,7 @@ class VerseImageCard extends StatelessWidget {
             bottom: 220, // Just below the card
             right: 50,
             child: Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 14,
-                vertical: 7,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
               decoration: BoxDecoration(
                 color: AppColors.midnightFaith.withValues(alpha: 0.8),
                 borderRadius: BorderRadius.circular(12),
