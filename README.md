@@ -28,6 +28,17 @@ Aplicación Flutter que muestra el “Versículo del día”, permite elegir la 
 - iOS: App Group (ej. `group.biblewidget.app`) con clave `widgetVerse`; `AppDelegate.swift` escribe el JSON recibido por canal y dispara `WidgetCenter.shared.reloadAllTimelines()` cuando Flutter llama `refreshWidgets`. El stub de WidgetKit está en `ios/WidgetVerseExtension/WidgetVerseWidget.swift` (placeholder amistoso + timeline cada ~12h); habilita el App Group tanto en Runner como en la extensión.
 - Android: SharedPreferences (`bible_widget_prefs`/`widgetVerse`), `BibleWidgetProvider` lee y refresca widgets; `refreshWidgets` envía broadcast de actualización.
 
+## Funcionalidades Principales
+- ✅ Autenticación de usuarios (registro, login, recuperación de contraseña)
+- ✅ Versículo del día personalizado por versión bíblica
+- ✅ Widgets nativos para iOS (WidgetKit) y Android (AppWidget)
+- ✅ Selección de versiones de la Biblia
+- ✅ **Compartir versículos como imágenes hermosas** 🆕
+  - Generación automática de imágenes con diseño profesional
+  - Optimizadas para redes sociales (1080x1920px)
+  - Opción de compartir como texto o imagen
+  - Ver documentación: `../docs/front/10-verse-as-image-implementation.md`
+
 ## Pruebas
 - Unit y widget tests en `test/`.
 - Casos clave: selección de versión (VersionsController), mapeo `/verse/today` a `VerseOfTheDay`/`WidgetVerse`, render básico de `VerseOfTheDayScreen`.

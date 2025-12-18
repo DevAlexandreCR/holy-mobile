@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:holyverso/core/l10n/app_localizations.dart';
+import 'package:holyverso/core/services/verse_image_service.dart';
 import 'package:holyverso/core/theme/app_colors.dart';
 import 'package:holyverso/core/theme/app_design_tokens.dart';
 import 'package:holyverso/core/theme/app_text_styles.dart';
@@ -19,6 +20,8 @@ class VerseOfTheDayScreen extends ConsumerStatefulWidget {
 
 class _VerseOfTheDayScreenState extends ConsumerState<VerseOfTheDayScreen> {
   bool _isFavorite = false;
+  final VerseImageService _verseImageService = VerseImageService();
+  bool _isGeneratingImage = false;
 
   @override
   void initState() {
@@ -43,6 +46,133 @@ class _VerseOfTheDayScreenState extends ConsumerState<VerseOfTheDayScreen> {
       shareText,
       subject: l10n.shareSubject,
       sharePositionOrigin: sharePositionOrigin,
+    );
+  }
+
+  Future<void> _onShareAsImage(
+    VerseOfTheDay verse,
+    Rect? sharePositionOrigin,
+  ) async {
+    if (_isGeneratingImage) return;
+
+    setState(() => _isGeneratingImage = true);
+
+    try {
+      final l10n = context.l10n;
+      await _verseImageService.shareVerseAsImage(
+        verse,
+        sharePositionOrigin: sharePositionOrigin,
+        subject: l10n.shareSubject,
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(context.l10n.shareImageError),
+            backgroundColor: Colors.red.shade700,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isGeneratingImage = false);
+      }
+    }
+  }
+
+  void _showShareOptions(VerseOfTheDay verse, Rect? sharePositionOrigin) {
+    final l10n = context.l10n;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: BoxDecoration(
+          color: AppColors.midnightFaith,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 12),
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.pureWhite.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 24),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Text(
+                  l10n.shareOptionsTitle,
+                  style: AppTextStyles.headline3.copyWith(
+                    color: AppColors.pureWhite,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.holyGold.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(Icons.image_outlined, color: AppColors.holyGold),
+                ),
+                title: Text(
+                  l10n.shareAsImage,
+                  style: AppTextStyles.bodyLarge.copyWith(
+                    color: AppColors.pureWhite,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                subtitle: Text(
+                  l10n.shareAsImageDescription,
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: AppColors.softMist.withValues(alpha: 0.7),
+                  ),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  _onShareAsImage(verse, sharePositionOrigin);
+                },
+              ),
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.pureWhite.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(Icons.text_fields, color: AppColors.pureWhite),
+                ),
+                title: Text(
+                  l10n.shareAsText,
+                  style: AppTextStyles.bodyLarge.copyWith(
+                    color: AppColors.pureWhite,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                subtitle: Text(
+                  l10n.shareAsTextDescription,
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: AppColors.softMist.withValues(alpha: 0.7),
+                  ),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  _onShare(verse, sharePositionOrigin);
+                },
+              ),
+              const SizedBox(height: 24),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -81,14 +211,25 @@ class _VerseOfTheDayScreenState extends ConsumerState<VerseOfTheDayScreen> {
                         final sharePositionOrigin = box == null
                             ? null
                             : box.localToGlobal(Offset.zero) & box.size;
-                        _onShare(verse, sharePositionOrigin);
+                        _showShareOptions(verse, sharePositionOrigin);
                       },
-                icon: Icon(
-                  Icons.ios_share,
-                  color: verse == null
-                      ? AppColors.softMist.withValues(alpha: 0.4)
-                      : AppColors.pureWhite,
-                ),
+                icon: _isGeneratingImage
+                    ? SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            AppColors.pureWhite,
+                          ),
+                        ),
+                      )
+                    : Icon(
+                        Icons.ios_share,
+                        color: verse == null
+                            ? AppColors.softMist.withValues(alpha: 0.4)
+                            : AppColors.pureWhite,
+                      ),
               );
             },
           ),
@@ -125,10 +266,11 @@ class _VerseOfTheDayScreenState extends ConsumerState<VerseOfTheDayScreen> {
                     verse: verse,
                     isLoading: verseState.isLoading,
                     isFavorite: _isFavorite,
+                    isGeneratingImage: _isGeneratingImage,
                     onToggleFavorite: _toggleFavorite,
                     onShare: verse == null
                         ? null
-                        : (rect) => _onShare(verse, rect),
+                        : (rect) => _showShareOptions(verse, rect),
                   ),
                   if (verseState.hasError)
                     Padding(
@@ -215,6 +357,7 @@ class _VerseCard extends StatelessWidget {
     required this.verse,
     required this.isLoading,
     required this.isFavorite,
+    required this.isGeneratingImage,
     required this.onToggleFavorite,
     required this.onShare,
   });
@@ -222,6 +365,7 @@ class _VerseCard extends StatelessWidget {
   final VerseOfTheDay? verse;
   final bool isLoading;
   final bool isFavorite;
+  final bool isGeneratingImage;
   final VoidCallback onToggleFavorite;
   final void Function(Rect?)? onShare;
 
@@ -278,6 +422,7 @@ class _VerseCard extends StatelessWidget {
                       return _CircleIconButton(
                         icon: Icons.ios_share,
                         color: AppColors.pureWhite.withValues(alpha: 0.85),
+                        isLoading: isGeneratingImage,
                         onPressed: onShare == null
                             ? null
                             : () {
@@ -376,11 +521,13 @@ class _CircleIconButton extends StatelessWidget {
     required this.icon,
     required this.color,
     this.onPressed,
+    this.isLoading = false,
   });
 
   final IconData icon;
   final Color color;
   final VoidCallback? onPressed;
+  final bool isLoading;
 
   @override
   Widget build(BuildContext context) {
@@ -391,8 +538,17 @@ class _CircleIconButton extends StatelessWidget {
         border: Border.all(color: AppColors.pureWhite.withValues(alpha: 0.1)),
       ),
       child: IconButton(
-        onPressed: onPressed,
-        icon: Icon(icon, color: color, size: AppSizes.iconMedium),
+        onPressed: isLoading ? null : onPressed,
+        icon: isLoading
+            ? SizedBox(
+                width: AppSizes.iconMedium,
+                height: AppSizes.iconMedium,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(color),
+                ),
+              )
+            : Icon(icon, color: color, size: AppSizes.iconMedium),
       ),
     );
   }

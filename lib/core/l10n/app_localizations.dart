@@ -73,6 +73,12 @@ class AppLocalizations {
   String get updateAction => _string('updateAction');
   String get shareAction => _string('shareAction');
   String get shareTooltip => _string('shareTooltip');
+  String get shareOptionsTitle => _string('shareOptionsTitle');
+  String get shareAsImage => _string('shareAsImage');
+  String get shareAsImageDescription => _string('shareAsImageDescription');
+  String get shareAsText => _string('shareAsText');
+  String get shareAsTextDescription => _string('shareAsTextDescription');
+  String get shareImageError => _string('shareImageError');
   String get settingsTooltip => _string('settingsTooltip');
   String get shareSubject => _string('shareSubject');
   String get verseLoadError => _string('verseLoadError');
@@ -153,6 +159,12 @@ class AppLocalizations {
       'updateAction': 'Actualizar',
       'shareAction': 'Compartir',
       'shareTooltip': 'Compartir',
+      'shareOptionsTitle': 'Compartir versículo',
+      'shareAsImage': 'Compartir como imagen',
+      'shareAsImageDescription': 'Crea una imagen hermosa del versículo',
+      'shareAsText': 'Compartir como texto',
+      'shareAsTextDescription': 'Comparte el texto del versículo',
+      'shareImageError': 'No se pudo generar la imagen. Inténtalo nuevamente.',
       'settingsTooltip': 'Configuración',
       'shareSubject': 'Versículo de hoy',
       'verseLoadError': 'No pudimos cargar el versículo de hoy.',
@@ -222,6 +234,12 @@ class AppLocalizations {
       'updateAction': 'Refresh',
       'shareAction': 'Share',
       'shareTooltip': 'Share',
+      'shareOptionsTitle': 'Share verse',
+      'shareAsImage': 'Share as image',
+      'shareAsImageDescription': 'Create a beautiful image of the verse',
+      'shareAsText': 'Share as text',
+      'shareAsTextDescription': 'Share the verse text',
+      'shareImageError': 'Could not generate the image. Please try again.',
       'settingsTooltip': 'Settings',
       'shareSubject': 'Verse of the day',
       'verseLoadError': 'We could not load the verse of the day.',
