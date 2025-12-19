@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:holyverso/core/theme/app_colors.dart';
 import 'package:holyverso/domain/verse/verse_of_the_day.dart';
@@ -48,7 +49,9 @@ class VerseImageCard extends StatelessWidget {
       ),
       child: Stack(
         children: [
-          // Background decorative elements
+          // Starry background
+          ..._buildStarryBackground(),
+          // Background decorative glow elements
           Positioned(
             top: -100,
             right: -100,
@@ -59,7 +62,7 @@ class VerseImageCard extends StatelessWidget {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    AppColors.holyGold.withValues(alpha: 0.12),
+                    AppColors.holyGold.withValues(alpha: 0.06),
                     Colors.transparent,
                   ],
                 ),
@@ -76,7 +79,7 @@ class VerseImageCard extends StatelessWidget {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    AppColors.holyGold.withValues(alpha: 0.08),
+                    AppColors.holyGold.withValues(alpha: 0.04),
                     Colors.transparent,
                   ],
                 ),
@@ -236,5 +239,61 @@ class VerseImageCard extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  /// Builds a starry background similar to the landing page
+  List<Widget> _buildStarryBackground() {
+    final random = math.Random(42); // Fixed seed for consistency in images
+    final stars = <Widget>[];
+    
+    // Create 200 stars (más estrellas)
+    for (int i = 0; i < 200; i++) {
+      final size = random.nextDouble() * 3.5 + 1.0; // Tamaños más grandes
+      final isGolden = random.nextDouble() > 0.65; // 35% golden stars
+      final opacity = random.nextDouble() * 0.8 + 0.5; // Más opacas y brillantes
+      
+      final color = isGolden
+          ? AppColors.holyGold.withValues(alpha: opacity)
+          : Colors.white.withValues(alpha: opacity);
+      
+      stars.add(
+        Positioned(
+          top: random.nextDouble() * 1920,
+          left: random.nextDouble() * 1080,
+          child: Container(
+            width: size,
+            height: size,
+            decoration: BoxDecoration(
+              color: color,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: isGolden 
+                      ? AppColors.holyGold.withValues(alpha: 1.0)
+                      : Colors.white.withValues(alpha: 1.0),
+                  blurRadius: size * 5, // Más brillo
+                  spreadRadius: 0,
+                ),
+                BoxShadow(
+                  color: isGolden 
+                      ? AppColors.holyGold.withValues(alpha: 0.8)
+                      : Colors.white.withValues(alpha: 0.7),
+                  blurRadius: size * 8, // Segundo nivel de brillo
+                  spreadRadius: 0,
+                ),
+                if (isGolden)
+                  BoxShadow(
+                    color: const Color(0xFFFFD700).withValues(alpha: 0.9),
+                    blurRadius: size * 12, // Brillo dorado más intenso
+                    spreadRadius: 0,
+                  ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+    
+    return stars;
   }
 }
