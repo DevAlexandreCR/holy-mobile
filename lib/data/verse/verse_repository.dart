@@ -50,6 +50,14 @@ class VerseRepository {
       text: widgetVerse.text,
     );
   }
+
+  Future<void> likeVerse(int libraryVerseId) async {
+    await _client.likeVerse(libraryVerseId);
+  }
+
+  Future<void> shareVerse(int libraryVerseId) async {
+    await _client.shareVerse(libraryVerseId);
+  }
 }
 
 final verseRepositoryProvider = Provider<VerseRepository>((ref) {

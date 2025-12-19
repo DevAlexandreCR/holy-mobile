@@ -89,6 +89,22 @@ class VerseController extends Notifier<VerseState> {
 
     return _l10n.verseRequestError;
   }
+
+  Future<void> likeVerse(int libraryVerseId) async {
+    try {
+      await _repository.likeVerse(libraryVerseId);
+    } catch (error) {
+      // Silently fail - no UI feedback needed for background analytics
+    }
+  }
+
+  Future<void> shareVerse(int libraryVerseId) async {
+    try {
+      await _repository.shareVerse(libraryVerseId);
+    } catch (error) {
+      // Silently fail - no UI feedback needed for background analytics
+    }
+  }
 }
 
 final verseControllerProvider = NotifierProvider<VerseController, VerseState>(

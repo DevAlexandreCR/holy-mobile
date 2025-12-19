@@ -22,6 +22,14 @@ class VerseApiClient {
     const l10n = AppLocalizations(Locale('es'));
     throw StateError(l10n.unexpectedVerseFormat);
   }
+
+  Future<void> likeVerse(int libraryVerseId) async {
+    await _dio.post('/verse/$libraryVerseId/like');
+  }
+
+  Future<void> shareVerse(int libraryVerseId) async {
+    await _dio.post('/verse/$libraryVerseId/share');
+  }
 }
 
 final verseApiClientProvider = Provider<VerseApiClient>((ref) {

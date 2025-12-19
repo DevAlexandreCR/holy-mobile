@@ -47,6 +47,13 @@ class _VerseOfTheDayScreenState extends ConsumerState<VerseOfTheDayScreen> {
       subject: l10n.shareSubject,
       sharePositionOrigin: sharePositionOrigin,
     );
+
+    // Registrar el share en el backend si tiene libraryVerseId
+    if (verse.libraryVerseId != null) {
+      ref
+          .read(verseControllerProvider.notifier)
+          .shareVerse(verse.libraryVerseId!);
+    }
   }
 
   Future<void> _onShareAsImage(
@@ -64,6 +71,13 @@ class _VerseOfTheDayScreenState extends ConsumerState<VerseOfTheDayScreen> {
         sharePositionOrigin: sharePositionOrigin,
         subject: l10n.shareSubject,
       );
+
+      // Registrar el share en el backend si tiene libraryVerseId
+      if (verse.libraryVerseId != null) {
+        ref
+            .read(verseControllerProvider.notifier)
+            .shareVerse(verse.libraryVerseId!);
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -177,7 +191,17 @@ class _VerseOfTheDayScreenState extends ConsumerState<VerseOfTheDayScreen> {
   }
 
   void _toggleFavorite() {
-    setState(() => _isFavorite = !_isFavorite);
+    final verse = ref.read(verseControllerProvider).verse;
+    final newFavoriteState = !_isFavorite;
+
+    setState(() => _isFavorite = newFavoriteState);
+
+    // Registrar el like en el backend si tiene libraryVerseId y el usuario marcó como favorito
+    if (newFavoriteState && verse?.libraryVerseId != null) {
+      ref
+          .read(verseControllerProvider.notifier)
+          .likeVerse(verse!.libraryVerseId!);
+    }
   }
 
   @override
