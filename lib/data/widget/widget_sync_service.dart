@@ -26,10 +26,14 @@ class WidgetSyncService {
       // Guardar el verso
       await _storage.saveVerse(widgetVerse);
 
-      // Esperar un poco para asegurar que se guardó
-      await Future.delayed(const Duration(milliseconds: 100));
+      // Esperar un poco más para asegurar que se guardó en UserDefaults compartido
+      await Future.delayed(const Duration(milliseconds: 300));
 
-      // Refrescar los widgets inmediatamente
+      // Refrescar los widgets inmediatamente (primera vez)
+      await _storage.refreshWidgets();
+
+      // Esperar un poco y refrescar de nuevo para asegurar que el widget lo detecte
+      await Future.delayed(const Duration(milliseconds: 200));
       await _storage.refreshWidgets();
 
       debugPrint('[WidgetSyncService] Sync completed successfully');

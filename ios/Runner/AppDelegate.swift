@@ -56,28 +56,33 @@ private enum WidgetSharedConfig {
           print("[AppDelegate] Saving verse to App Group...")
           print("[AppDelegate] JSON: \(verseJson)")
           sharedDefaults.set(verseJson, forKey: WidgetSharedConfig.widgetVerseKey)
-          let saved = sharedDefaults.synchronize()
-          print("[AppDelegate] Synchronize result: \(saved)")
+          
+          // Forzar sincronización inmediata
+          sharedDefaults.synchronize()
           
           // Verificar que se guardó correctamente
           if let readBack = sharedDefaults.string(forKey: WidgetSharedConfig.widgetVerseKey) {
-            print("[AppDelegate] Verification - Data saved correctly")
+            print("[AppDelegate] Verification - Data saved correctly: \(readBack.prefix(50))...")
           } else {
             print("[AppDelegate] ERROR - Data not saved!")
           }
           
+          // Recargar todos los widgets inmediatamente después de guardar
           if #available(iOS 14.0, *) {
             WidgetCenter.shared.reloadAllTimelines()
-            print("[AppDelegate] Widgets reloaded")
+            print("[AppDelegate] Widget timelines reloaded immediately after save")
           }
+          
           result(nil)
 
         case "readVerse":
           result(sharedDefaults.string(forKey: WidgetSharedConfig.widgetVerseKey))
 
         case "refreshWidgets":
+          print("[AppDelegate] Refreshing all widgets...")
           if #available(iOS 14.0, *) {
             WidgetCenter.shared.reloadAllTimelines()
+            print("[AppDelegate] All widget timelines reloaded")
           }
           result(nil)
 

@@ -6,6 +6,7 @@ import 'package:holyverso/core/l10n/app_localizations.dart';
 import 'package:holyverso/core/router/app_router.dart';
 import 'package:holyverso/core/theme/app_theme.dart';
 import 'package:holyverso/data/auth/token_storage.dart';
+import 'package:holyverso/data/widget/widget_verse_storage.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -22,11 +23,40 @@ Future<void> main() async {
   runApp(const ProviderScope(child: HolyVersoApp()));
 }
 
-class HolyVersoApp extends ConsumerWidget {
+class HolyVersoApp extends ConsumerStatefulWidget {
   const HolyVersoApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HolyVersoApp> createState() => _HolyVersoAppState();
+}
+
+class _HolyVersoAppState extends ConsumerState<HolyVersoApp>
+    with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+
+    // Cuando la app vuelve al primer plano, refrescar el widget
+    if (state == AppLifecycleState.resumed) {
+      debugPrint('[AppLifecycle] App resumed, refreshing widgets...');
+      ref.read(widgetVerseStorageProvider).refreshWidgets();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final router = ref.watch(appRouterProvider);
 
     return MaterialApp.router(
