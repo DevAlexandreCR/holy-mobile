@@ -26,20 +26,21 @@ class WidgetUpdateWorker(
     companion object {
         private const val TAG = "WidgetUpdateWorker"
         private const val WORK_NAME = "bible_widget_daily_update"
+        private const val WORK_NAME_RETRY = "bible_widget_retry_update"
         private const val PREFS_NAME = "bible_widget_prefs"
         private const val KEY_WIDGET_VERSE = "widgetVerse"
         private const val KEY_AUTH_TOKEN = "FlutterSecureStorage"
         private const val KEY_JWT_TOKEN = "jwt_token"
 
         fun schedule(context: Context) {
-            // Calcular tiempo hasta las 6 AM del siguiente día
+            // Calcular tiempo hasta las 5 AM del siguiente día
             val currentTime = Calendar.getInstance()
             val targetTime = Calendar.getInstance().apply {
-                set(Calendar.HOUR_OF_DAY, 6)
+                set(Calendar.HOUR_OF_DAY, 5)
                 set(Calendar.MINUTE, 0)
                 set(Calendar.SECOND, 0)
                 
-                // Si ya pasaron las 6 AM, programar para mañana
+                // Si ya pasaron las 5 AM, programar para mañana
                 if (before(currentTime)) {
                     add(Calendar.DAY_OF_MONTH, 1)
                 }
@@ -60,7 +61,21 @@ class WidgetUpdateWorker(
                 updateRequest
             )
             
-            Log.d(TAG, "Widget daily update scheduled for 6:00 AM. Initial delay: ${initialDelay / 1000 / 60} minutes")
+            Log.d(TAG, "Widget daily update scheduled for 5:00 AM. Initial delay: ${initialDelay / 1000 / 60} minutes")
+        }
+        
+        fun scheduleOneTimeUpdate(context: Context, delayHours: Long) {
+            val updateRequest = androidx.work.OneTimeWorkRequestBuilder<WidgetUpdateWorker>()
+                .setInitialDelay(delayHours, TimeUnit.HOURS)
+                .build()
+
+            WorkManager.getInstance(context).enqueueUniqueWork(
+                WORK_NAME_RETRY,
+                androidx.work.ExistingWorkPolicy.REPLACE,
+                updateRequest
+            )
+            
+            Log.d(TAG, "Widget retry update scheduled in $delayHours hour(s)")
         }
 
         fun cancel(context: Context) {
@@ -71,23 +86,38 @@ class WidgetUpdateWorker(
     override suspend fun doWork(): Result {
         return try {
             Log.d(TAG, "Starting daily verse fetch...")
-            fetchAndUpdateVerse()
+            val shouldRetry = fetchAndUpdateVerse()
+            
+            if (shouldRetry) {
+                // Programar reintento en 1 hora
+                Log.d(TAG, "Verse not loaded, scheduling retry in 1 hour")
+                scheduleOneTimeUpdate(applicationContext, 1)
+            }
+            
             Result.success()
         } catch (e: Exception) {
             Log.e(TAG, "Error fetching daily verse", e)
+            // En caso de error, reintentar en 1 hora
+            scheduleOneTimeUpdate(applicationContext, 1)
             Result.retry()
         }
     }
 
-    private suspend fun fetchAndUpdateVerse() = withContext(Dispatchers.IO) {
+    private suspend fun fetchAndUpdateVerse(): Boolean = withContext(Dispatchers.IO) {
         try {
+            // Verificar si ya tenemos el verso del día actual
+            if (hasVerseForToday()) {
+                Log.d(TAG, "Already have verse for today")
+                return@withContext false // No necesita reintentar
+            }
+            
             // Obtener el token JWT de SharedPreferences
             val authPrefs = applicationContext.getSharedPreferences(KEY_AUTH_TOKEN, Context.MODE_PRIVATE)
             val jwtToken = authPrefs.getString(KEY_JWT_TOKEN, null)
             
             if (jwtToken.isNullOrEmpty()) {
-                Log.w(TAG, "No JWT token found, skipping verse fetch")
-                return@withContext
+                Log.w(TAG, "No JWT token found, will retry in 1 hour")
+                return@withContext true // Reintentar en 1 hora
             }
 
             // Obtener la URL base de la API
@@ -140,9 +170,26 @@ class WidgetUpdateWorker(
 
             // Actualizar los widgets
             updateWidgets()
+            
+            return@withContext false // No necesita reintentar, se cargó exitosamente
         } catch (e: Exception) {
             Log.e(TAG, "Error in fetchAndUpdateVerse", e)
-            throw e
+            return@withContext true // Reintentar en 1 hora
+        }
+    }
+    
+    private fun hasVerseForToday(): Boolean {
+        return try {
+            val prefs = applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            val verseJson = prefs.getString(KEY_WIDGET_VERSE, null) ?: return false
+            
+            val json = JSONObject(verseJson)
+            val verseDate = json.getString("date")
+            val today = LocalDate.now().toString()
+            
+            verseDate == today
+        } catch (e: Exception) {
+            false
         }
     }
 

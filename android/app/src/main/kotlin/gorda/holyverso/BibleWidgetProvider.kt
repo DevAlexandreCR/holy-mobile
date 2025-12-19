@@ -20,6 +20,9 @@ class BibleWidgetProvider : AppWidgetProvider() {
         appWidgetManager: AppWidgetManager,
         appWidgetIds: IntArray
     ) {
+        // Verificar si necesitamos actualizar el verso
+        checkAndScheduleUpdate(context)
+        
         for (appWidgetId in appWidgetIds) {
             updateAppWidget(context, appWidgetManager, appWidgetId)
         }
@@ -37,6 +40,30 @@ class BibleWidgetProvider : AppWidgetProvider() {
         WidgetUpdateWorker.cancel(context)
     }
 
+    private fun checkAndScheduleUpdate(context: Context) {
+        val verse = readWidgetVerse(context)
+        val currentHour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
+        
+        // Si es antes de las 5am, esperar hasta las 5am
+        if (currentHour < 5) {
+            return
+        }
+        
+        // Si después de las 5am y no hay verso del día, programar actualización en 1 hora
+        if (verse == null || !isVerseFromToday(verse)) {
+            WidgetUpdateWorker.scheduleOneTimeUpdate(context, 1)
+        }
+    }
+    
+    private fun isVerseFromToday(verse: WidgetVerse): Boolean {
+        return try {
+            val today = java.time.LocalDate.now().toString()
+            verse.date == today
+        } catch (e: Exception) {
+            false
+        }
+    }
+
     private fun updateAppWidget(
         context: Context,
         appWidgetManager: AppWidgetManager,
@@ -46,8 +73,9 @@ class BibleWidgetProvider : AppWidgetProvider() {
         
         // Leer el verso guardado
         val verse = readWidgetVerse(context)
+        val isVerseValid = verse != null && isVerseFromToday(verse)
         
-        if (verse != null) {
+        if (isVerseValid) {
             views.setTextViewText(R.id.widget_verse_text, verse.text)
             views.setTextViewText(R.id.widget_reference, verse.reference)
             views.setTextViewText(R.id.widget_version, verse.versionName)
