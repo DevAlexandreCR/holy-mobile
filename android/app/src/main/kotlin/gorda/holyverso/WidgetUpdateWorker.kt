@@ -143,13 +143,13 @@ class WidgetUpdateWorker(
             
             if (!response.isSuccessful) {
                 Log.e(TAG, "API request failed: ${response.code}")
-                return@withContext
+                return@withContext true // Reintentar en 1 hora
             }
 
             val responseBody = response.body?.string()
             if (responseBody.isNullOrEmpty()) {
                 Log.e(TAG, "Empty response from API")
-                return@withContext
+                return@withContext true // Reintentar en 1 hora
             }
 
             // Parsear la respuesta
