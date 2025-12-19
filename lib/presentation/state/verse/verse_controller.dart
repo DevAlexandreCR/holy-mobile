@@ -38,6 +38,16 @@ class VerseController extends Notifier<VerseState> {
       return;
     }
 
+    // Check if user has selected a Bible version
+    if (authState.preferredVersionId == null) {
+      // Don't make API call, just mark as no version selected
+      state = const VerseState(
+        isLoading: false,
+        errorMessage: null, // No error, just no version selected
+      );
+      return;
+    }
+
     state = state.copyWith(isLoading: true, clearError: true);
 
     try {
@@ -47,12 +57,17 @@ class VerseController extends Notifier<VerseState> {
       state = state.copyWith(verse: verse, isLoading: false);
       unawaited(_handleAfterFetch(verse));
     } catch (error) {
-      // Check if it's a 404 error (no versions configured)
+      // Check if it's a 404 or NO_VERSION_SELECTED error
       final is404 = error is DioException && error.response?.statusCode == 404;
+      final isNoVersionError =
+          error is DioException &&
+          error.response?.statusCode == 400 &&
+          error.response?.data is Map &&
+          error.response?.data['error']?['code'] == 'NO_VERSION_SELECTED';
 
       state = state.copyWith(
         isLoading: false,
-        errorMessage: is404 ? null : _mapError(error),
+        errorMessage: (is404 || isNoVersionError) ? null : _mapError(error),
       );
     }
   }
