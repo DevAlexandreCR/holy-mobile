@@ -245,17 +245,18 @@ class VerseImageCard extends StatelessWidget {
   List<Widget> _buildStarryBackground() {
     final random = math.Random(42); // Fixed seed for consistency in images
     final stars = <Widget>[];
-    
+
     // Create 200 stars (más estrellas)
     for (int i = 0; i < 200; i++) {
       final size = random.nextDouble() * 3.5 + 1.0; // Tamaños más grandes
       final isGolden = random.nextDouble() > 0.65; // 35% golden stars
-      final opacity = random.nextDouble() * 0.8 + 0.5; // Más opacas y brillantes
-      
+      final opacity =
+          random.nextDouble() * 0.8 + 0.5; // Más opacas y brillantes
+
       final color = isGolden
           ? AppColors.holyGold.withValues(alpha: opacity)
           : Colors.white.withValues(alpha: opacity);
-      
+
       stars.add(
         Positioned(
           top: random.nextDouble() * 1920,
@@ -268,14 +269,14 @@ class VerseImageCard extends StatelessWidget {
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: isGolden 
+                  color: isGolden
                       ? AppColors.holyGold.withValues(alpha: 1.0)
                       : Colors.white.withValues(alpha: 1.0),
                   blurRadius: size * 5, // Más brillo
                   spreadRadius: 0,
                 ),
                 BoxShadow(
-                  color: isGolden 
+                  color: isGolden
                       ? AppColors.holyGold.withValues(alpha: 0.8)
                       : Colors.white.withValues(alpha: 0.7),
                   blurRadius: size * 8, // Segundo nivel de brillo
@@ -293,7 +294,7 @@ class VerseImageCard extends StatelessWidget {
         ),
       );
     }
-    
+
     return stars;
   }
 }
