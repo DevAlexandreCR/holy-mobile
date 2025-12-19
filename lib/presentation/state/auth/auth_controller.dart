@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:holyverso/core/l10n/app_localizations.dart';
 import 'package:holyverso/data/auth/auth_repository.dart';
 import 'package:holyverso/data/auth/models/auth_payload.dart';
@@ -188,6 +189,37 @@ class AuthController extends Notifier<AuthState> {
       isUpdatingSettings: false,
       errorMessage: null,
     );
+
+    // Detectar y enviar timezone automáticamente si no está configurado
+    _autoUpdateTimezoneIfNeeded();
+  }
+
+  /// Detecta el timezone del dispositivo y lo envía al backend si no está configurado
+  Future<void> _autoUpdateTimezoneIfNeeded() async {
+    try {
+      // Verificar si el usuario ya tiene un timezone configurado
+      if (state.settings?.timezone != null &&
+          state.settings!.timezone!.isNotEmpty) {
+        debugPrint('[Auth] Timezone already set: ${state.settings!.timezone}');
+        return;
+      }
+
+      // Obtener el timezone del dispositivo en formato IANA (e.g., 'America/Bogota')
+      final String deviceTimezone = await FlutterTimezone.getLocalTimezone();
+
+      debugPrint('[Auth] Auto-updating timezone to: $deviceTimezone');
+
+      // Enviar al backend sin bloquear la UI
+      final updatedSettings = await _repository.updateTimezone(deviceTimezone);
+
+      // Actualizar el estado con el nuevo timezone
+      state = state.copyWith(settings: updatedSettings);
+
+      debugPrint('[Auth] Timezone updated successfully');
+    } catch (error) {
+      // No mostramos error al usuario, es una operación en background
+      debugPrint('[Auth] Failed to auto-update timezone: $error');
+    }
   }
 
   String _mapError(Object error) {

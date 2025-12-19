@@ -74,6 +74,17 @@ class AuthApiClient {
     final data = rawData is Map ? rawData['data'] ?? rawData : rawData;
     return UserSettings.fromMap(Map<String, dynamic>.from(data as Map));
   }
+
+  Future<UserSettings> updateTimezone(String timezone) async {
+    final response = await _dio.put(
+      '/user/settings/timezone',
+      data: {'timezone': timezone},
+    );
+
+    final rawData = response.data;
+    final data = rawData is Map ? rawData['data'] ?? rawData : rawData;
+    return UserSettings.fromMap(Map<String, dynamic>.from(data as Map));
+  }
 }
 
 final authApiClientProvider = Provider<AuthApiClient>((ref) {

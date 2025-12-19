@@ -80,6 +80,10 @@ class AuthRepository {
     return _client.updateWidgetFontSize(fontSize);
   }
 
+  Future<UserSettings> updateTimezone(String timezone) {
+    return _client.updateTimezone(timezone);
+  }
+
   Future<void> _persistToken(String? token) async {
     if (token == null || token.isEmpty) {
       throw StateError('El servidor no retornó un token de acceso.');
