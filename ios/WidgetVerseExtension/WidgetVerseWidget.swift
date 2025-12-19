@@ -115,14 +115,50 @@ struct WidgetVerseProvider: TimelineProvider {
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<WidgetVerseEntry>) -> Void) {
+        let now = Date()
+        let calendar = Calendar.current
+        let currentHour = calendar.component(.hour, from: now)
+        
+        // Verificar si el verso guardado es del día actual
         let savedVerse = loadSavedVerse()
+        let isVerseFromToday = isVerseCurrentDate(savedVerse)
+        
+        // Si antes de las 5am, no hay verso válido, mostrar placeholder y esperar hasta las 5am
+        if currentHour < 5 {
+            let entry = WidgetVerseEntry(
+                date: now,
+                verse: isVerseFromToday ? savedVerse : nil,
+                isPlaceholder: !isVerseFromToday
+            )
+            
+            // Próxima actualización a las 5am de hoy
+            let nextRefresh = calendar.date(bySettingHour: 5, minute: 0, second: 0, of: now) ?? now.addingTimeInterval(3600)
+            completion(Timeline(entries: [entry], policy: .after(nextRefresh)))
+            return
+        }
+        
+        // Si ya pasó las 5am y no hay verso del día actual, actualizar cada hora
+        if !isVerseFromToday {
+            let entry = WidgetVerseEntry(
+                date: now,
+                verse: nil,
+                isPlaceholder: true
+            )
+            
+            // Próxima actualización en 1 hora para volver a verificar
+            let nextRefresh = calendar.date(byAdding: .hour, value: 1, to: now) ?? now.addingTimeInterval(3600)
+            completion(Timeline(entries: [entry], policy: .after(nextRefresh)))
+            return
+        }
+        
+        // Hay verso del día actual, mostrar y actualizar cada 6 horas
         let entry = WidgetVerseEntry(
-            date: Date(),
+            date: now,
             verse: savedVerse,
-            isPlaceholder: savedVerse == nil
+            isPlaceholder: false
         )
-        let refreshDate = Calendar.current.date(byAdding: .hour, value: 12, to: Date()) ?? Date().addingTimeInterval(12 * 3600)
-        completion(Timeline(entries: [entry], policy: .after(refreshDate)))
+        let nextRefresh = calendar.date(byAdding: .hour, value: 6, to: now) ?? now.addingTimeInterval(6 * 3600)
+        completion(Timeline(entries: [entry], policy: .after(nextRefresh)))
     }
 
     private func loadSavedVerse() -> WidgetVerseModel? {
@@ -133,6 +169,22 @@ struct WidgetVerseProvider: TimelineProvider {
         else { return nil }
 
         return try? JSONDecoder().decode(WidgetVerseModel.self, from: data)
+    }
+    
+    private func isVerseCurrentDate(_ verse: WidgetVerseModel?) -> Bool {
+        guard let verse = verse else { return false }
+        
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd"
+        
+        guard let verseDate = dateFormatter.date(from: verse.date) else {
+            return false
+        }
+        
+        let today = dateFormatter.string(from: Date())
+        let verseDateString = dateFormatter.string(from: verseDate)
+        
+        return today == verseDateString
     }
 }
 

@@ -21,21 +21,27 @@ class DailyVerseFetchTask {
         }
     }
     
-    func scheduleNextFetch() {
+    func scheduleNextFetch(retryInHour: Bool = false) {
         let request = BGAppRefreshTaskRequest(identifier: taskIdentifier)
-        
-        // Programar para las 6:00 AM del siguiente día
         let calendar = Calendar.current
-        var components = calendar.dateComponents([.year, .month, .day], from: Date())
-        components.hour = 6
-        components.minute = 0
-        components.second = 0
         
-        if let targetDate = calendar.date(from: components), targetDate < Date() {
-            // Si ya pasaron las 6 AM, programar para mañana
-            request.earliestBeginDate = calendar.date(byAdding: .day, value: 1, to: targetDate)
+        if retryInHour {
+            // Si hay que reintentar, programar en 1 hora
+            request.earliestBeginDate = calendar.date(byAdding: .hour, value: 1, to: Date())
+            print("[DailyVerseFetchTask] Retry scheduled in 1 hour")
         } else {
-            request.earliestBeginDate = calendar.date(from: components)
+            // Programar para las 5:00 AM del siguiente día (o de hoy si aún no son las 5am)
+            var components = calendar.dateComponents([.year, .month, .day], from: Date())
+            components.hour = 5
+            components.minute = 0
+            components.second = 0
+            
+            if let targetDate = calendar.date(from: components), targetDate < Date() {
+                // Si ya pasaron las 5 AM, programar para mañana
+                request.earliestBeginDate = calendar.date(byAdding: .day, value: 1, to: targetDate)
+            } else {
+                request.earliestBeginDate = calendar.date(from: components)
+            }
         }
         
         do {
@@ -49,38 +55,54 @@ class DailyVerseFetchTask {
     private func handleDailyVerseFetch(task: BGAppRefreshTask) {
         print("[DailyVerseFetchTask] Starting daily verse fetch...")
         
-        // Programar la siguiente ejecución
-        scheduleNextFetch()
-        
         // Crear una tarea para manejar la expiración
         task.expirationHandler = {
             print("[DailyVerseFetchTask] Task expired before completion")
+            self.scheduleNextFetch(retryInHour: true) // Reintentar en 1 hora
         }
         
         // Ejecutar la petición
         Task {
             do {
-                try await fetchAndSaveDailyVerse()
+                let shouldRetry = try await fetchAndSaveDailyVerse()
+                
+                if shouldRetry {
+                    // Si no se cargó el verso (falta token o sin conexión), reintentar en 1 hora
+                    print("[DailyVerseFetchTask] Verse not loaded, will retry in 1 hour")
+                    scheduleNextFetch(retryInHour: true)
+                } else {
+                    // Si se cargó exitosamente, programar para mañana a las 5am
+                    print("[DailyVerseFetchTask] Task completed successfully, scheduled for tomorrow")
+                    scheduleNextFetch(retryInHour: false)
+                }
+                
                 task.setTaskCompleted(success: true)
-                print("[DailyVerseFetchTask] Task completed successfully")
             } catch {
                 print("[DailyVerseFetchTask] Task failed: \(error)")
+                // En caso de error, reintentar en 1 hora
+                scheduleNextFetch(retryInHour: true)
                 task.setTaskCompleted(success: false)
             }
         }
     }
     
-    private func fetchAndSaveDailyVerse() async throws {
+    private func fetchAndSaveDailyVerse() async throws -> Bool {
+        // Verificar si ya tenemos el verso del día actual
+        if hasVerseForToday() {
+            print("[DailyVerseFetchTask] Already have verse for today")
+            return false // No necesita reintentar
+        }
+        
         // Obtener el token JWT de Keychain
         guard let jwtToken = getJWTToken() else {
             print("[DailyVerseFetchTask] No JWT token found")
-            return
+            return true // Reintentar en 1 hora por si el usuario inicia sesión
         }
         
         // Obtener la API URL guardada
         guard let apiBaseUrl = getApiUrl() else {
             print("[DailyVerseFetchTask] No API URL found")
-            return
+            return true // Reintentar en 1 hora
         }
         
         // Crear la URL
@@ -143,6 +165,23 @@ class DailyVerseFetchTask {
         }
         
         print("[DailyVerseFetchTask] Verse saved and widgets updated for \(today)")
+        return false // No necesita reintentar, se cargó exitosamente
+    }
+    
+    private func hasVerseForToday() -> Bool {
+        guard let sharedDefaults = UserDefaults(suiteName: appGroupId),
+              let jsonString = sharedDefaults.string(forKey: widgetVerseKey),
+              let data = jsonString.data(using: .utf8),
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let dateString = json["date"] as? String else {
+            return false
+        }
+        
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd"
+        let today = dateFormatter.string(from: Date())
+        
+        return dateString == today
     }
     
     private func getJWTToken() -> String? {
