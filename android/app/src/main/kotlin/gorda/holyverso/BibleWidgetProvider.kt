@@ -73,9 +73,11 @@ class BibleWidgetProvider : AppWidgetProvider() {
         
         // Leer el verso guardado
         val verse = readWidgetVerse(context)
-        val isVerseValid = verse != null && isVerseFromToday(verse)
+        android.util.Log.d("BibleWidgetProvider", "Updating widget $appWidgetId, verse: ${verse?.reference ?: "null"}")
         
-        if (isVerseValid) {
+        // Mostrar el verso si existe, sin importar la fecha
+        if (verse != null) {
+            android.util.Log.d("BibleWidgetProvider", "Showing verse: ${verse.text}")
             views.setTextViewText(R.id.widget_verse_text, verse.text)
             views.setTextViewText(R.id.widget_reference, verse.reference)
             views.setTextViewText(R.id.widget_version, verse.versionName)
@@ -83,8 +85,9 @@ class BibleWidgetProvider : AppWidgetProvider() {
             // Aplicar tamaño de fuente dinámico
             views.setFloat(R.id.widget_verse_text, "setTextSize", verse.fontSize)
         } else {
-            views.setTextViewText(R.id.widget_verse_text, "Tap to open HolyVerso")
-            views.setTextViewText(R.id.widget_reference, "Verse of the day")
+            android.util.Log.d("BibleWidgetProvider", "No verse found, showing placeholder")
+            views.setTextViewText(R.id.widget_verse_text, "Abre HolyVerso para actualizar el versículo")
+            views.setTextViewText(R.id.widget_reference, "")
             views.setTextViewText(R.id.widget_version, "")
         }
 
@@ -108,8 +111,10 @@ class BibleWidgetProvider : AppWidgetProvider() {
         return try {
             val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
             val verseJson = prefs.getString(KEY_WIDGET_VERSE, null) ?: return null
+            android.util.Log.d("BibleWidgetProvider", "Read verse from prefs: $verseJson")
             parseWidgetVerse(verseJson)
         } catch (e: Exception) {
+            android.util.Log.e("BibleWidgetProvider", "Error reading verse", e)
             null
         }
     }

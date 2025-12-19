@@ -65,8 +65,9 @@ class WidgetUpdateWorker(
         }
         
         fun scheduleOneTimeUpdate(context: Context, delayHours: Long) {
+            val delayTime = if (delayHours == 0L) 5 else (delayHours * 3600)
             val updateRequest = androidx.work.OneTimeWorkRequestBuilder<WidgetUpdateWorker>()
-                .setInitialDelay(delayHours, TimeUnit.HOURS)
+                .setInitialDelay(delayTime, if (delayHours == 0L) TimeUnit.SECONDS else TimeUnit.SECONDS)
                 .build()
 
             WorkManager.getInstance(context).enqueueUniqueWork(
@@ -75,7 +76,11 @@ class WidgetUpdateWorker(
                 updateRequest
             )
             
-            Log.d(TAG, "Widget retry update scheduled in $delayHours hour(s)")
+            if (delayHours == 0L) {
+                Log.d(TAG, "Widget immediate update requested")
+            } else {
+                Log.d(TAG, "Widget retry update scheduled in $delayHours hour(s)")
+            }
         }
 
         fun cancel(context: Context) {

@@ -21,11 +21,15 @@ class DailyVerseFetchTask {
         }
     }
     
-    func scheduleNextFetch(retryInHour: Bool = false) {
+    func scheduleNextFetch(retryInHour: Bool = false, immediate: Bool = false) {
         let request = BGAppRefreshTaskRequest(identifier: taskIdentifier)
         let calendar = Calendar.current
         
-        if retryInHour {
+        if immediate {
+            // Ejecutar lo antes posible (en unos segundos)
+            request.earliestBeginDate = Date(timeIntervalSinceNow: 5)
+            print("[DailyVerseFetchTask] Immediate update requested")
+        } else if retryInHour {
             // Si hay que reintentar, programar en 1 hora
             request.earliestBeginDate = calendar.date(byAdding: .hour, value: 1, to: Date())
             print("[DailyVerseFetchTask] Retry scheduled in 1 hour")

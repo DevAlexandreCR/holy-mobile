@@ -53,10 +53,22 @@ private enum WidgetSharedConfig {
             return
           }
 
+          print("[AppDelegate] Saving verse to App Group...")
+          print("[AppDelegate] JSON: \(verseJson)")
           sharedDefaults.set(verseJson, forKey: WidgetSharedConfig.widgetVerseKey)
-          sharedDefaults.synchronize()
+          let saved = sharedDefaults.synchronize()
+          print("[AppDelegate] Synchronize result: \(saved)")
+          
+          // Verificar que se guardó correctamente
+          if let readBack = sharedDefaults.string(forKey: WidgetSharedConfig.widgetVerseKey) {
+            print("[AppDelegate] Verification - Data saved correctly")
+          } else {
+            print("[AppDelegate] ERROR - Data not saved!")
+          }
+          
           if #available(iOS 14.0, *) {
             WidgetCenter.shared.reloadAllTimelines()
+            print("[AppDelegate] Widgets reloaded")
           }
           result(nil)
 
@@ -66,6 +78,13 @@ private enum WidgetSharedConfig {
         case "refreshWidgets":
           if #available(iOS 14.0, *) {
             WidgetCenter.shared.reloadAllTimelines()
+          }
+          result(nil)
+
+        case "requestImmediateUpdate":
+          // Solicitar una actualización inmediata del background task
+          if #available(iOS 13.0, *) {
+            DailyVerseFetchTask.shared.scheduleNextFetch(retryInHour: false, immediate: true)
           }
           result(nil)
 

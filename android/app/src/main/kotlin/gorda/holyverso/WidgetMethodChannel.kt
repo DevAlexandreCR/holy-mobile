@@ -32,6 +32,10 @@ class WidgetMethodChannel(private val context: Context) : MethodChannel.MethodCa
                 refreshWidgets()
                 result.success(null)
             }
+            "requestImmediateUpdate" -> {
+                requestImmediateUpdate()
+                result.success(null)
+            }
             else -> {
                 result.notImplemented()
             }
@@ -41,6 +45,7 @@ class WidgetMethodChannel(private val context: Context) : MethodChannel.MethodCa
     private fun saveVerse(verseJson: String) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         prefs.edit().putString(KEY_WIDGET_VERSE, verseJson).apply()
+        android.util.Log.d("WidgetMethodChannel", "Verse saved: $verseJson")
     }
 
     private fun readVerse(): String? {
@@ -56,7 +61,13 @@ class WidgetMethodChannel(private val context: Context) : MethodChannel.MethodCa
         val widgetIds = widgetManager.getAppWidgetIds(
             ComponentName(context, BibleWidgetProvider::class.java)
         )
+        android.util.Log.d("WidgetMethodChannel", "Refreshing ${widgetIds.size} widgets")
         intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, widgetIds)
         context.sendBroadcast(intent)
+    }
+
+    private fun requestImmediateUpdate() {
+        // Programar una actualización inmediata del WidgetUpdateWorker
+        WidgetUpdateWorker.scheduleOneTimeUpdate(context, 0) // 0 horas = inmediato
     }
 }

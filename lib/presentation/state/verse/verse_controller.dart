@@ -51,11 +51,13 @@ class VerseController extends Notifier<VerseState> {
     state = state.copyWith(isLoading: true, clearError: true);
 
     try {
-      final verse = await _repository.fetchTodayVerse(
+      final result = await _repository.fetchTodayVerse(
         forceRefresh: forceRefresh,
       );
-      state = state.copyWith(verse: verse, isLoading: false);
-      unawaited(_handleAfterFetch(verse));
+      state = state.copyWith(verse: result.verse, isLoading: false);
+      unawaited(
+        _handleAfterFetch(result.verse, wasFromNetwork: result.wasFromNetwork),
+      );
     } catch (error) {
       // Check if it's a 404 or NO_VERSION_SELECTED error
       final is404 = error is DioException && error.response?.statusCode == 404;
@@ -72,10 +74,19 @@ class VerseController extends Notifier<VerseState> {
     }
   }
 
-  Future<void> _handleAfterFetch(VerseOfTheDay verse) async {
+  Future<void> _handleAfterFetch(
+    VerseOfTheDay verse, {
+    required bool wasFromNetwork,
+  }) async {
     final authState = ref.read(authControllerProvider);
     final fontSize = authState.settings?.widgetFontSize.size ?? 16.0;
-    await _widgetSyncService.syncLatestVerse(verse, fontSize: fontSize);
+    // Siempre sincronizar y solicitar actualización inmediata del widget
+    // Esto asegura que el widget se actualice incluso si ya había datos guardados
+    await _widgetSyncService.syncLatestVerse(
+      verse,
+      fontSize: fontSize,
+      requestImmediateUpdate: true, // Siempre solicitar actualización
+    );
   }
 
   String _mapError(Object error) {

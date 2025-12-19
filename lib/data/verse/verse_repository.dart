@@ -11,12 +11,14 @@ class VerseRepository {
   final WidgetVerseStorage _storage;
   VerseOfTheDay? _cache;
 
-  Future<VerseOfTheDay> fetchTodayVerse({bool forceRefresh = false}) async {
+  Future<({VerseOfTheDay verse, bool wasFromNetwork})> fetchTodayVerse({
+    bool forceRefresh = false,
+  }) async {
     // Si no es forceRefresh, verificar primero si hay un verso del día actual guardado
     if (!forceRefresh) {
       // Primero verificar el cache en memoria
       if (_cache != null) {
-        return _cache!;
+        return (verse: _cache!, wasFromNetwork: false);
       }
 
       // Luego verificar si hay un verso del día actual en el storage
@@ -24,7 +26,7 @@ class VerseRepository {
       if (todayVerse != null) {
         final verse = _widgetVerseToVerseOfTheDay(todayVerse);
         _cache = verse;
-        return verse;
+        return (verse: verse, wasFromNetwork: false);
       }
     }
 
@@ -32,10 +34,10 @@ class VerseRepository {
     try {
       final verse = await _client.getTodayVerse();
       _cache = verse;
-      return verse;
+      return (verse: verse, wasFromNetwork: true);
     } catch (error) {
       if (_cache != null) {
-        return _cache!;
+        return (verse: _cache!, wasFromNetwork: false);
       }
       rethrow;
     }

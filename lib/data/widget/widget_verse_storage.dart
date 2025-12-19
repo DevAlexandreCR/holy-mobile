@@ -12,9 +12,12 @@ class WidgetVerseStorage {
 
   Future<void> saveVerse(WidgetVerse verse) async {
     try {
-      await _channel.invokeMethod<void>('saveVerse', verse.toJsonString());
+      final jsonString = verse.toJsonString();
+      debugPrint('[WidgetStorage] Saving verse: $jsonString');
+      await _channel.invokeMethod<void>('saveVerse', jsonString);
+      debugPrint('[WidgetStorage] Verse saved successfully');
     } catch (error, stackTrace) {
-      debugPrint('Failed to save verse for widgets: $error');
+      debugPrint('[WidgetStorage] Failed to save verse: $error');
       debugPrint('$stackTrace');
     }
   }
@@ -57,9 +60,21 @@ class WidgetVerseStorage {
 
   Future<void> refreshWidgets() async {
     try {
+      debugPrint('[WidgetStorage] Refreshing widgets...');
       await _channel.invokeMethod<void>('refreshWidgets');
+      debugPrint('[WidgetStorage] Widgets refreshed successfully');
     } catch (error, stackTrace) {
-      debugPrint('Failed to request widget refresh: $error');
+      debugPrint('[WidgetStorage] Failed to request widget refresh: $error');
+      debugPrint('$stackTrace');
+    }
+  }
+
+  /// Solicita una actualización inmediata del widget desde el background worker
+  Future<void> requestImmediateWidgetUpdate() async {
+    try {
+      await _channel.invokeMethod<void>('requestImmediateUpdate');
+    } catch (error, stackTrace) {
+      debugPrint('Failed to request immediate widget update: $error');
       debugPrint('$stackTrace');
     }
   }

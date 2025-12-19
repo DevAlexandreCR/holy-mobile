@@ -117,48 +117,33 @@ struct WidgetVerseProvider: TimelineProvider {
     func getTimeline(in context: Context, completion: @escaping (Timeline<WidgetVerseEntry>) -> Void) {
         let now = Date()
         let calendar = Calendar.current
-        let currentHour = calendar.component(.hour, from: now)
         
-        // Verificar si el verso guardado es del día actual
+        // Cargar el verso guardado
         let savedVerse = loadSavedVerse()
-        let isVerseFromToday = isVerseCurrentDate(savedVerse)
         
-        // Si antes de las 5am, no hay verso válido, mostrar placeholder y esperar hasta las 5am
-        if currentHour < 5 {
+        // Si hay un verso guardado, mostrarlo siempre (sin importar fecha)
+        if let savedVerse = savedVerse {
+            print("[Widget] Showing saved verse: \(savedVerse.reference)")
             let entry = WidgetVerseEntry(
                 date: now,
-                verse: isVerseFromToday ? savedVerse : nil,
-                isPlaceholder: !isVerseFromToday
+                verse: savedVerse,
+                isPlaceholder: false
             )
-            
-            // Próxima actualización a las 5am de hoy
-            let nextRefresh = calendar.date(bySettingHour: 5, minute: 0, second: 0, of: now) ?? now.addingTimeInterval(3600)
+            // Actualizar cada 6 horas
+            let nextRefresh = calendar.date(byAdding: .hour, value: 6, to: now) ?? now.addingTimeInterval(6 * 3600)
             completion(Timeline(entries: [entry], policy: .after(nextRefresh)))
-            return
-        }
-        
-        // Si ya pasó las 5am y no hay verso del día actual, actualizar cada hora
-        if !isVerseFromToday {
+        } else {
+            // No hay verso guardado, mostrar placeholder
+            print("[Widget] No verse found, showing placeholder")
             let entry = WidgetVerseEntry(
                 date: now,
                 verse: nil,
                 isPlaceholder: true
             )
-            
-            // Próxima actualización en 1 hora para volver a verificar
+            // Actualizar cada hora para volver a verificar
             let nextRefresh = calendar.date(byAdding: .hour, value: 1, to: now) ?? now.addingTimeInterval(3600)
             completion(Timeline(entries: [entry], policy: .after(nextRefresh)))
-            return
         }
-        
-        // Hay verso del día actual, mostrar y actualizar cada 6 horas
-        let entry = WidgetVerseEntry(
-            date: now,
-            verse: savedVerse,
-            isPlaceholder: false
-        )
-        let nextRefresh = calendar.date(byAdding: .hour, value: 6, to: now) ?? now.addingTimeInterval(6 * 3600)
-        completion(Timeline(entries: [entry], policy: .after(nextRefresh)))
     }
 
     private func loadSavedVerse() -> WidgetVerseModel? {
@@ -166,24 +151,34 @@ struct WidgetVerseProvider: TimelineProvider {
             let defaults = UserDefaults(suiteName: SharedConfig.appGroupId),
             let raw = defaults.string(forKey: SharedConfig.widgetVerseKey),
             let data = raw.data(using: .utf8)
-        else { return nil }
+        else { 
+            print("[Widget] No verse found in shared defaults")
+            return nil 
+        }
 
-        return try? JSONDecoder().decode(WidgetVerseModel.self, from: data)
+        let verse = try? JSONDecoder().decode(WidgetVerseModel.self, from: data)
+        print("[Widget] Loaded verse with date: \(verse?.date ?? "nil")")
+        return verse
     }
     
     private func isVerseCurrentDate(_ verse: WidgetVerseModel?) -> Bool {
-        guard let verse = verse else { return false }
+        guard let verse = verse else { 
+            print("[Widget] No verse to check date")
+            return false 
+        }
         
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM-dd"
         
         guard let verseDate = dateFormatter.date(from: verse.date) else {
+            print("[Widget] Could not parse verse date: \(verse.date)")
             return false
         }
         
         let today = dateFormatter.string(from: Date())
         let verseDateString = dateFormatter.string(from: verseDate)
         
+        print("[Widget] Comparing dates - Today: \(today), Verse: \(verseDateString)")
         return today == verseDateString
     }
 }
