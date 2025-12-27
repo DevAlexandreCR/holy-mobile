@@ -33,6 +33,7 @@ class AppLocalizations {
   String get genericError => _string('genericError');
   String get networkError => _string('networkError');
   String get unexpectedVerseFormat => _string('unexpectedVerseFormat');
+  String get unexpectedChapterFormat => _string('unexpectedChapterFormat');
 
   String get loginTitle => _string('loginTitle');
   String get loginHeadline => _string('loginHeadline');
@@ -84,6 +85,14 @@ class AppLocalizations {
   String get verseLoadError => _string('verseLoadError');
   String get verseRequestError => _string('verseRequestError');
   String get errorRetry => _string('errorRetry');
+  String get readFullChapter => _string('readFullChapter');
+  String get readFullChapterSubtitle => _string('readFullChapterSubtitle');
+  String get chapterReaderTitle => _string('chapterReaderTitle');
+  String get chapterLoading => _string('chapterLoading');
+  String get chapterLoadError => _string('chapterLoadError');
+  String get chapterTextSize => _string('chapterTextSize');
+  String get chapterResetText => _string('chapterResetText');
+  String get chapterRequestError => _string('chapterRequestError');
 
   String get settingsTitle => _string('settingsTitle');
   String get preferencesTitle => _string('preferencesTitle');
@@ -123,6 +132,7 @@ class AppLocalizations {
       'genericError': 'Ocurrió un error inesperado. Inténtalo nuevamente.',
       'networkError': 'Verifica tu conexión a internet.',
       'unexpectedVerseFormat': 'Formato de versículo inesperado.',
+      'unexpectedChapterFormat': 'Formato de capítulo inesperado.',
       'loginTitle': 'Iniciar sesión',
       'loginHeadline': 'Bienvenido de nuevo',
       'loginSubtitle': 'Ingresa para continuar con tu experiencia bíblica.',
@@ -170,6 +180,15 @@ class AppLocalizations {
       'verseLoadError': 'No pudimos cargar el versículo de hoy.',
       'verseRequestError':
           'No pudimos cargar el versículo. Inténtalo nuevamente.',
+      'readFullChapter': 'Leer capítulo completo',
+      'readFullChapterSubtitle': 'Abre el capítulo con controles de lectura',
+      'chapterReaderTitle': 'Capítulo completo',
+      'chapterLoading': 'Cargando capítulo...',
+      'chapterLoadError': 'No pudimos cargar el capítulo completo.',
+      'chapterTextSize': 'Tamaño del texto',
+      'chapterResetText': 'Restablecer',
+      'chapterRequestError':
+          'No pudimos cargar el capítulo. Inténtalo nuevamente.',
       'errorRetry': 'Reintentar',
       'settingsTitle': 'Configuración',
       'preferencesTitle': 'Preferencias',
@@ -198,6 +217,7 @@ class AppLocalizations {
       'genericError': 'Something went wrong. Please try again.',
       'networkError': 'Check your internet connection.',
       'unexpectedVerseFormat': 'Unexpected verse format.',
+      'unexpectedChapterFormat': 'Unexpected chapter format.',
       'loginTitle': 'Sign in',
       'loginHeadline': 'Welcome back',
       'loginSubtitle': 'Sign in to continue your Bible journey.',
@@ -244,6 +264,14 @@ class AppLocalizations {
       'shareSubject': 'Verse of the day',
       'verseLoadError': 'We could not load the verse of the day.',
       'verseRequestError': 'We could not load the verse. Please try again.',
+      'readFullChapter': 'Read full chapter',
+      'readFullChapterSubtitle': 'Open the full chapter with reading controls',
+      'chapterReaderTitle': 'Full chapter',
+      'chapterLoading': 'Loading chapter...',
+      'chapterLoadError': 'We could not load the full chapter.',
+      'chapterTextSize': 'Text size',
+      'chapterResetText': 'Reset',
+      'chapterRequestError': 'We could not load the chapter. Please try again.',
       'errorRetry': 'Retry',
       'settingsTitle': 'Settings',
       'preferencesTitle': 'Preferences',

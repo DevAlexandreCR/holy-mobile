@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:holyverso/core/l10n/app_localizations.dart';
 import 'package:holyverso/data/network/api_client.dart';
+import 'package:holyverso/domain/verse/chapter.dart';
 import 'package:holyverso/domain/verse/verse_of_the_day.dart';
 
 class VerseApiClient {
@@ -21,6 +22,19 @@ class VerseApiClient {
 
     const l10n = AppLocalizations(Locale('es'));
     throw StateError(l10n.unexpectedVerseFormat);
+  }
+
+  Future<Chapter> getTodayChapter() async {
+    final response = await _dio.get('/verse/today/chapter');
+    final rawData = response.data;
+    final data = rawData is Map ? rawData['data'] ?? rawData : rawData;
+
+    if (data is Map) {
+      return Chapter.fromMap(Map<String, dynamic>.from(data));
+    }
+
+    const l10n = AppLocalizations(Locale('es'));
+    throw StateError(l10n.unexpectedChapterFormat);
   }
 
   Future<void> likeVerse(int libraryVerseId) async {

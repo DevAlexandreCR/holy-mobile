@@ -7,6 +7,8 @@ import 'package:holyverso/core/theme/app_colors.dart';
 import 'package:holyverso/core/theme/app_design_tokens.dart';
 import 'package:holyverso/core/theme/app_text_styles.dart';
 import 'package:holyverso/domain/verse/verse_of_the_day.dart';
+import 'package:holyverso/presentation/screens/verse/chapter_reader_screen.dart';
+import 'package:holyverso/presentation/state/verse/chapter_reader_state.dart';
 import 'package:holyverso/presentation/state/verse/verse_controller.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -54,6 +56,31 @@ class _VerseOfTheDayScreenState extends ConsumerState<VerseOfTheDayScreen> {
           .read(verseControllerProvider.notifier)
           .shareVerse(verse.libraryVerseId!);
     }
+  }
+
+  void _openChapterReader(VerseOfTheDay verse) {
+    final highlight = _extractHighlightRange(verse.reference);
+    context.push(
+      '/verse/chapter',
+      extra: ChapterReaderArgs.today(highlightRange: highlight),
+    );
+  }
+
+  ChapterHighlightRange? _extractHighlightRange(String reference) {
+    final parts = reference.split(':');
+    if (parts.length < 2) return null;
+
+    final versePart = parts.last.split('-');
+    final start = int.tryParse(
+      versePart.first.replaceAll(RegExp(r'[^0-9]'), ''),
+    );
+    if (start == null) return null;
+
+    final end = versePart.length > 1
+        ? int.tryParse(versePart[1].replaceAll(RegExp(r'[^0-9]'), '')) ?? start
+        : start;
+
+    return ChapterHighlightRange(start: start, end: end);
   }
 
   Future<void> _onShareAsImage(
@@ -296,6 +323,10 @@ class _VerseOfTheDayScreenState extends ConsumerState<VerseOfTheDayScreen> {
                         ? null
                         : (rect) => _showShareOptions(verse, rect),
                   ),
+                  if (verse != null) ...[
+                    const SizedBox(height: AppSpacing.md),
+                    _ChapterEntryCard(onTap: () => _openChapterReader(verse)),
+                  ],
                   if (verseState.hasError)
                     Padding(
                       padding: const EdgeInsets.only(top: AppSpacing.md),
@@ -462,6 +493,75 @@ class _VerseCard extends StatelessWidget {
                   ),
                 ],
               ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ChapterEntryCard extends StatelessWidget {
+  const _ChapterEntryCard({this.onTap});
+
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        decoration: BoxDecoration(
+          color: AppColors.pureWhite.withValues(alpha: 0.06),
+          borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+          border: Border.all(color: AppColors.pureWhite.withValues(alpha: 0.1)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(AppSpacing.sm),
+              decoration: BoxDecoration(
+                color: AppColors.holyGold.withValues(alpha: 0.14),
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: AppColors.holyGold.withValues(alpha: 0.35),
+                ),
+              ),
+              child: const Icon(
+                Icons.menu_book_rounded,
+                color: AppColors.holyGold,
+                size: AppSizes.iconMedium,
+              ),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    l10n.readFullChapter,
+                    style: AppTextStyles.labelLarge.copyWith(
+                      color: AppColors.pureWhite,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    l10n.readFullChapterSubtitle,
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: AppColors.softMist.withValues(alpha: 0.75),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.arrow_forward_ios,
+              color: AppColors.pureWhite.withValues(alpha: 0.8),
+              size: AppSizes.iconSmall,
             ),
           ],
         ),
