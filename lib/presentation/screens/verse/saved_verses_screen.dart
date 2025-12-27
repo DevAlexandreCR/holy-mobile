@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:holyverso/core/l10n/app_localizations.dart';
+import 'package:holyverso/core/services/verse_image_service.dart';
 import 'package:holyverso/core/theme/app_colors.dart';
 import 'package:holyverso/core/theme/app_design_tokens.dart';
 import 'package:holyverso/core/theme/app_text_styles.dart';
 import 'package:holyverso/domain/verse/reference_parser.dart';
 import 'package:holyverso/domain/verse/saved_verse.dart';
+import 'package:holyverso/domain/verse/verse_of_the_day.dart';
 import 'package:holyverso/presentation/screens/verse/chapter_reader_screen.dart';
 import 'package:holyverso/presentation/state/verse/chapter_reader_state.dart';
 import 'package:holyverso/presentation/state/verse/saved_verses_controller.dart';
@@ -23,6 +25,9 @@ class SavedVersesScreen extends ConsumerStatefulWidget {
 
 class _SavedVersesScreenState extends ConsumerState<SavedVersesScreen> {
   final ScrollController _scrollController = ScrollController();
+  final VerseImageService _verseImageService = VerseImageService();
+  bool _isGeneratingImage = false;
+  int? _sharingVerseId;
 
   @override
   void initState() {
@@ -60,6 +65,172 @@ class _SavedVersesScreenState extends ConsumerState<SavedVersesScreen> {
     final day = local.day.toString().padLeft(2, '0');
     final month = local.month.toString().padLeft(2, '0');
     return '$day/$month/${local.year}';
+  }
+
+  VerseOfTheDay _toVerseOfTheDay(SavedVerse verse, String formattedDate) {
+    return VerseOfTheDay(
+      date: formattedDate,
+      versionCode: verse.versionCode,
+      versionName: verse.versionName,
+      reference: verse.reference,
+      text: verse.text,
+      libraryVerseId: verse.libraryVerseId,
+      isSaved: true,
+      theme: verse.theme.isEmpty ? null : verse.theme,
+    );
+  }
+
+  void _shareVerseAsText(SavedVerse verse, Rect? sharePositionOrigin) {
+    final l10n = context.l10n;
+    final shareText =
+        '"${verse.text}"\n${verse.reference}\n${verse.versionName} '
+        '(${verse.displayVersionCode})';
+    Share.share(
+      shareText,
+      subject: l10n.shareSubject,
+      sharePositionOrigin: sharePositionOrigin,
+    );
+    ref.read(verseControllerProvider.notifier).shareVerse(verse.libraryVerseId);
+  }
+
+  Future<void> _shareVerseAsImage(
+    SavedVerse verse,
+    String formattedDate,
+    Rect? sharePositionOrigin,
+  ) async {
+    if (_isGeneratingImage) return;
+    setState(() {
+      _isGeneratingImage = true;
+      _sharingVerseId = verse.libraryVerseId;
+    });
+
+    try {
+      final l10n = context.l10n;
+      final asVerseOfDay = _toVerseOfTheDay(verse, formattedDate);
+      await _verseImageService.shareVerseAsImage(
+        asVerseOfDay,
+        sharePositionOrigin: sharePositionOrigin,
+        subject: l10n.shareSubject,
+      );
+      ref
+          .read(verseControllerProvider.notifier)
+          .shareVerse(verse.libraryVerseId);
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(context.l10n.shareImageError),
+          backgroundColor: Colors.red.shade700,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isGeneratingImage = false;
+          _sharingVerseId = null;
+        });
+      }
+    }
+  }
+
+  void _showShareOptions(
+    SavedVerse verse,
+    String formattedDate,
+    Rect? sharePositionOrigin,
+  ) {
+    final l10n = context.l10n;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: BoxDecoration(
+          color: AppColors.midnightFaith,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 12),
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.pureWhite.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 24),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Text(
+                  l10n.shareOptionsTitle,
+                  style: AppTextStyles.headline3.copyWith(
+                    color: AppColors.pureWhite,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.holyGold.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(Icons.image_outlined, color: AppColors.holyGold),
+                ),
+                title: Text(
+                  l10n.shareAsImage,
+                  style: AppTextStyles.bodyLarge.copyWith(
+                    color: AppColors.pureWhite,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                subtitle: Text(
+                  l10n.shareAsImageDescription,
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: AppColors.softMist.withValues(alpha: 0.7),
+                  ),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  _shareVerseAsImage(verse, formattedDate, sharePositionOrigin);
+                },
+              ),
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.pureWhite.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(Icons.text_fields, color: AppColors.pureWhite),
+                ),
+                title: Text(
+                  l10n.shareAsText,
+                  style: AppTextStyles.bodyLarge.copyWith(
+                    color: AppColors.pureWhite,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                subtitle: Text(
+                  l10n.shareAsTextDescription,
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: AppColors.softMist.withValues(alpha: 0.7),
+                  ),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  _shareVerseAsText(verse, sharePositionOrigin);
+                },
+              ),
+              const SizedBox(height: 24),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -167,10 +338,14 @@ class _SavedVersesScreenState extends ConsumerState<SavedVersesScreen> {
               final verse = state.items[index];
               final isProcessing =
                   state.pendingIds.contains(verse.libraryVerseId);
+              final formattedDate = _formatDate(verse.savedAt);
+              final isSharingImage =
+                  _isGeneratingImage && _sharingVerseId == verse.libraryVerseId;
               return _SavedVerseCard(
                 verse: verse,
-                formattedDate: _formatDate(verse.savedAt),
-                onShare: () => _shareVerse(verse),
+                formattedDate: formattedDate,
+                onShare: (rect) =>
+                    _showShareOptions(verse, formattedDate, rect),
                 onUnsave: () =>
                     ref.read(savedVersesControllerProvider.notifier).toggleSave(
                           verse.libraryVerseId,
@@ -187,6 +362,7 @@ class _SavedVersesScreenState extends ConsumerState<SavedVersesScreen> {
                   );
                 },
                 isProcessing: isProcessing,
+                isSharingImage: isSharingImage,
               );
             },
             separatorBuilder: (context, index) =>
@@ -198,12 +374,6 @@ class _SavedVersesScreenState extends ConsumerState<SavedVersesScreen> {
     );
   }
 
-  void _shareVerse(SavedVerse verse) {
-    final shareText =
-        '"${verse.text}"\n${verse.reference}\n${verse.versionName} (${verse.displayVersionCode})';
-    Share.share(shareText);
-    ref.read(verseControllerProvider.notifier).shareVerse(verse.libraryVerseId);
-  }
 }
 
 class _SavedVerseCard extends StatelessWidget {
@@ -214,14 +384,16 @@ class _SavedVerseCard extends StatelessWidget {
     required this.onUnsave,
     required this.onReadChapter,
     this.isProcessing = false,
+    this.isSharingImage = false,
   });
 
   final SavedVerse verse;
   final String formattedDate;
-  final VoidCallback onShare;
+  final void Function(Rect? sharePositionOrigin) onShare;
   final VoidCallback onUnsave;
   final VoidCallback onReadChapter;
   final bool isProcessing;
+  final bool isSharingImage;
 
   @override
   Widget build(BuildContext context) {
@@ -311,40 +483,60 @@ class _SavedVerseCard extends StatelessWidget {
           const SizedBox(height: AppSpacing.md),
           Row(
             children: [
-              ElevatedButton.icon(
-                onPressed: isProcessing ? null : onReadChapter,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.holyGold.withValues(alpha: 0.18),
-                  foregroundColor: AppColors.holyGold,
-                  elevation: 0,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.md,
-                    vertical: AppSpacing.sm,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: AppBorderRadius.button,
-                    side: BorderSide(
-                      color: AppColors.holyGold.withValues(alpha: 0.35),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: isProcessing ? null : onReadChapter,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.holyGold.withValues(alpha: 0.18),
+                    foregroundColor: AppColors.holyGold,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.md,
+                      vertical: AppSpacing.sm,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: AppBorderRadius.button,
+                      side: BorderSide(
+                        color: AppColors.holyGold.withValues(alpha: 0.35),
+                      ),
                     ),
                   ),
-                ),
-                icon: const Icon(Icons.menu_book_rounded),
-                label: Text(
-                  l10n.readFullChapter,
-                  style: AppTextStyles.labelLarge.copyWith(
-                    fontWeight: FontWeight.w700,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.max,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.menu_book_rounded),
+                      const SizedBox(width: AppSpacing.xs),
+                      Flexible(
+                        child: Text(
+                          l10n.readFullChapter,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
+                          style: AppTextStyles.labelLarge.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
-              const Spacer(),
+              const SizedBox(width: AppSpacing.sm),
               _CircleAction(
                 icon: Icons.ios_share,
-                onTap: isProcessing ? null : onShare,
+                isLoading: isSharingImage,
+                onTap: isProcessing
+                    ? null
+                    : (ctx) {
+                        final sharePositionOrigin = _originFromContext(ctx);
+                        onShare(sharePositionOrigin);
+                      },
               ),
               const SizedBox(width: AppSpacing.sm),
               _CircleAction(
                 icon: Icons.bookmark_remove_outlined,
-                onTap: isProcessing ? null : onUnsave,
+                onTap: isProcessing ? null : (_) => onUnsave(),
               ),
             ],
           ),
@@ -355,10 +547,15 @@ class _SavedVerseCard extends StatelessWidget {
 }
 
 class _CircleAction extends StatelessWidget {
-  const _CircleAction({required this.icon, this.onTap});
+  const _CircleAction({
+    required this.icon,
+    this.onTap,
+    this.isLoading = false,
+  });
 
   final IconData icon;
-  final VoidCallback? onTap;
+  final void Function(BuildContext context)? onTap;
+  final bool isLoading;
 
   @override
   Widget build(BuildContext context) {
@@ -368,12 +565,35 @@ class _CircleAction extends StatelessWidget {
         shape: BoxShape.circle,
         border: Border.all(color: AppColors.pureWhite.withValues(alpha: 0.08)),
       ),
-      child: IconButton(
-        icon: Icon(icon, color: AppColors.pureWhite),
-        onPressed: onTap,
+      child: Builder(
+        builder: (buttonContext) {
+          return IconButton(
+            icon: isLoading
+                ? SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor:
+                          AlwaysStoppedAnimation<Color>(AppColors.pureWhite),
+                    ),
+                  )
+                : Icon(icon, color: AppColors.pureWhite),
+            onPressed: onTap == null || isLoading
+                ? null
+                : () => onTap!(buttonContext),
+          );
+        },
       ),
     );
   }
+}
+
+Rect? _originFromContext(BuildContext context) {
+  final renderBox = context.findRenderObject() as RenderBox?;
+  if (renderBox == null) return null;
+  final offset = renderBox.localToGlobal(Offset.zero);
+  return offset & renderBox.size;
 }
 
 class _EmptySavedState extends StatelessWidget {
