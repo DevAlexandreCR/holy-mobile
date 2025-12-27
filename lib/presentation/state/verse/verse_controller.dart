@@ -8,6 +8,7 @@ import 'package:holyverso/data/verse/verse_repository.dart';
 import 'package:holyverso/data/widget/widget_sync_service.dart';
 import 'package:holyverso/domain/verse/verse_of_the_day.dart';
 import 'package:holyverso/presentation/state/auth/auth_controller.dart';
+import 'package:holyverso/presentation/state/verse/saved_verses_controller.dart';
 import 'package:holyverso/presentation/state/verse/verse_state.dart';
 
 class VerseController extends Notifier<VerseState> {
@@ -55,6 +56,9 @@ class VerseController extends Notifier<VerseState> {
         forceRefresh: forceRefresh,
       );
       state = state.copyWith(verse: result.verse, isLoading: false);
+      ref
+          .read(savedVersesControllerProvider.notifier)
+          .syncFromTodayVerse(result.verse);
       unawaited(
         _handleAfterFetch(result.verse, wasFromNetwork: result.wasFromNetwork),
       );
@@ -115,6 +119,24 @@ class VerseController extends Notifier<VerseState> {
     } catch (error) {
       // Silently fail - no UI feedback needed for background analytics
     }
+  }
+
+  Future<void> toggleSave() async {
+    final verse = state.verse;
+    final libraryVerseId = verse?.libraryVerseId;
+    if (libraryVerseId == null) return;
+
+    final savedNotifier = ref.read(savedVersesControllerProvider.notifier);
+    await savedNotifier.toggleSave(libraryVerseId);
+
+    final isSaved = savedNotifier.isSaved(libraryVerseId);
+    state = state.copyWith(verse: verse?.copyWith(isSaved: isSaved));
+  }
+
+  void updateSavedFlag(int libraryVerseId, bool isSaved) {
+    final verse = state.verse;
+    if (verse?.libraryVerseId != libraryVerseId) return;
+    state = state.copyWith(verse: verse?.copyWith(isSaved: isSaved));
   }
 }
 

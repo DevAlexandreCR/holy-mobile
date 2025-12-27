@@ -93,6 +93,13 @@ class AppLocalizations {
   String get chapterTextSize => _string('chapterTextSize');
   String get chapterResetText => _string('chapterResetText');
   String get chapterRequestError => _string('chapterRequestError');
+  String get savedVersesTitle => _string('savedVersesTitle');
+  String get viewSavedAction => _string('viewSavedAction');
+  String get savedVerseToastAdded => _string('savedVerseToastAdded');
+  String get savedVerseToastRemoved => _string('savedVerseToastRemoved');
+  String get savedVersesEmptyTitle => _string('savedVersesEmptyTitle');
+  String get savedVersesEmptySubtitle => _string('savedVersesEmptySubtitle');
+  String get savedVersesEmptyCta => _string('savedVersesEmptyCta');
 
   String get settingsTitle => _string('settingsTitle');
   String get preferencesTitle => _string('preferencesTitle');
@@ -189,6 +196,14 @@ class AppLocalizations {
       'chapterResetText': 'Restablecer',
       'chapterRequestError':
           'No pudimos cargar el capítulo. Inténtalo nuevamente.',
+      'savedVersesTitle': 'Versículos guardados',
+      'viewSavedAction': 'Ver guardados',
+      'savedVerseToastAdded': 'Guardado en tus versículos',
+      'savedVerseToastRemoved': 'Eliminado de guardados',
+      'savedVersesEmptyTitle': 'Aún no tienes versículos guardados',
+      'savedVersesEmptySubtitle':
+          'Guarda tus versículos favoritos para releerlos y compartirlos.',
+      'savedVersesEmptyCta': 'Descubrir versículo diario',
       'errorRetry': 'Reintentar',
       'settingsTitle': 'Configuración',
       'preferencesTitle': 'Preferencias',
@@ -272,6 +287,14 @@ class AppLocalizations {
       'chapterTextSize': 'Text size',
       'chapterResetText': 'Reset',
       'chapterRequestError': 'We could not load the chapter. Please try again.',
+      'savedVersesTitle': 'Saved verses',
+      'viewSavedAction': 'View saved',
+      'savedVerseToastAdded': 'Saved to your verses',
+      'savedVerseToastRemoved': 'Removed from saved',
+      'savedVersesEmptyTitle': 'You have no saved verses yet',
+      'savedVersesEmptySubtitle':
+          'Save your favorite verses to read and share later.',
+      'savedVersesEmptyCta': 'See verse of the day',
       'errorRetry': 'Retry',
       'settingsTitle': 'Settings',
       'preferencesTitle': 'Preferences',

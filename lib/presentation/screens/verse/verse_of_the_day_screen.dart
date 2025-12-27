@@ -6,8 +6,10 @@ import 'package:holyverso/core/services/verse_image_service.dart';
 import 'package:holyverso/core/theme/app_colors.dart';
 import 'package:holyverso/core/theme/app_design_tokens.dart';
 import 'package:holyverso/core/theme/app_text_styles.dart';
+import 'package:holyverso/domain/verse/reference_parser.dart';
 import 'package:holyverso/domain/verse/verse_of_the_day.dart';
 import 'package:holyverso/presentation/screens/verse/chapter_reader_screen.dart';
+import 'package:holyverso/presentation/state/verse/saved_verses_controller.dart';
 import 'package:holyverso/presentation/state/verse/chapter_reader_state.dart';
 import 'package:holyverso/presentation/state/verse/verse_controller.dart';
 import 'package:share_plus/share_plus.dart';
@@ -39,6 +41,10 @@ class _VerseOfTheDayScreenState extends ConsumerState<VerseOfTheDayScreen> {
         .loadVerse(forceRefresh: true);
   }
 
+  void _openSavedVerses() {
+    context.push('/verse/saved');
+  }
+
   void _onShare(VerseOfTheDay verse, Rect? sharePositionOrigin) {
     final l10n = context.l10n;
     final shareText =
@@ -67,20 +73,9 @@ class _VerseOfTheDayScreenState extends ConsumerState<VerseOfTheDayScreen> {
   }
 
   ChapterHighlightRange? _extractHighlightRange(String reference) {
-    final parts = reference.split(':');
-    if (parts.length < 2) return null;
-
-    final versePart = parts.last.split('-');
-    final start = int.tryParse(
-      versePart.first.replaceAll(RegExp(r'[^0-9]'), ''),
-    );
-    if (start == null) return null;
-
-    final end = versePart.length > 1
-        ? int.tryParse(versePart[1].replaceAll(RegExp(r'[^0-9]'), '')) ?? start
-        : start;
-
-    return ChapterHighlightRange(start: start, end: end);
+    final parsed = ReferenceParser.parseHighlightRange(reference);
+    if (parsed == null) return null;
+    return ChapterHighlightRange(start: parsed.start, end: parsed.end);
   }
 
   Future<void> _onShareAsImage(
@@ -217,6 +212,47 @@ class _VerseOfTheDayScreenState extends ConsumerState<VerseOfTheDayScreen> {
     );
   }
 
+  Future<void> _toggleSave(VerseOfTheDay verse) async {
+    final libraryVerseId = verse.libraryVerseId;
+    if (libraryVerseId == null) return;
+
+    final savedNotifier = ref.read(savedVersesControllerProvider.notifier);
+    final previousError = ref.read(savedVersesControllerProvider).error;
+    await savedNotifier.toggleSave(libraryVerseId);
+
+    final savedState = ref.read(savedVersesControllerProvider);
+    if (savedState.error != null && savedState.error != previousError) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(savedState.error!),
+          backgroundColor: Colors.red.shade700,
+        ),
+      );
+      return;
+    }
+
+    final isSavedNow = savedNotifier.isSaved(libraryVerseId);
+    ref.read(verseControllerProvider.notifier).updateSavedFlag(
+          libraryVerseId,
+          isSavedNow,
+        );
+
+    if (!mounted) return;
+    final l10n = context.l10n;
+    final message =
+        isSavedNow ? l10n.savedVerseToastAdded : l10n.savedVerseToastRemoved;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isSavedNow
+            ? AppColors.holyGold.withValues(alpha: 0.85)
+            : AppColors.midnightFaith,
+      ),
+    );
+  }
+
   void _toggleFavorite() {
     final verse = ref.read(verseControllerProvider).verse;
     final newFavoriteState = !_isFavorite;
@@ -236,6 +272,10 @@ class _VerseOfTheDayScreenState extends ConsumerState<VerseOfTheDayScreen> {
     final verseState = ref.watch(verseControllerProvider);
     final verse = verseState.verse;
     final l10n = context.l10n;
+    final savedState = ref.watch(savedVersesControllerProvider);
+    final verseId = verse?.libraryVerseId;
+    final isSaved = verseId != null && savedState.savedIds.contains(verseId);
+    final isSaving = verseId != null && savedState.pendingIds.contains(verseId);
 
     return Scaffold(
       backgroundColor: AppColors.midnightFaith,
@@ -311,13 +351,20 @@ class _VerseOfTheDayScreenState extends ConsumerState<VerseOfTheDayScreen> {
                   vertical: AppSpacing.md,
                 ),
                 children: [
-                  _Header(verse: verse),
+                  _Header(
+                    verse: verse,
+                    onViewSaved: _openSavedVerses,
+                  ),
                   const SizedBox(height: AppSpacing.md),
                   _VerseCard(
                     verse: verse,
                     isLoading: verseState.isLoading,
+                    isSaved: isSaved,
+                    isSaving: isSaving,
                     isFavorite: _isFavorite,
                     isGeneratingImage: _isGeneratingImage,
+                    onToggleSave:
+                        verse == null ? null : () => _toggleSave(verse),
                     onToggleFavorite: _toggleFavorite,
                     onShare: verse == null
                         ? null
@@ -345,9 +392,10 @@ class _VerseOfTheDayScreenState extends ConsumerState<VerseOfTheDayScreen> {
 }
 
 class _Header extends StatelessWidget {
-  const _Header({this.verse});
+  const _Header({this.verse, this.onViewSaved});
 
   final VerseOfTheDay? verse;
+  final VoidCallback? onViewSaved;
 
   @override
   Widget build(BuildContext context) {
@@ -393,6 +441,30 @@ class _Header extends StatelessWidget {
             color: AppColors.softMist.withValues(alpha: 0.85),
           ),
         ),
+        if (onViewSaved != null) ...[
+          const SizedBox(height: AppSpacing.sm),
+          TextButton.icon(
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.holyGold,
+              backgroundColor: AppColors.pureWhite.withValues(alpha: 0.06),
+              shape: RoundedRectangleBorder(
+                borderRadius: AppBorderRadius.button,
+                side: BorderSide(
+                  color: AppColors.holyGold.withValues(alpha: 0.35),
+                ),
+              ),
+            ),
+            onPressed: onViewSaved,
+            icon: const Icon(Icons.bookmark_add_outlined),
+            label: Text(
+              l10n.viewSavedAction,
+              style: AppTextStyles.labelMedium.copyWith(
+                fontWeight: FontWeight.w700,
+                color: AppColors.holyGold,
+              ),
+            ),
+          ),
+        ],
         if (verse != null && verse!.date.isNotEmpty) ...[
           const SizedBox(height: AppSpacing.xs),
           Text(
@@ -411,16 +483,22 @@ class _VerseCard extends StatelessWidget {
   const _VerseCard({
     required this.verse,
     required this.isLoading,
+    required this.isSaved,
+    required this.isSaving,
     required this.isFavorite,
     required this.isGeneratingImage,
+    required this.onToggleSave,
     required this.onToggleFavorite,
     required this.onShare,
   });
 
   final VerseOfTheDay? verse;
   final bool isLoading;
+  final bool isSaved;
+  final bool isSaving;
   final bool isFavorite;
   final bool isGeneratingImage;
+  final VoidCallback? onToggleSave;
   final VoidCallback onToggleFavorite;
   final void Function(Rect?)? onShare;
 
@@ -464,6 +542,16 @@ class _VerseCard extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
+                  _CircleIconButton(
+                    icon:
+                        isSaved ? Icons.bookmark : Icons.bookmark_border_outlined,
+                    color: isSaved
+                        ? AppColors.holyGold
+                        : AppColors.pureWhite.withValues(alpha: 0.85),
+                    isLoading: isSaving,
+                    onPressed: onToggleSave,
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
                   _CircleIconButton(
                     icon: isFavorite ? Icons.favorite : Icons.favorite_border,
                     color: isFavorite

@@ -10,6 +10,9 @@ class WidgetVerse {
     required this.reference,
     required this.text,
     this.fontSize = 16.0,
+    this.libraryVerseId,
+    this.isSaved = false,
+    this.theme,
   });
 
   final String date;
@@ -18,6 +21,9 @@ class WidgetVerse {
   final String reference;
   final String text;
   final double fontSize;
+  final int? libraryVerseId;
+  final bool isSaved;
+  final String? theme;
 
   Map<String, dynamic> toJson() {
     return {
@@ -27,6 +33,9 @@ class WidgetVerse {
       'reference': reference,
       'text': text,
       'font_size': fontSize,
+      if (libraryVerseId != null) 'library_verse_id': libraryVerseId,
+      'is_saved': isSaved,
+      if (theme != null) 'theme': theme,
     };
   }
 
@@ -44,6 +53,13 @@ class WidgetVerse {
       reference: json['reference'] as String? ?? '',
       text: json['text'] as String? ?? '',
       fontSize: (json['font_size'] as num?)?.toDouble() ?? 16.0,
+      libraryVerseId:
+          (json['library_verse_id'] as num?)?.toInt() ??
+          (json['libraryVerseId'] as num?)?.toInt(),
+      isSaved: json['is_saved'] as bool? ??
+          json['isSaved'] as bool? ??
+          false,
+      theme: json['theme'] as String?,
     );
   }
 
@@ -58,6 +74,9 @@ class WidgetVerse {
       reference: verse.reference,
       text: verse.text,
       fontSize: fontSize,
+      libraryVerseId: verse.libraryVerseId,
+      isSaved: verse.isSaved,
+      theme: verse.theme,
     );
   }
 

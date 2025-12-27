@@ -6,17 +6,27 @@ class ChapterRequest {
   const ChapterRequest.today()
     : book = null,
       chapter = null,
+      libraryVerseId = null,
       versionCode = null,
       isToday = true;
+
+  const ChapterRequest.saved({
+    required this.libraryVerseId,
+    this.versionCode,
+  })  : book = null,
+        chapter = null,
+        isToday = false;
 
   const ChapterRequest({
     required this.book,
     required this.chapter,
     this.versionCode,
-  }) : isToday = false;
+  })  : libraryVerseId = null,
+        isToday = false;
 
   final String? book;
   final int? chapter;
+  final int? libraryVerseId;
   final String? versionCode;
   final bool isToday;
 }
@@ -36,6 +46,10 @@ class ChapterRepository {
       final chapter = await _client.getTodayChapter();
       _todayCache = chapter;
       return chapter;
+    }
+
+    if (request.libraryVerseId != null) {
+      return _client.getSavedVerseChapter(request.libraryVerseId!);
     }
 
     // Placeholder for future arbitrary chapter navigation (book/chapter/version).

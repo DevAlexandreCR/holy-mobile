@@ -15,20 +15,40 @@ class ChapterReaderArgs {
     this.chapter,
     this.versionCode,
     this.highlightRange,
+    this.libraryVerseId,
   });
 
   const ChapterReaderArgs.today({ChapterHighlightRange? highlightRange})
     : book = null,
       chapter = null,
       versionCode = null,
-      highlightRange = highlightRange;
+      highlightRange = highlightRange,
+      libraryVerseId = null;
+
+  const ChapterReaderArgs.saved({
+    required int libraryVerseId,
+    ChapterHighlightRange? highlightRange,
+    String? versionCode,
+  })  : book = null,
+        chapter = null,
+        versionCode = versionCode,
+        highlightRange = highlightRange,
+        libraryVerseId = libraryVerseId;
 
   final String? book;
   final int? chapter;
   final String? versionCode;
   final ChapterHighlightRange? highlightRange;
+  final int? libraryVerseId;
 
   ChapterRequest toRequest() {
+    if (libraryVerseId != null) {
+      return ChapterRequest.saved(
+        libraryVerseId: libraryVerseId!,
+        versionCode: versionCode,
+      );
+    }
+
     if (book != null && chapter != null) {
       return ChapterRequest(
         book: book!,
