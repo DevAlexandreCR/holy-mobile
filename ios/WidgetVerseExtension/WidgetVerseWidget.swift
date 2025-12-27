@@ -115,33 +115,32 @@ struct WidgetVerseProvider: TimelineProvider {
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<WidgetVerseEntry>) -> Void) {
-        let now = Date()
-        let calendar = Calendar.current
-        
-        // Cargar el verso guardado
-        let savedVerse = loadSavedVerse()
-        
-        // Si hay un verso guardado, mostrarlo siempre (sin importar fecha)
-        if let savedVerse = savedVerse {
-            print("[Widget] Showing saved verse: \(savedVerse.reference)")
+        Task {
+            let now = Date()
+            let calendar = Calendar.current
+            
+            var savedVerse = loadSavedVerse()
+            var isPlaceholder = savedVerse == nil
+
+            // Si no hay verso o es de otro día, intentar traerlo directo desde la API
+            if savedVerse == nil || !isVerseCurrentDate(savedVerse) {
+                if let latestVerse = await fetchLatestVerse(currentVerse: savedVerse) {
+                    savedVerse = latestVerse
+                    isPlaceholder = false
+                }
+            }
+
             let entry = WidgetVerseEntry(
                 date: now,
-                verse: savedVerse,
-                isPlaceholder: false
+                verse: savedVerse ?? WidgetVersePlaceholder.sample,
+                isPlaceholder: isPlaceholder && savedVerse == nil
             )
-            // Actualizar cada 6 horas
-            let nextRefresh = calendar.date(byAdding: .hour, value: 6, to: now) ?? now.addingTimeInterval(6 * 3600)
-            completion(Timeline(entries: [entry], policy: .after(nextRefresh)))
-        } else {
-            // No hay verso guardado, mostrar placeholder
-            print("[Widget] No verse found, showing placeholder")
-            let entry = WidgetVerseEntry(
-                date: now,
-                verse: nil,
-                isPlaceholder: true
-            )
-            // Actualizar cada hora para volver a verificar
-            let nextRefresh = calendar.date(byAdding: .hour, value: 1, to: now) ?? now.addingTimeInterval(3600)
+
+            // Si no tenemos verso fresco, reintentar pronto; si lo tenemos, refrescar cada 6h
+            let hoursUntilNextRefresh = (savedVerse == nil || !isVerseCurrentDate(savedVerse)) ? 1 : 6
+            let nextRefresh = calendar.date(byAdding: .hour, value: hoursUntilNextRefresh, to: now)
+                ?? now.addingTimeInterval(Double(hoursUntilNextRefresh) * 3600)
+            
             completion(Timeline(entries: [entry], policy: .after(nextRefresh)))
         }
     }
@@ -159,6 +158,89 @@ struct WidgetVerseProvider: TimelineProvider {
         let verse = try? JSONDecoder().decode(WidgetVerseModel.self, from: data)
         print("[Widget] Loaded verse with date: \(verse?.date ?? "nil")")
         return verse
+    }
+
+    private func fetchLatestVerse(currentVerse: WidgetVerseModel?) async -> WidgetVerseModel? {
+        guard let defaults = UserDefaults(suiteName: SharedConfig.appGroupId) else {
+            print("[Widget] App Group not configured")
+            return nil
+        }
+
+        guard let jwtToken = defaults.string(forKey: "jwt_token"), !jwtToken.isEmpty else {
+            print("[Widget] No JWT token available for fetch")
+            return nil
+        }
+
+        let apiUrl = defaults.string(forKey: "api_url") ?? "https://api.holyverso.com"
+        guard let url = URL(string: "\(apiUrl)/verse/today") else {
+            print("[Widget] Invalid API URL: \(apiUrl)")
+            return nil
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.timeoutInterval = 15
+        request.setValue("Bearer \(jwtToken)", forHTTPHeaderField: "Authorization")
+
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+
+            guard let httpResponse = response as? HTTPURLResponse,
+                  (200 ... 299).contains(httpResponse.statusCode) else {
+                let status = (response as? HTTPURLResponse)?.statusCode ?? -1
+                print("[Widget] HTTP error while fetching verse: \(status)")
+                return nil
+            }
+
+            guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+                print("[Widget] Invalid JSON payload for verse")
+                return nil
+            }
+
+            let verseData = (json["data"] as? [String: Any]) ?? json
+            let dateFormatter = DateFormatter()
+            dateFormatter.dateFormat = "yyyy-MM-dd"
+            let today = dateFormatter.string(from: Date())
+            let fontSize = currentVerse?.fontSize ?? 16.0
+
+            let verse = WidgetVerseModel(
+                date: today,
+                versionCode: verseData["version_code"] as? String
+                    ?? verseData["versionCode"] as? String
+                    ?? "",
+                versionName: verseData["version_name"] as? String
+                    ?? verseData["versionName"] as? String
+                    ?? "",
+                reference: verseData["reference"] as? String ?? "",
+                text: verseData["text"] as? String ?? "",
+                fontSize: fontSize
+            )
+
+            saveVerseToSharedDefaults(verse, defaults: defaults)
+            print("[Widget] Verse fetched directly from API: \(verse.reference)")
+            return verse
+        } catch {
+            print("[Widget] Failed to fetch verse: \(error)")
+            return nil
+        }
+    }
+
+    private func saveVerseToSharedDefaults(
+        _ verse: WidgetVerseModel,
+        defaults: UserDefaults? = nil
+    ) {
+        let defaults = defaults ?? UserDefaults(suiteName: SharedConfig.appGroupId)
+        guard
+            let defaults,
+            let data = try? JSONEncoder().encode(verse),
+            let jsonString = String(data: data, encoding: .utf8)
+        else {
+            print("[Widget] Could not encode verse for storage")
+            return
+        }
+
+        defaults.set(jsonString, forKey: SharedConfig.widgetVerseKey)
+        defaults.synchronize()
     }
     
     private func isVerseCurrentDate(_ verse: WidgetVerseModel?) -> Bool {

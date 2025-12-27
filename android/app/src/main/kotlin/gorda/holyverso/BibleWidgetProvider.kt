@@ -22,6 +22,7 @@ class BibleWidgetProvider : AppWidgetProvider() {
     ) {
         // Verificar si necesitamos actualizar el verso
         checkAndScheduleUpdate(context)
+        WidgetUpdateWorker.schedule(context)
         
         for (appWidgetId in appWidgetIds) {
             updateAppWidget(context, appWidgetManager, appWidgetId)
@@ -49,9 +50,9 @@ class BibleWidgetProvider : AppWidgetProvider() {
             return
         }
         
-        // Si después de las 5am y no hay verso del día, programar actualización en 1 hora
+        // Si después de las 5am y no hay verso del día, solicitar actualización inmediata
         if (verse == null || !isVerseFromToday(verse)) {
-            WidgetUpdateWorker.scheduleOneTimeUpdate(context, 1)
+            WidgetUpdateWorker.scheduleOneTimeUpdate(context, 0)
         }
     }
     

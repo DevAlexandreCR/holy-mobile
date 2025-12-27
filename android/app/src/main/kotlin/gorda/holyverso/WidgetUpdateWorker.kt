@@ -65,9 +65,9 @@ class WidgetUpdateWorker(
         }
         
         fun scheduleOneTimeUpdate(context: Context, delayHours: Long) {
-            val delayTime = if (delayHours == 0L) 5 else (delayHours * 3600)
+            val delayTime = if (delayHours == 0L) 0 else TimeUnit.HOURS.toSeconds(delayHours)
             val updateRequest = androidx.work.OneTimeWorkRequestBuilder<WidgetUpdateWorker>()
-                .setInitialDelay(delayTime, if (delayHours == 0L) TimeUnit.SECONDS else TimeUnit.SECONDS)
+                .setInitialDelay(delayTime, TimeUnit.SECONDS)
                 .build()
 
             WorkManager.getInstance(context).enqueueUniqueWork(
