@@ -15,7 +15,7 @@ Future<void> main() async {
   final envFile = kReleaseMode ? '.env.production' : '.env.development';
   await dotenv.load(fileName: envFile);
 
-  // Inicializar configuración nativa con la API_URL del .env
+  // Initialize native configuration with the API_URL from the .env file
   final apiUrl = dotenv.get('API_URL', fallback: 'https://api.holyverso.com');
   final authTokenService = AuthTokenService();
   await authTokenService.initializeNativeConfig(apiUrl);
@@ -48,7 +48,7 @@ class _HolyVersoAppState extends ConsumerState<HolyVersoApp>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
 
-    // Cuando la app vuelve al primer plano, refrescar el widget
+    // Refresh the widget when the app returns to the foreground
     if (state == AppLifecycleState.resumed) {
       debugPrint('[AppLifecycle] App resumed, refreshing widgets...');
       ref.read(widgetVerseStorageProvider).refreshWidgets();

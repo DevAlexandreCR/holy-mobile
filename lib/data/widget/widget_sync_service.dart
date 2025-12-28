@@ -23,22 +23,22 @@ class WidgetSyncService {
         '[WidgetSyncService] Starting sync for verse: ${verse.reference}',
       );
 
-      // Guardar el verso
+      // Persist the verse
       await _storage.saveVerse(widgetVerse);
 
-      // Esperar un poco más para asegurar que se guardó en UserDefaults compartido
+      // Wait briefly to ensure it was written to shared UserDefaults
       await Future.delayed(const Duration(milliseconds: 300));
 
-      // Refrescar los widgets inmediatamente (primera vez)
+      // Refresh widgets immediately on the first pass
       await _storage.refreshWidgets();
 
-      // Esperar un poco y refrescar de nuevo para asegurar que el widget lo detecte
+      // Wait and refresh again to help the widget pick it up
       await Future.delayed(const Duration(milliseconds: 200));
       await _storage.refreshWidgets();
 
       debugPrint('[WidgetSyncService] Sync completed successfully');
 
-      // Si se solicita, programar una actualización inmediata del background worker
+      // Request an immediate background update if asked
       if (requestImmediateUpdate) {
         debugPrint(
           '[WidgetSyncService] Requesting immediate background update',

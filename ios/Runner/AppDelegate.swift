@@ -16,7 +16,7 @@ private enum WidgetSharedConfig {
   ) -> Bool {
     GeneratedPluginRegistrant.register(with: self)
     
-    // Registrar y programar la tarea de background para verso diario
+    // Register and schedule the daily verse background task
     if #available(iOS 13.0, *) {
       DailyVerseFetchTask.shared.registerBackgroundTask()
       DailyVerseFetchTask.shared.scheduleNextFetch()
@@ -57,17 +57,17 @@ private enum WidgetSharedConfig {
           print("[AppDelegate] JSON: \(verseJson)")
           sharedDefaults.set(verseJson, forKey: WidgetSharedConfig.widgetVerseKey)
           
-          // Forzar sincronización inmediata
+          // Force an immediate sync
           sharedDefaults.synchronize()
           
-          // Verificar que se guardó correctamente
+          // Verify it was saved correctly
           if let readBack = sharedDefaults.string(forKey: WidgetSharedConfig.widgetVerseKey) {
             print("[AppDelegate] Verification - Data saved correctly: \(readBack.prefix(50))...")
           } else {
             print("[AppDelegate] ERROR - Data not saved!")
           }
           
-          // Recargar todos los widgets inmediatamente después de guardar
+          // Reload all widgets right after saving
           if #available(iOS 14.0, *) {
             WidgetCenter.shared.reloadAllTimelines()
             print("[AppDelegate] Widget timelines reloaded immediately after save")
@@ -87,7 +87,7 @@ private enum WidgetSharedConfig {
           result(nil)
 
         case "requestImmediateUpdate":
-          // Solicitar una actualización inmediata del background task
+          // Request an immediate background task update
           if #available(iOS 13.0, *) {
             DailyVerseFetchTask.shared.scheduleNextFetch(retryInHour: false, immediate: true)
           }
@@ -98,7 +98,7 @@ private enum WidgetSharedConfig {
         }
       }
       
-      // Channel para guardar JWT token en App Group compartido
+      // Channel for saving the JWT token to the shared App Group
       let authChannel = FlutterMethodChannel(
         name: "bible_widget/auth",
         binaryMessenger: controller.binaryMessenger

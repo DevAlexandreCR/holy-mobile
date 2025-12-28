@@ -19,15 +19,15 @@ class VerseRepository {
   Future<({VerseOfTheDay verse, bool wasFromNetwork})> fetchTodayVerse({
     bool forceRefresh = false,
   }) async {
-    // Si no es forceRefresh, verificar primero si hay un verso del día actual guardado
+    // If not forcing a refresh, check if today's verse is already cached
     if (!forceRefresh) {
-      // Primero verificar el cache en memoria
+      // Check the in-memory cache first
       if (_cache != null && _cache!.libraryVerseId != null) {
         _syncCacheSavedStatus();
         return (verse: _cache!, wasFromNetwork: false);
       }
 
-      // Luego verificar si hay un verso del día actual en el storage
+      // Then check if today's verse is persisted in storage
       final todayVerse = await _storage.getTodayVerse();
       if (todayVerse != null && todayVerse.libraryVerseId != null) {
         final verse = _widgetVerseToVerseOfTheDay(todayVerse);
@@ -39,7 +39,7 @@ class VerseRepository {
       }
     }
 
-    // Si no hay verso guardado o es forceRefresh, pedir al backend
+    // If nothing is cached or forceRefresh is true, fetch from the backend
     try {
       final verse = await _client.getTodayVerse();
       _cache = verse;

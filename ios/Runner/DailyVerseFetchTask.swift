@@ -26,22 +26,22 @@ class DailyVerseFetchTask {
         let calendar = Calendar.current
         
         if immediate {
-            // Ejecutar lo antes posible (en unos segundos)
+            // Run as soon as possible (in a few seconds)
             request.earliestBeginDate = Date(timeIntervalSinceNow: 5)
             print("[DailyVerseFetchTask] Immediate update requested")
         } else if retryInHour {
-            // Si hay que reintentar, programar en 1 hora
+            // Retry in one hour if needed
             request.earliestBeginDate = calendar.date(byAdding: .hour, value: 1, to: Date())
             print("[DailyVerseFetchTask] Retry scheduled in 1 hour")
         } else {
-            // Programar para las 5:00 AM del siguiente día (o de hoy si aún no son las 5am)
+            // Schedule for 5:00 AM the next day (or today if it's before 5 AM)
             var components = calendar.dateComponents([.year, .month, .day], from: Date())
             components.hour = 5
             components.minute = 0
             components.second = 0
             
             if let targetDate = calendar.date(from: components), targetDate < Date() {
-                // Si ya pasaron las 5 AM, programar para mañana
+                // If it's already past 5 AM, schedule for tomorrow
                 request.earliestBeginDate = calendar.date(byAdding: .day, value: 1, to: targetDate)
             } else {
                 request.earliestBeginDate = calendar.date(from: components)
@@ -59,23 +59,23 @@ class DailyVerseFetchTask {
     private func handleDailyVerseFetch(task: BGAppRefreshTask) {
         print("[DailyVerseFetchTask] Starting daily verse fetch...")
         
-        // Crear una tarea para manejar la expiración
+        // Set an expiration handler
         task.expirationHandler = {
             print("[DailyVerseFetchTask] Task expired before completion")
-            self.scheduleNextFetch(retryInHour: true) // Reintentar en 1 hora
+            self.scheduleNextFetch(retryInHour: true) // Retry in one hour
         }
         
-        // Ejecutar la petición
+        // Perform the request
         Task {
             do {
                 let shouldRetry = try await fetchAndSaveDailyVerse()
                 
                 if shouldRetry {
-                    // Si no se cargó el verso (falta token o sin conexión), reintentar en 1 hora
+                    // If the verse was not loaded (missing token or offline), retry in one hour
                     print("[DailyVerseFetchTask] Verse not loaded, will retry in 1 hour")
                     scheduleNextFetch(retryInHour: true)
                 } else {
-                    // Si se cargó exitosamente, programar para mañana a las 5am
+                    // If it loaded successfully, schedule for 5 AM tomorrow
                     print("[DailyVerseFetchTask] Task completed successfully, scheduled for tomorrow")
                     scheduleNextFetch(retryInHour: false)
                 }
@@ -83,7 +83,7 @@ class DailyVerseFetchTask {
                 task.setTaskCompleted(success: true)
             } catch {
                 print("[DailyVerseFetchTask] Task failed: \(error)")
-                // En caso de error, reintentar en 1 hora
+                // On error, retry in one hour
                 scheduleNextFetch(retryInHour: true)
                 task.setTaskCompleted(success: false)
             }
@@ -91,36 +91,36 @@ class DailyVerseFetchTask {
     }
     
     private func fetchAndSaveDailyVerse() async throws -> Bool {
-        // Verificar si ya tenemos el verso del día actual
+        // Check if today's verse is already stored
         if hasVerseForToday() {
             print("[DailyVerseFetchTask] Already have verse for today")
-            return false // No necesita reintentar
+            return false // No retry needed
         }
         
-        // Obtener el token JWT de Keychain
+        // Get the JWT token from Keychain
         guard let jwtToken = getJWTToken() else {
             print("[DailyVerseFetchTask] No JWT token found")
-            return true // Reintentar en 1 hora por si el usuario inicia sesión
+            return true // Retry in one hour in case the user signs in
         }
         
-        // Obtener la API URL guardada
+        // Read the stored API URL
         guard let apiBaseUrl = getApiUrl() else {
             print("[DailyVerseFetchTask] No API URL found")
-            return true // Reintentar en 1 hora
+            return true // Retry in one hour
         }
         
-        // Crear la URL
+        // Build the request URL
         guard let url = URL(string: "\(apiBaseUrl)/verse/today") else {
             throw NSError(domain: "DailyVerseFetchTask", code: 1, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"])
         }
         
-        // Crear la petición
+        // Build the request
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         request.setValue("Bearer \(jwtToken)", forHTTPHeaderField: "Authorization")
         request.timeoutInterval = 15
         
-        // Hacer la petición
+        // Perform the request
         let (data, response) = try await URLSession.shared.data(for: request)
         
         guard let httpResponse = response as? HTTPURLResponse,
@@ -128,14 +128,14 @@ class DailyVerseFetchTask {
             throw NSError(domain: "DailyVerseFetchTask", code: 2, userInfo: [NSLocalizedDescriptionKey: "HTTP error"])
         }
         
-        // Parsear la respuesta
+        // Parse the response
         guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
             throw NSError(domain: "DailyVerseFetchTask", code: 3, userInfo: [NSLocalizedDescriptionKey: "Invalid JSON"])
         }
         
         let verseData = (json["data"] as? [String: Any]) ?? json
         
-        // Crear el objeto WidgetVerse
+        // Build the WidgetVerse payload
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM-dd"
         let today = dateFormatter.string(from: Date())
@@ -149,13 +149,13 @@ class DailyVerseFetchTask {
             "font_size": 16.0
         ]
         
-        // Convertir a JSON string
+        // Convert to a JSON string
         let jsonData = try JSONSerialization.data(withJSONObject: widgetVerse)
         guard let jsonString = String(data: jsonData, encoding: .utf8) else {
             throw NSError(domain: "DailyVerseFetchTask", code: 4, userInfo: [NSLocalizedDescriptionKey: "Failed to create JSON string"])
         }
         
-        // Guardar en UserDefaults compartido
+        // Save to shared UserDefaults
         guard let sharedDefaults = UserDefaults(suiteName: appGroupId) else {
             throw NSError(domain: "DailyVerseFetchTask", code: 5, userInfo: [NSLocalizedDescriptionKey: "App Group not configured"])
         }
@@ -163,13 +163,13 @@ class DailyVerseFetchTask {
         sharedDefaults.set(jsonString, forKey: widgetVerseKey)
         sharedDefaults.synchronize()
         
-        // Actualizar widgets
+        // Refresh widgets
         if #available(iOS 14.0, *) {
             WidgetCenter.shared.reloadAllTimelines()
         }
         
         print("[DailyVerseFetchTask] Verse saved and widgets updated for \(today)")
-        return false // No necesita reintentar, se cargó exitosamente
+        return false // No retry needed; the verse loaded successfully
     }
     
     private func hasVerseForToday() -> Bool {
@@ -189,13 +189,13 @@ class DailyVerseFetchTask {
     }
     
     private func getJWTToken() -> String? {
-        // Intentar obtener el token de UserDefaults (donde Flutter lo guarda)
+        // Try reading the token from UserDefaults (written by Flutter)
         if let sharedDefaults = UserDefaults(suiteName: appGroupId),
            let token = sharedDefaults.string(forKey: "jwt_token") {
             return token
         }
         
-        // También intentar obtenerlo desde UserDefaults estándar como fallback
+        // Also try standard UserDefaults as a fallback
         if let token = UserDefaults.standard.string(forKey: "jwt_token") {
             return token
         }
@@ -204,13 +204,13 @@ class DailyVerseFetchTask {
     }
     
     private func getApiUrl() -> String? {
-        // Leer la API URL guardada desde Flutter
+        // Read the API URL saved by Flutter
         if let sharedDefaults = UserDefaults(suiteName: appGroupId),
            let apiUrl = sharedDefaults.string(forKey: "api_url") {
             return apiUrl
         }
         
-        // Fallback a URL por defecto
+        // Fallback to the default API URL
         return "https://api.holyverso.com"
     }
 }

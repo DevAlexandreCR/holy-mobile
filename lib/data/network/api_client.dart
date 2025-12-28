@@ -29,7 +29,7 @@ final dioProvider = Provider<Dio>((ref) {
         handler.next(options);
       },
       onError: (error, handler) async {
-        // Si recibimos un 401, hacer logout automáticamente
+        // If we get a 401, log out automatically
         if (error.response?.statusCode == 401) {
           final authNotifier = ref.read(authControllerProvider.notifier);
           await authNotifier.logout();

@@ -90,12 +90,12 @@ class VerseImageCard extends StatelessWidget {
           Center(
             child: Padding(
               padding: const EdgeInsets.symmetric(
-                horizontal: 40, // Padding mínimo
-                vertical: 240, // (1920 - 1440) / 2 = 240 para centrar
+                horizontal: 40, // Minimum padding to frame the card
+                vertical: 240, // (1920 - 1440) / 2 = 240 to center the card
               ),
               child: Container(
-                height: 1440, // Exactamente 3/4 de 1920
-                width: 1000, // Ancho máximo con padding mínimo
+                height: 1440, // Exactly three quarters of the 1920 height
+                width: 1000, // Max width that preserves the side padding
                 padding: const EdgeInsets.all(40),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
@@ -246,12 +246,12 @@ class VerseImageCard extends StatelessWidget {
     final random = math.Random(42); // Fixed seed for consistency in images
     final stars = <Widget>[];
 
-    // Create 200 stars (más estrellas)
+    // Create 200 stars to echo the landing page density
     for (int i = 0; i < 200; i++) {
-      final size = random.nextDouble() * 3.5 + 1.0; // Tamaños más grandes
+      final size = random.nextDouble() * 3.5 + 1.0; // Slightly larger stars
       final isGolden = random.nextDouble() > 0.65; // 35% golden stars
       final opacity =
-          random.nextDouble() * 0.8 + 0.5; // Más opacas y brillantes
+          random.nextDouble() * 0.8 + 0.5; // Brighter, more opaque stars
 
       final color = isGolden
           ? AppColors.holyGold.withValues(alpha: opacity)
@@ -272,20 +272,20 @@ class VerseImageCard extends StatelessWidget {
                   color: isGolden
                       ? AppColors.holyGold.withValues(alpha: 1.0)
                       : Colors.white.withValues(alpha: 1.0),
-                  blurRadius: size * 5, // Más brillo
+                  blurRadius: size * 5, // First glow layer
                   spreadRadius: 0,
                 ),
                 BoxShadow(
                   color: isGolden
                       ? AppColors.holyGold.withValues(alpha: 0.8)
                       : Colors.white.withValues(alpha: 0.7),
-                  blurRadius: size * 8, // Segundo nivel de brillo
+                  blurRadius: size * 8, // Secondary glow
                   spreadRadius: 0,
                 ),
                 if (isGolden)
                   BoxShadow(
                     color: const Color(0xFFFFD700).withValues(alpha: 0.9),
-                    blurRadius: size * 12, // Brillo dorado más intenso
+                    blurRadius: size * 12, // Intense gold glow
                     spreadRadius: 0,
                   ),
               ],

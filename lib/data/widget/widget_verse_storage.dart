@@ -33,13 +33,13 @@ class WidgetVerseStorage {
     }
   }
 
-  /// Verifica si hay un verso guardado para el día actual
+  /// Returns the saved verse if it belongs to the current day
   Future<WidgetVerse?> getTodayVerse() async {
     try {
       final savedVerse = await readVerse();
       if (savedVerse == null) return null;
 
-      // Verificar si el verso es de hoy
+      // Check if the verse is from today
       final today = _getTodayDateString();
       if (savedVerse.date == today) {
         return savedVerse;
@@ -69,7 +69,7 @@ class WidgetVerseStorage {
     }
   }
 
-  /// Solicita una actualización inmediata del widget desde el background worker
+  /// Requests an immediate widget update from the background worker
   Future<void> requestImmediateWidgetUpdate() async {
     try {
       await _channel.invokeMethod<void>('requestImmediateUpdate');

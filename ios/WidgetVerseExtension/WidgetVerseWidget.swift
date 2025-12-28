@@ -122,7 +122,7 @@ struct WidgetVerseProvider: TimelineProvider {
             var savedVerse = loadSavedVerse()
             var isPlaceholder = savedVerse == nil
 
-            // Si no hay verso o es de otro día, intentar traerlo directo desde la API
+            // If there is no verse or it's from another day, try fetching it directly from the API
             if savedVerse == nil || !isVerseCurrentDate(savedVerse) {
                 if let latestVerse = await fetchLatestVerse(currentVerse: savedVerse) {
                     savedVerse = latestVerse
@@ -136,7 +136,7 @@ struct WidgetVerseProvider: TimelineProvider {
                 isPlaceholder: isPlaceholder && savedVerse == nil
             )
 
-            // Si no tenemos verso fresco, reintentar pronto; si lo tenemos, refrescar cada 6h
+            // Retry sooner when no fresh verse is available; otherwise refresh every 6 hours
             let hoursUntilNextRefresh = (savedVerse == nil || !isVerseCurrentDate(savedVerse)) ? 1 : 6
             let nextRefresh = calendar.date(byAdding: .hour, value: hoursUntilNextRefresh, to: now)
                 ?? now.addingTimeInterval(Double(hoursUntilNextRefresh) * 3600)
@@ -292,9 +292,9 @@ struct WidgetVerseView: View {
                         .font(.system(size: CGFloat(verse.fontSize), weight: .medium))
                         .foregroundColor(HolyVersoColors.pureWhite.opacity(0.85))
                         .multilineTextAlignment(.leading)
-                        .lineLimit(nil) // Mostrar todas las líneas posibles, truncar solo si el contenedor se queda corto.
+                        .lineLimit(nil) // Show all lines; truncate only if the container is too small.
                         .truncationMode(.tail)
-                        .layoutPriority(1) // Dar prioridad a ocupar altura disponible.
+                        .layoutPriority(1) // Prioritize occupying available height.
                         .shadow(color: .black.opacity(0.5), radius: 2, x: 0, y: 1)
                         .accessibilityLabel("Versículo del día")
 
@@ -320,7 +320,7 @@ struct WidgetVerseView: View {
             }
         }
         .containerBackground(for: .widget) {
-            // Fondo compatible con iOS 17+/18 para evitar el aviso de containerBackground.
+            // Compatible background for iOS 17+/18 to avoid the containerBackground warning
             LinearGradient(
                 colors: [
                     HolyVersoColors.midnightFaithDark.opacity(0.9),

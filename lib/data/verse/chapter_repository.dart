@@ -52,7 +52,6 @@ class ChapterRepository {
       return _client.getSavedVerseChapter(request.libraryVerseId!);
     }
 
-    // Placeholder for future arbitrary chapter navigation (book/chapter/version).
     throw UnsupportedError('Custom chapter fetching is not implemented yet.');
   }
 

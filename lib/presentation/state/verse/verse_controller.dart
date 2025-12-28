@@ -84,12 +84,11 @@ class VerseController extends Notifier<VerseState> {
   }) async {
     final authState = ref.read(authControllerProvider);
     final fontSize = authState.settings?.widgetFontSize.size ?? 16.0;
-    // Siempre sincronizar y solicitar actualización inmediata del widget
-    // Esto asegura que el widget se actualice incluso si ya había datos guardados
+    // Always sync and request an immediate widget refresh so it updates even when data was already cached
     await _widgetSyncService.syncLatestVerse(
       verse,
       fontSize: fontSize,
-      requestImmediateUpdate: true, // Siempre solicitar actualización
+      requestImmediateUpdate: true, // Always request an update
     );
   }
 

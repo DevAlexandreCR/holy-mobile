@@ -11,7 +11,7 @@ class AuthTokenService {
   final FlutterSecureStorage _storage;
   final MethodChannel _channel;
 
-  /// Inicializa la configuración nativa (API URL)
+  /// Initializes native configuration (API URL)
   Future<void> initializeNativeConfig(String apiUrl) async {
     try {
       await _channel.invokeMethod<void>('setApiUrl', apiUrl);
@@ -22,11 +22,11 @@ class AuthTokenService {
 
   Future<void> saveToken(String token) async {
     await _storage.write(key: _tokenKey, value: token);
-    // También guardar en SharedPreferences/UserDefaults para uso nativo
+    // Also persist in SharedPreferences/UserDefaults for native usage
     try {
       await _channel.invokeMethod<void>('saveJwtToken', token);
     } catch (e) {
-      // No es crítico si falla, el token está guardado en secure storage
+      // Non-critical if it fails because the token is in secure storage
       print('Warning: Failed to save JWT token to native storage: $e');
     }
   }
@@ -37,7 +37,7 @@ class AuthTokenService {
 
   Future<void> clearToken() async {
     await _storage.delete(key: _tokenKey);
-    // También limpiar del storage nativo
+    // Also clear from native storage
     try {
       await _channel.invokeMethod<void>('clearJwtToken');
     } catch (e) {

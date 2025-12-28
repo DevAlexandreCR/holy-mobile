@@ -168,7 +168,7 @@ class AuthController extends Notifier<AuthState> {
         isUpdatingSettings: false,
       );
 
-      // Recargar el verso para actualizar el widget con el nuevo tamaño
+      // Reload the verse so the widget picks up the new font size
       ref.read(verseControllerProvider.notifier).loadVerse(forceRefresh: true);
 
       return true;
@@ -190,34 +190,34 @@ class AuthController extends Notifier<AuthState> {
       errorMessage: null,
     );
 
-    // Detectar y enviar timezone automáticamente si no está configurado
+    // Detect and send timezone automatically when it's missing
     _autoUpdateTimezoneIfNeeded();
   }
 
-  /// Detecta el timezone del dispositivo y lo envía al backend si no está configurado
+  /// Detects the device timezone and sends it to the backend if it's missing
   Future<void> _autoUpdateTimezoneIfNeeded() async {
     try {
-      // Verificar si el usuario ya tiene un timezone configurado
+      // Skip if the user already has a timezone configured
       if (state.settings?.timezone != null &&
           state.settings!.timezone!.isNotEmpty) {
         debugPrint('[Auth] Timezone already set: ${state.settings!.timezone}');
         return;
       }
 
-      // Obtener el timezone del dispositivo en formato IANA (e.g., 'America/Bogota')
+      // Fetch the device timezone in IANA format (e.g., 'America/Bogota')
       final String deviceTimezone = await FlutterTimezone.getLocalTimezone();
 
       debugPrint('[Auth] Auto-updating timezone to: $deviceTimezone');
 
-      // Enviar al backend sin bloquear la UI
+      // Send it to the backend without blocking the UI
       final updatedSettings = await _repository.updateTimezone(deviceTimezone);
 
-      // Actualizar el estado con el nuevo timezone
+      // Update state with the new timezone
       state = state.copyWith(settings: updatedSettings);
 
       debugPrint('[Auth] Timezone updated successfully');
     } catch (error) {
-      // No mostramos error al usuario, es una operación en background
+      // Do not show an error to the user; this is a background task
       debugPrint('[Auth] Failed to auto-update timezone: $error');
     }
   }
@@ -227,7 +227,7 @@ class AuthController extends Notifier<AuthState> {
       final statusCode = error.response?.statusCode;
       final data = error.response?.data;
 
-      // El backend devuelve errores en data['error']['message']
+      // Backend errors come in data['error']['message']
       String? responseMessage;
       if (data is Map) {
         if (data['error'] is Map && data['error']['message'] is String) {
@@ -237,7 +237,7 @@ class AuthController extends Notifier<AuthState> {
         }
       }
 
-      // Si es un 401 con mensaje de credenciales, usar mensaje específico
+      // Use a specific message for credential errors on 401 responses
       if (statusCode == 401 && responseMessage != null) {
         if (responseMessage.toLowerCase().contains('invalid') &&
             (responseMessage.toLowerCase().contains('email') ||

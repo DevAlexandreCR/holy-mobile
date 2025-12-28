@@ -56,7 +56,6 @@ class _VerseOfTheDayScreenState extends ConsumerState<VerseOfTheDayScreen> {
       sharePositionOrigin: sharePositionOrigin,
     );
 
-    // Registrar el share en el backend si tiene libraryVerseId
     if (verse.libraryVerseId != null) {
       ref
           .read(verseControllerProvider.notifier)
@@ -94,7 +93,6 @@ class _VerseOfTheDayScreenState extends ConsumerState<VerseOfTheDayScreen> {
         subject: l10n.shareSubject,
       );
 
-      // Registrar el share en el backend si tiene libraryVerseId
       if (verse.libraryVerseId != null) {
         ref
             .read(verseControllerProvider.notifier)
@@ -259,7 +257,6 @@ class _VerseOfTheDayScreenState extends ConsumerState<VerseOfTheDayScreen> {
 
     setState(() => _isFavorite = newFavoriteState);
 
-    // Registrar el like en el backend si tiene libraryVerseId y el usuario marcó como favorito
     if (newFavoriteState && verse?.libraryVerseId != null) {
       ref
           .read(verseControllerProvider.notifier)
