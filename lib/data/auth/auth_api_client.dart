@@ -44,7 +44,7 @@ class AuthApiClient {
   }) {
     return _dio.post(
       '/auth/reset-password',
-      data: {'token': token, 'password': newPassword},
+      data: {'token': token, 'new_password': newPassword},
     );
   }
 

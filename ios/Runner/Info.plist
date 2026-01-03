@@ -54,6 +54,17 @@
 		<string>fetch</string>
 		<string>processing</string>
 	</array>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>holyverso</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>holyverso</string>
+			</array>
+		</dict>
+	</array>
   <key>NSAppTransportSecurity</key>
   <dict>
       <key>NSAllowsArbitraryLoads</key>

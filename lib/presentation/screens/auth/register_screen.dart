@@ -162,7 +162,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         if (value == null || value.isEmpty) {
                           return l10n.missingPasswordError;
                         }
-                        if (value.length < 6) {
+                        if (value.length < 8) {
                           return l10n.shortPasswordError;
                         }
                         return null;

@@ -66,6 +66,13 @@ class AppLocalizations {
   String get sendLink => _string('sendLink');
   String get backToLogin => _string('backToLogin');
   String get instructionsSent => _string('instructionsSent');
+  String get resetPasswordTitle => _string('resetPasswordTitle');
+  String get resetPasswordHeadline => _string('resetPasswordHeadline');
+  String get resetPasswordSubtitle => _string('resetPasswordSubtitle');
+  String get tokenLabel => _string('tokenLabel');
+  String get missingTokenError => _string('missingTokenError');
+  String get resetPasswordAction => _string('resetPasswordAction');
+  String get passwordResetSuccess => _string('passwordResetSuccess');
 
   String get verseScreenTitle => _string('verseScreenTitle');
   String get verseOfDayTag => _string('verseOfDayTag');
@@ -152,7 +159,7 @@ class AppLocalizations {
       'missingEmailError': 'Ingresa tu correo',
       'invalidEmailError': 'Correo inválido',
       'missingPasswordError': 'Ingresa tu contraseña',
-      'shortPasswordError': 'Debe tener al menos 6 caracteres',
+      'shortPasswordError': 'Debe tener al menos 8 caracteres',
       'registerTitle': 'Crear cuenta',
       'registerHeadline': 'Regístrate',
       'registerSubtitle': 'Crea tu cuenta para personalizar tus lecturas.',
@@ -169,6 +176,15 @@ class AppLocalizations {
       'sendLink': 'Enviar enlace',
       'backToLogin': 'Volver a iniciar sesión',
       'instructionsSent': 'Te enviamos instrucciones a tu correo.',
+      'resetPasswordTitle': 'Restablecer contraseña',
+      'resetPasswordHeadline': 'Crea una nueva contraseña',
+      'resetPasswordSubtitle':
+          'Ingresa el código que recibiste y elige tu nueva contraseña.',
+      'tokenLabel': 'Código de recuperación',
+      'missingTokenError': 'Ingresa el código de recuperación',
+      'resetPasswordAction': 'Actualizar contraseña',
+      'passwordResetSuccess':
+          'Tu contraseña fue actualizada. Inicia sesión con la nueva.',
       'verseScreenTitle': 'Versículo del día',
       'verseOfDayTag': 'Versículo de hoy',
       'verseSubtitle': 'Renueva tu espíritu con la palabra diaria.',
@@ -245,7 +261,7 @@ class AppLocalizations {
       'missingEmailError': 'Enter your email',
       'invalidEmailError': 'Invalid email',
       'missingPasswordError': 'Enter your password',
-      'shortPasswordError': 'Must be at least 6 characters',
+      'shortPasswordError': 'Must be at least 8 characters',
       'registerTitle': 'Create account',
       'registerHeadline': 'Sign up',
       'registerSubtitle': 'Create your account to personalize your readings.',
@@ -262,6 +278,15 @@ class AppLocalizations {
       'sendLink': 'Send link',
       'backToLogin': 'Back to sign in',
       'instructionsSent': 'We sent instructions to your email.',
+      'resetPasswordTitle': 'Reset password',
+      'resetPasswordHeadline': 'Create a new password',
+      'resetPasswordSubtitle':
+          'Enter the code you received and choose your new password.',
+      'tokenLabel': 'Recovery code',
+      'missingTokenError': 'Enter the recovery code',
+      'resetPasswordAction': 'Update password',
+      'passwordResetSuccess':
+          'Your password was updated. Sign in with the new one.',
       'verseScreenTitle': 'Verse of the Day',
       'verseOfDayTag': 'Verse of the day',
       'verseSubtitle': 'Refresh your spirit with the daily word.',

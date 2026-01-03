@@ -6,6 +6,7 @@ import 'package:holyverso/presentation/state/auth/auth_controller.dart';
 import 'package:holyverso/presentation/screens/auth/forgot_password_screen.dart';
 import 'package:holyverso/presentation/screens/auth/login_screen.dart';
 import 'package:holyverso/presentation/screens/auth/register_screen.dart';
+import 'package:holyverso/presentation/screens/auth/reset_password_screen.dart';
 import 'package:holyverso/presentation/screens/settings/settings_screen.dart';
 import 'package:holyverso/presentation/screens/splash/splash_screen.dart';
 import 'package:holyverso/presentation/screens/verse/saved_verses_screen.dart';
@@ -48,6 +49,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const ForgotPasswordScreen(),
       ),
       GoRoute(
+        path: '/reset-password',
+        builder: (context, state) => ResetPasswordScreen(
+          initialToken: state.uri.queryParameters['token'],
+        ),
+      ),
+      GoRoute(
         path: '/verse',
         builder: (context, state) => const VerseOfTheDayScreen(),
       ),
@@ -72,6 +79,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     redirect: (context, state) {
       final bootstrapping = authState.isLoading;
       final atSplash = state.matchedLocation == '/splash';
+      final atResetPassword = state.matchedLocation == '/reset-password';
       final atAuthRoute =
           state.matchedLocation == '/login' ||
           state.matchedLocation == '/register' ||
@@ -82,7 +90,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           state.matchedLocation == '/verse/saved' ||
           state.matchedLocation == '/settings';
 
-      if (bootstrapping) {
+      if (bootstrapping && !atResetPassword) {
         return atSplash ? null : '/splash';
       }
 
