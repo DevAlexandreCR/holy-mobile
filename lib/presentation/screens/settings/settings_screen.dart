@@ -14,6 +14,7 @@ import 'package:holyverso/presentation/state/settings/versions_controller.dart';
 import 'package:holyverso/presentation/state/settings/versions_state.dart';
 import 'package:holyverso/presentation/widgets/section_card.dart';
 import 'package:holyverso/presentation/widgets/setting_tile.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -25,13 +26,33 @@ class SettingsScreen extends ConsumerStatefulWidget {
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _verseNotificationEnabled = true;
   bool _reminderEnabled = false;
+  bool _isAppInfoLoading = true;
+  String? _appVersion;
+  String? _buildNumber;
 
   @override
   void initState() {
     super.initState();
+    _loadAppInfo();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(versionsControllerProvider.notifier).loadVersions();
     });
+  }
+
+  Future<void> _loadAppInfo() async {
+    try {
+      final info = await PackageInfo.fromPlatform();
+      if (!mounted) return;
+
+      setState(() {
+        _appVersion = info.version;
+        _buildNumber = info.buildNumber;
+        _isAppInfoLoading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _isAppInfoLoading = false);
+    }
   }
 
   Future<void> _onChangeVersion(int versionId) async {
@@ -341,6 +362,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final versionSubtitle = versionsState.isLoading && selectedVersion == null
         ? l10n.splashLoading
         : selectedVersion?.name ?? l10n.versionsEmpty;
+    final versionLabel = _appVersion != null
+        ? 'v$_appVersion'
+        : (_isAppInfoLoading ? 'Cargando...' : 'No disponible');
+    final buildLabel = _buildNumber ?? (_isAppInfoLoading ? '--' : 'N/D');
 
     return Scaffold(
       backgroundColor: AppColors.midnightFaith,
@@ -481,6 +506,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         onTap: () => setState(
                           () => _reminderEnabled = !_reminderEnabled,
                         ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  _sectionLabel('Acerca de'),
+                  SectionCard(
+                    addDividers: false,
+                    children: [
+                      SettingTile(
+                        icon: Icons.info_outline_rounded,
+                        title: 'Acerca de',
+                        subtitle: 'Versión $versionLabel • Build $buildLabel',
                       ),
                     ],
                   ),
