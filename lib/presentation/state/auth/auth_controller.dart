@@ -34,6 +34,7 @@ class AuthController extends Notifier<AuthState> {
         state = state.copyWith(
           isLoading: false,
           errorMessage: _mapError(error),
+          clearInfo: true,
         );
       }
     });
@@ -44,6 +45,7 @@ class AuthController extends Notifier<AuthState> {
       isLoading: true,
       isUpdatingSettings: false,
       clearError: true,
+      clearInfo: true,
     );
     try {
       final session = await _repository.restoreSession();
@@ -53,7 +55,11 @@ class AuthController extends Notifier<AuthState> {
       }
       _setAuthenticated(session);
     } catch (error) {
-      state = state.copyWith(isLoading: false, errorMessage: _mapError(error));
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: _mapError(error),
+        clearInfo: true,
+      );
     }
   }
 
@@ -62,13 +68,18 @@ class AuthController extends Notifier<AuthState> {
       isLoading: true,
       isUpdatingSettings: false,
       clearError: true,
+      clearInfo: true,
     );
     try {
       final payload = await _repository.login(email: email, password: password);
       _setAuthenticated(payload);
       return true;
     } catch (error) {
-      state = state.copyWith(isLoading: false, errorMessage: _mapError(error));
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: _mapError(error),
+        clearInfo: true,
+      );
       return false;
     }
   }
@@ -82,6 +93,7 @@ class AuthController extends Notifier<AuthState> {
       isLoading: true,
       isUpdatingSettings: false,
       clearError: true,
+      clearInfo: true,
     );
     try {
       final payload = await _repository.register(
@@ -92,7 +104,11 @@ class AuthController extends Notifier<AuthState> {
       _setAuthenticated(payload);
       return true;
     } catch (error) {
-      state = state.copyWith(isLoading: false, errorMessage: _mapError(error));
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: _mapError(error),
+        clearInfo: true,
+      );
       return false;
     }
   }
@@ -102,13 +118,22 @@ class AuthController extends Notifier<AuthState> {
       isLoading: true,
       isUpdatingSettings: false,
       clearError: true,
+      clearInfo: true,
     );
     try {
       await _repository.forgotPassword(email);
-      state = state.copyWith(isLoading: false);
+      state = state.copyWith(
+        isLoading: false,
+        infoMessage: _l10n.instructionsSent,
+        clearError: true,
+      );
       return true;
     } catch (error) {
-      state = state.copyWith(isLoading: false, errorMessage: _mapError(error));
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: _mapError(error),
+        clearInfo: true,
+      );
       return false;
     }
   }
@@ -121,13 +146,18 @@ class AuthController extends Notifier<AuthState> {
       isLoading: true,
       isUpdatingSettings: false,
       clearError: true,
+      clearInfo: true,
     );
     try {
       await _repository.resetPassword(token: token, newPassword: newPassword);
-      state = state.copyWith(isLoading: false);
+      state = state.copyWith(isLoading: false, clearInfo: true);
       return true;
     } catch (error) {
-      state = state.copyWith(isLoading: false, errorMessage: _mapError(error));
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: _mapError(error),
+        clearInfo: true,
+      );
       return false;
     }
   }
@@ -138,7 +168,11 @@ class AuthController extends Notifier<AuthState> {
   }
 
   Future<bool> updatePreferredVersion(int versionId) async {
-    state = state.copyWith(isUpdatingSettings: true, clearError: true);
+    state = state.copyWith(
+      isUpdatingSettings: true,
+      clearError: true,
+      clearInfo: true,
+    );
     try {
       final updatedSettings = await _repository.updatePreferredVersion(
         versionId,
@@ -152,13 +186,18 @@ class AuthController extends Notifier<AuthState> {
       state = state.copyWith(
         isUpdatingSettings: false,
         errorMessage: _mapError(error),
+        clearInfo: true,
       );
       return false;
     }
   }
 
   Future<bool> updateWidgetFontSize(WidgetFontSize fontSize) async {
-    state = state.copyWith(isUpdatingSettings: true, clearError: true);
+    state = state.copyWith(
+      isUpdatingSettings: true,
+      clearError: true,
+      clearInfo: true,
+    );
     try {
       final updatedSettings = await _repository.updateWidgetFontSize(
         fontSize.toApiString(),
@@ -176,6 +215,7 @@ class AuthController extends Notifier<AuthState> {
       state = state.copyWith(
         isUpdatingSettings: false,
         errorMessage: _mapError(error),
+        clearInfo: true,
       );
       return false;
     }
@@ -188,6 +228,7 @@ class AuthController extends Notifier<AuthState> {
       isLoading: false,
       isUpdatingSettings: false,
       errorMessage: null,
+      infoMessage: null,
     );
 
     // Detect and send timezone automatically when it's missing
@@ -250,6 +291,11 @@ class AuthController extends Notifier<AuthState> {
     }
 
     return _l10n.authUnexpectedError;
+  }
+
+  void clearInfoMessage() {
+    if (state.infoMessage == null) return;
+    state = state.copyWith(clearInfo: true);
   }
 }
 

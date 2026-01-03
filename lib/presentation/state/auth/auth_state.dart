@@ -8,6 +8,7 @@ class AuthState {
     this.isLoading = false,
     this.isUpdatingSettings = false,
     this.errorMessage,
+    this.infoMessage,
   });
 
   final User? user;
@@ -15,6 +16,7 @@ class AuthState {
   final bool isLoading;
   final bool isUpdatingSettings;
   final String? errorMessage;
+  final String? infoMessage;
 
   bool get isAuthenticated => user != null;
   int? get preferredVersionId => settings?.preferredVersionId;
@@ -25,7 +27,9 @@ class AuthState {
     bool? isLoading,
     bool? isUpdatingSettings,
     String? errorMessage,
+    String? infoMessage,
     bool clearError = false,
+    bool clearInfo = false,
   }) {
     return AuthState(
       user: user ?? this.user,
@@ -33,6 +37,7 @@ class AuthState {
       isLoading: isLoading ?? this.isLoading,
       isUpdatingSettings: isUpdatingSettings ?? this.isUpdatingSettings,
       errorMessage: clearError ? null : errorMessage ?? this.errorMessage,
+      infoMessage: clearInfo ? null : infoMessage ?? this.infoMessage,
     );
   }
 }

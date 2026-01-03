@@ -97,7 +97,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           state.matchedLocation == '/verse/saved' ||
           state.matchedLocation == '/settings';
 
-      if (bootstrapping && !atResetPassword) {
+      if (bootstrapping && !atResetPassword && !atAuthRoute) {
         return atSplash ? null : '/splash';
       }
 

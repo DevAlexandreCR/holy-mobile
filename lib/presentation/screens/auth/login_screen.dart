@@ -6,6 +6,7 @@ import 'package:holyverso/core/theme/app_colors.dart';
 import 'package:holyverso/core/theme/app_design_tokens.dart';
 import 'package:holyverso/core/theme/app_text_styles.dart';
 import 'package:holyverso/presentation/state/auth/auth_controller.dart';
+import 'package:holyverso/presentation/state/auth/auth_state.dart';
 import 'package:holyverso/presentation/widgets/holy_button.dart';
 import 'package:holyverso/presentation/widgets/holy_input_field.dart';
 
@@ -23,12 +24,25 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
-  bool _messageShown = false;
+  String? _messageShownFor;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _showSuccessMessage());
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _showSuccessMessage(ref.read(authControllerProvider)),
+    );
+  }
+
+  @override
+  void didUpdateWidget(covariant LoginScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.successMessage != oldWidget.successMessage) {
+      _messageShownFor = null;
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _showSuccessMessage(ref.read(authControllerProvider)),
+      );
+    }
   }
 
   @override
@@ -38,14 +52,35 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     super.dispose();
   }
 
-  void _showSuccessMessage() {
-    if (!mounted || _messageShown) return;
-    final message = widget.successMessage;
+  String? _getSuccessMessage(AuthState state) {
+    final widgetMessage = widget.successMessage;
+    if (widgetMessage != null && widgetMessage.isNotEmpty) {
+      return widgetMessage;
+    }
+
+    final infoMessage = state.infoMessage;
+    if (infoMessage != null && infoMessage.isNotEmpty) {
+      return infoMessage;
+    }
+
+    if (_messageShownFor != null && _messageShownFor!.isNotEmpty) {
+      return _messageShownFor;
+    }
+
+    return null;
+  }
+
+  void _showSuccessMessage(AuthState state) {
+    if (!mounted) return;
+    final message = _getSuccessMessage(state);
     if (message == null || message.isEmpty) return;
-    _messageShown = true;
+    if (_messageShownFor == message) return;
+
+    _messageShownFor = message;
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
+    ref.read(authControllerProvider.notifier).clearInfoMessage();
   }
 
   Future<void> _onSubmit() async {
@@ -76,6 +111,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Widget build(BuildContext context) {
     final state = ref.watch(authControllerProvider);
     final l10n = context.l10n;
+    final successMessage = _getSuccessMessage(state);
+
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _showSuccessMessage(state),
+    );
 
     return Scaffold(
       backgroundColor: AppColors.midnightFaith,
@@ -119,6 +159,38 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           ? null
                           : () => context.go('/register'),
                     ),
+                    if (successMessage != null && successMessage.isNotEmpty)
+                      Container(
+                        padding: const EdgeInsets.all(AppSpacing.sm),
+                        margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+                        decoration: BoxDecoration(
+                          color: AppColors.holyGold.withValues(alpha: 0.12),
+                          borderRadius: AppBorderRadius.card,
+                          border: Border.all(
+                            color: AppColors.holyGold.withValues(alpha: 0.5),
+                          ),
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Icon(
+                              Icons.check_circle_outline,
+                              color: AppColors.holyGold,
+                              size: 20,
+                            ),
+                            const SizedBox(width: AppSpacing.sm),
+                            Expanded(
+                              child: Text(
+                                successMessage,
+                                style: AppTextStyles.bodySmall.copyWith(
+                                  color: AppColors.pureWhite,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     const SizedBox(height: AppSpacing.lg),
                     HolyInputField(
                       label: l10n.emailLabel,
