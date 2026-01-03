@@ -111,7 +111,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Widget build(BuildContext context) {
     final state = ref.watch(authControllerProvider);
     final l10n = context.l10n;
-    final successMessage = _getSuccessMessage(state);
 
     WidgetsBinding.instance.addPostFrameCallback(
       (_) => _showSuccessMessage(state),
@@ -159,38 +158,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           ? null
                           : () => context.go('/register'),
                     ),
-                    if (successMessage != null && successMessage.isNotEmpty)
-                      Container(
-                        padding: const EdgeInsets.all(AppSpacing.sm),
-                        margin: const EdgeInsets.only(bottom: AppSpacing.sm),
-                        decoration: BoxDecoration(
-                          color: AppColors.holyGold.withValues(alpha: 0.12),
-                          borderRadius: AppBorderRadius.card,
-                          border: Border.all(
-                            color: AppColors.holyGold.withValues(alpha: 0.5),
-                          ),
-                        ),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Icon(
-                              Icons.check_circle_outline,
-                              color: AppColors.holyGold,
-                              size: 20,
-                            ),
-                            const SizedBox(width: AppSpacing.sm),
-                            Expanded(
-                              child: Text(
-                                successMessage,
-                                style: AppTextStyles.bodySmall.copyWith(
-                                  color: AppColors.pureWhite,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
                     const SizedBox(height: AppSpacing.lg),
                     HolyInputField(
                       label: l10n.emailLabel,
