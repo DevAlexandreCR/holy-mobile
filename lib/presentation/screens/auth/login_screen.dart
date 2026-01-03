@@ -10,7 +10,9 @@ import 'package:holyverso/presentation/widgets/holy_button.dart';
 import 'package:holyverso/presentation/widgets/holy_input_field.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
-  const LoginScreen({super.key});
+  const LoginScreen({super.key, this.successMessage});
+
+  final String? successMessage;
 
   @override
   ConsumerState<LoginScreen> createState() => _LoginScreenState();
@@ -21,12 +23,29 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  bool _messageShown = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _showSuccessMessage());
+  }
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  void _showSuccessMessage() {
+    if (!mounted || _messageShown) return;
+    final message = widget.successMessage;
+    if (message == null || message.isEmpty) return;
+    _messageShown = true;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> _onSubmit() async {

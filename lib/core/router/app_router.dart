@@ -39,7 +39,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) =>
             SplashScreen(message: splashMessage, errorDetails: splashError),
       ),
-      GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
+      GoRoute(
+        path: '/login',
+        builder: (context, state) => LoginScreen(
+          successMessage: state.extra is String
+              ? state.extra as String
+              : state.uri.queryParameters['message'],
+        ),
+      ),
       GoRoute(
         path: '/register',
         builder: (context, state) => const RegisterScreen(),
