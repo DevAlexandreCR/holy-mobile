@@ -9,6 +9,7 @@ class SettingTile extends StatelessWidget {
     super.key,
     required this.icon,
     required this.title,
+    this.iconColor,
     this.subtitle,
     this.trailing,
     this.onTap,
@@ -16,6 +17,7 @@ class SettingTile extends StatelessWidget {
 
   final IconData icon;
   final String title;
+  final Color? iconColor;
   final String? subtitle;
   final Widget? trailing;
   final VoidCallback? onTap;
@@ -35,7 +37,7 @@ class SettingTile extends StatelessWidget {
           children: [
             Icon(
               icon,
-              color: AppColors.holyGold,
+              color: iconColor ?? AppColors.holyGold,
               size: AppSizes.iconMedium,
             ),
             const SizedBox(width: AppSpacing.md),

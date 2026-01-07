@@ -675,7 +675,24 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     addDividers: false,
                     children: [
                       SettingTile(
+                        icon: Icons.logout_rounded,
+                        title: 'Cerrar sesión',
+                        trailing: Icon(
+                          Icons.chevron_right,
+                          color: AppColors.softMist.withValues(alpha: 0.8),
+                        ),
+                        onTap: () async {
+                          final goRouter = GoRouter.of(context);
+                          await ref
+                              .read(authControllerProvider.notifier)
+                              .logout();
+                          if (!mounted) return;
+                          goRouter.go('/login');
+                        },
+                      ),
+                      SettingTile(
                         icon: Icons.delete_outline,
+                        iconColor: Colors.red.shade700,
                         title: l10n.deleteAccountTitle,
                         trailing: _isDeletingAccount
                             ? const SizedBox(
@@ -693,22 +710,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                               ),
                         onTap:
                             _isDeletingAccount ? null : _openDeleteAccountSheet,
-                      ),
-                      SettingTile(
-                        icon: Icons.logout_rounded,
-                        title: 'Cerrar sesión',
-                        trailing: Icon(
-                          Icons.chevron_right,
-                          color: AppColors.softMist.withValues(alpha: 0.8),
-                        ),
-                        onTap: () async {
-                          final goRouter = GoRouter.of(context);
-                          await ref
-                              .read(authControllerProvider.notifier)
-                              .logout();
-                          if (!mounted) return;
-                          goRouter.go('/login');
-                        },
                       ),
                     ],
                   ),
