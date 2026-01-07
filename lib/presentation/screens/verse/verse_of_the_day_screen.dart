@@ -9,9 +9,11 @@ import 'package:holyverso/core/theme/app_text_styles.dart';
 import 'package:holyverso/domain/verse/reference_parser.dart';
 import 'package:holyverso/domain/verse/verse_of_the_day.dart';
 import 'package:holyverso/presentation/screens/verse/chapter_reader_screen.dart';
+import 'package:holyverso/presentation/state/auth/auth_controller.dart';
 import 'package:holyverso/presentation/state/verse/saved_verses_controller.dart';
 import 'package:holyverso/presentation/state/verse/chapter_reader_state.dart';
 import 'package:holyverso/presentation/state/verse/verse_controller.dart';
+import 'package:holyverso/presentation/widgets/holy_button.dart';
 import 'package:share_plus/share_plus.dart';
 
 class VerseOfTheDayScreen extends ConsumerStatefulWidget {
@@ -43,6 +45,10 @@ class _VerseOfTheDayScreenState extends ConsumerState<VerseOfTheDayScreen> {
 
   void _openSavedVerses() {
     context.push('/verse/saved');
+  }
+
+  void _promptLogin() {
+    context.go('/login', extra: context.l10n.loginRequiredMessage);
   }
 
   void _onShare(VerseOfTheDay verse, Rect? sharePositionOrigin) {
@@ -252,6 +258,12 @@ class _VerseOfTheDayScreenState extends ConsumerState<VerseOfTheDayScreen> {
   }
 
   void _toggleFavorite() {
+    final isAuthenticated = ref.read(authControllerProvider).isAuthenticated;
+    if (!isAuthenticated) {
+      _promptLogin();
+      return;
+    }
+
     final verse = ref.read(verseControllerProvider).verse;
     final newFavoriteState = !_isFavorite;
 
@@ -269,6 +281,8 @@ class _VerseOfTheDayScreenState extends ConsumerState<VerseOfTheDayScreen> {
     final verseState = ref.watch(verseControllerProvider);
     final verse = verseState.verse;
     final l10n = context.l10n;
+    final authState = ref.watch(authControllerProvider);
+    final isGuest = !authState.isAuthenticated;
     final savedState = ref.watch(savedVersesControllerProvider);
     final verseId = verse?.libraryVerseId;
     final isSaved = verseId != null && savedState.savedIds.contains(verseId);
@@ -292,7 +306,7 @@ class _VerseOfTheDayScreenState extends ConsumerState<VerseOfTheDayScreen> {
             builder: (BuildContext context) {
               return IconButton(
                 tooltip: l10n.shareTooltip,
-                onPressed: verse == null
+                onPressed: verse == null || isGuest
                     ? null
                     : () {
                         final box = context.findRenderObject() as RenderBox?;
@@ -314,7 +328,7 @@ class _VerseOfTheDayScreenState extends ConsumerState<VerseOfTheDayScreen> {
                       )
                     : Icon(
                         Icons.ios_share,
-                        color: verse == null
+                        color: verse == null || isGuest
                             ? AppColors.softMist.withValues(alpha: 0.4)
                             : AppColors.pureWhite,
                       ),
@@ -323,7 +337,7 @@ class _VerseOfTheDayScreenState extends ConsumerState<VerseOfTheDayScreen> {
           ),
           IconButton(
             tooltip: l10n.settingsTooltip,
-            onPressed: () => context.push('/settings'),
+            onPressed: isGuest ? _promptLogin : () => context.push('/settings'),
             icon: const Icon(
               Icons.settings_outlined,
               color: AppColors.pureWhite,
@@ -350,7 +364,7 @@ class _VerseOfTheDayScreenState extends ConsumerState<VerseOfTheDayScreen> {
                 children: [
                   _Header(
                     verse: verse,
-                    onViewSaved: _openSavedVerses,
+                    onViewSaved: isGuest ? null : _openSavedVerses,
                   ),
                   const SizedBox(height: AppSpacing.md),
                   _VerseCard(
@@ -360,16 +374,24 @@ class _VerseOfTheDayScreenState extends ConsumerState<VerseOfTheDayScreen> {
                     isSaving: isSaving,
                     isFavorite: _isFavorite,
                     isGeneratingImage: _isGeneratingImage,
+                    canUseAccountFeatures: !isGuest,
                     onToggleSave:
-                        verse == null ? null : () => _toggleSave(verse),
-                    onToggleFavorite: _toggleFavorite,
-                    onShare: verse == null
+                        verse == null || isGuest ? null : () => _toggleSave(verse),
+                    onToggleFavorite: isGuest ? null : _toggleFavorite,
+                    onShare: verse == null || isGuest
                         ? null
                         : (rect) => _showShareOptions(verse, rect),
                   ),
-                  if (verse != null) ...[
+                  if (verse != null && !isGuest) ...[
                     const SizedBox(height: AppSpacing.md),
                     _ChapterEntryCard(onTap: () => _openChapterReader(verse)),
+                  ],
+                  if (isGuest) ...[
+                    const SizedBox(height: AppSpacing.md),
+                    _GuestCtaCard(
+                      onRegister: () => context.go('/register'),
+                      onLogin: _promptLogin,
+                    ),
                   ],
                   if (verseState.hasError)
                     Padding(
@@ -484,6 +506,7 @@ class _VerseCard extends StatelessWidget {
     required this.isSaving,
     required this.isFavorite,
     required this.isGeneratingImage,
+    required this.canUseAccountFeatures,
     required this.onToggleSave,
     required this.onToggleFavorite,
     required this.onShare,
@@ -495,8 +518,9 @@ class _VerseCard extends StatelessWidget {
   final bool isSaving;
   final bool isFavorite;
   final bool isGeneratingImage;
+  final bool canUseAccountFeatures;
   final VoidCallback? onToggleSave;
-  final VoidCallback onToggleFavorite;
+  final VoidCallback? onToggleFavorite;
   final void Function(Rect?)? onShare;
 
   @override
@@ -542,28 +566,35 @@ class _VerseCard extends StatelessWidget {
                   _CircleIconButton(
                     icon:
                         isSaved ? Icons.bookmark : Icons.bookmark_border_outlined,
-                    color: isSaved
-                        ? AppColors.holyGold
-                        : AppColors.pureWhite.withValues(alpha: 0.85),
+                    color: canUseAccountFeatures
+                        ? (isSaved
+                            ? AppColors.holyGold
+                            : AppColors.pureWhite.withValues(alpha: 0.85))
+                        : AppColors.softMist.withValues(alpha: 0.35),
                     isLoading: isSaving,
-                    onPressed: onToggleSave,
+                    onPressed: canUseAccountFeatures ? onToggleSave : null,
                   ),
                   const SizedBox(width: AppSpacing.sm),
                   _CircleIconButton(
                     icon: isFavorite ? Icons.favorite : Icons.favorite_border,
-                    color: isFavorite
-                        ? AppColors.holyGold
-                        : AppColors.pureWhite.withValues(alpha: 0.85),
-                    onPressed: onToggleFavorite,
+                    color: canUseAccountFeatures
+                        ? (isFavorite
+                            ? AppColors.holyGold
+                            : AppColors.pureWhite.withValues(alpha: 0.85))
+                        : AppColors.softMist.withValues(alpha: 0.35),
+                    onPressed: canUseAccountFeatures ? onToggleFavorite : null,
                   ),
                   const SizedBox(width: AppSpacing.sm),
                   Builder(
                     builder: (BuildContext context) {
                       return _CircleIconButton(
                         icon: Icons.ios_share,
-                        color: AppColors.pureWhite.withValues(alpha: 0.85),
+                        color: canUseAccountFeatures
+                            ? AppColors.pureWhite.withValues(alpha: 0.85)
+                            : AppColors.softMist.withValues(alpha: 0.35),
                         isLoading: isGeneratingImage,
-                        onPressed: onShare == null
+                        onPressed:
+                            !canUseAccountFeatures || onShare == null
                             ? null
                             : () {
                                 final box =
@@ -581,6 +612,71 @@ class _VerseCard extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _GuestCtaCard extends StatelessWidget {
+  const _GuestCtaCard({
+    required this.onRegister,
+    required this.onLogin,
+  });
+
+  final VoidCallback onRegister;
+  final VoidCallback onLogin;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: AppColors.pureWhite.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+        border: Border.all(color: AppColors.pureWhite.withValues(alpha: 0.1)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            l10n.guestCtaTitle,
+            style: AppTextStyles.labelLarge.copyWith(
+              color: AppColors.pureWhite,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            l10n.guestAccessFeatureMessage,
+            style: AppTextStyles.bodySmall.copyWith(
+              color: AppColors.softMist.withValues(alpha: 0.8),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            l10n.guestAccessFreeMessage,
+            style: AppTextStyles.bodySmall.copyWith(
+              color: AppColors.softMist.withValues(alpha: 0.75),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          HolyButton(
+            label: l10n.guestCtaAction,
+            onPressed: onRegister,
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          TextButton(
+            onPressed: onLogin,
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.holyGold,
+              textStyle: AppTextStyles.bodyMedium.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            child: Text(l10n.loginTitle),
+          ),
+        ],
       ),
     );
   }

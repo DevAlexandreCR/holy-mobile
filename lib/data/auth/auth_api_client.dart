@@ -53,6 +53,10 @@ class AuthApiClient {
     return AuthPayload.fromMap(response.data as Map<String, dynamic>);
   }
 
+  Future<void> deleteAccount() async {
+    await _dio.delete('/user/account');
+  }
+
   Future<UserSettings> updatePreferredVersion(int versionId) async {
     final response = await _dio.put(
       '/user/settings/version',

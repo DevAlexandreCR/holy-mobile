@@ -16,6 +16,11 @@ class VerseRepository {
 
   Set<int> get savedIds => {..._savedIds};
 
+  void clearSession() {
+    _cache = null;
+    _savedIds.clear();
+  }
+
   Future<({VerseOfTheDay verse, bool wasFromNetwork})> fetchTodayVerse({
     bool forceRefresh = false,
   }) async {

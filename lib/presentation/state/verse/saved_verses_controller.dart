@@ -19,6 +19,7 @@ class SavedVersesController extends Notifier<SavedVersesState> {
     _repository = ref.read(verseRepositoryProvider);
     ref.listen(authControllerProvider, (previous, next) {
       if (previous?.isAuthenticated == true && !next.isAuthenticated) {
+        _repository.clearSession();
         state = const SavedVersesState();
       }
     });

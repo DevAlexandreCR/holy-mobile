@@ -72,6 +72,11 @@ class AuthRepository {
     return _tokenService.clearToken();
   }
 
+  Future<void> deleteAccount() async {
+    await _client.deleteAccount();
+    await _tokenService.clearToken();
+  }
+
   Future<UserSettings> updatePreferredVersion(int versionId) {
     return _client.updatePreferredVersion(versionId);
   }

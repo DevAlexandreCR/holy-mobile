@@ -261,6 +261,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       onPressed: state.isLoading ? null : _onSubmit,
                     ),
                     const SizedBox(height: AppSpacing.md),
+                    _GuestAccessCard(
+                      isLoading: state.isLoading,
+                      onContinue: () => context.go('/verse'),
+                    ),
+                    const SizedBox(height: AppSpacing.md),
                     TextButton(
                       onPressed: state.isLoading
                           ? null
@@ -410,6 +415,72 @@ class _AuthToggleButton extends StatelessWidget {
             fontWeight: FontWeight.w700,
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _GuestAccessCard extends StatelessWidget {
+  const _GuestAccessCard({required this.isLoading, required this.onContinue});
+
+  final bool isLoading;
+  final VoidCallback onContinue;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: AppColors.pureWhite.withValues(alpha: 0.06),
+        borderRadius: AppBorderRadius.card,
+        border: Border.all(
+          color: AppColors.pureWhite.withValues(alpha: 0.1),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            l10n.guestAccessTitle,
+            style: AppTextStyles.labelLarge.copyWith(
+              color: AppColors.pureWhite,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            l10n.guestAccessFreeMessage,
+            style: AppTextStyles.bodySmall.copyWith(
+              color: AppColors.softMist.withValues(alpha: 0.85),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            l10n.guestAccessFeatureMessage,
+            style: AppTextStyles.bodySmall.copyWith(
+              color: AppColors.softMist.withValues(alpha: 0.75),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          OutlinedButton(
+            onPressed: isLoading ? null : onContinue,
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.holyGold,
+              side: BorderSide(
+                color: AppColors.holyGold.withValues(alpha: 0.7),
+              ),
+              minimumSize: const Size(
+                double.infinity,
+                AppSizes.buttonHeight,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: AppBorderRadius.button,
+              ),
+            ),
+            child: Text(l10n.continueWithoutAccount),
+          ),
+        ],
       ),
     );
   }

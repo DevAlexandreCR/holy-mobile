@@ -20,6 +20,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         isLoading: state.isLoading,
         isAuthenticated: state.isAuthenticated,
         errorMessage: state.errorMessage,
+        infoMessage: state.infoMessage,
       ),
     ),
   );
@@ -92,7 +93,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           state.matchedLocation == '/register' ||
           state.matchedLocation == '/forgot-password';
       final isProtectedRoute =
-          state.matchedLocation == '/verse' ||
           state.matchedLocation == '/verse/chapter' ||
           state.matchedLocation == '/verse/saved' ||
           state.matchedLocation == '/settings';
@@ -106,7 +106,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       }
 
       if (!authState.isAuthenticated && (atSplash || isProtectedRoute)) {
-        return '/login';
+        if (atSplash) {
+          return '/login';
+        }
+
+        final message = baseL10n.loginRequiredMessage;
+        final encodedMessage = Uri.encodeComponent(message);
+        return authState.infoMessage == null || authState.infoMessage!.isEmpty
+            ? '/login?message=$encodedMessage'
+            : '/login';
       }
 
       return null;

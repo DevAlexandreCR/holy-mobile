@@ -167,6 +167,27 @@ class AuthController extends Notifier<AuthState> {
     state = const AuthState();
   }
 
+  Future<bool> deleteAccount() async {
+    state = state.copyWith(
+      isLoading: true,
+      isUpdatingSettings: false,
+      clearError: true,
+      clearInfo: true,
+    );
+    try {
+      await _repository.deleteAccount();
+      state = AuthState(infoMessage: _l10n.deleteAccountSuccess);
+      return true;
+    } catch (error) {
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: _mapError(error),
+        clearInfo: true,
+      );
+      return false;
+    }
+  }
+
   Future<bool> updatePreferredVersion(int versionId) async {
     state = state.copyWith(
       isUpdatingSettings: true,

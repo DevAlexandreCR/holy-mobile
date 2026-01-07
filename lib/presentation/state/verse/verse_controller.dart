@@ -22,8 +22,10 @@ class VerseController extends Notifier<VerseState> {
     _widgetSyncService = ref.read(widgetSyncServiceProvider);
 
     ref.listen(authControllerProvider, (previous, next) {
-      if (previous?.isAuthenticated == true && !next.isAuthenticated) {
+      if (previous?.isAuthenticated != next.isAuthenticated) {
+        _repository.clearSession();
         state = const VerseState();
+        unawaited(loadVerse(forceRefresh: true));
       }
     });
 
@@ -34,13 +36,10 @@ class VerseController extends Notifier<VerseState> {
     if (state.isLoading && !forceRefresh) return;
 
     final authState = ref.read(authControllerProvider);
-    if (!authState.isAuthenticated) {
-      state = const VerseState();
-      return;
-    }
+    final isGuest = !authState.isAuthenticated;
 
     // Check if user has selected a Bible version
-    if (authState.preferredVersionId == null) {
+    if (!isGuest && authState.preferredVersionId == null) {
       // Don't make API call, just mark as no version selected
       state = const VerseState(
         isLoading: false,
@@ -53,15 +52,20 @@ class VerseController extends Notifier<VerseState> {
 
     try {
       final result = await _repository.fetchTodayVerse(
-        forceRefresh: forceRefresh,
+        forceRefresh: forceRefresh || isGuest,
       );
       state = state.copyWith(verse: result.verse, isLoading: false);
-      ref
-          .read(savedVersesControllerProvider.notifier)
-          .syncFromTodayVerse(result.verse);
-      unawaited(
-        _handleAfterFetch(result.verse, wasFromNetwork: result.wasFromNetwork),
-      );
+      if (!isGuest) {
+        ref
+            .read(savedVersesControllerProvider.notifier)
+            .syncFromTodayVerse(result.verse);
+        unawaited(
+          _handleAfterFetch(
+            result.verse,
+            wasFromNetwork: result.wasFromNetwork,
+          ),
+        );
+      }
     } catch (error) {
       // Check if it's a 404 or NO_VERSION_SELECTED error
       final is404 = error is DioException && error.response?.statusCode == 404;

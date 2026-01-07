@@ -43,6 +43,19 @@ class AppLocalizations {
   String get loginAction => _string('loginAction');
   String get forgotPassword => _string('forgotPassword');
   String get createAccount => _string('createAccount');
+  String get continueWithoutAccount => _string('continueWithoutAccount');
+  String get guestAccessTitle => _string('guestAccessTitle');
+  String get guestAccessFreeMessage => _string('guestAccessFreeMessage');
+  String get guestAccessFeatureMessage => _string('guestAccessFeatureMessage');
+  String get guestCtaTitle => _string('guestCtaTitle');
+  String get guestCtaAction => _string('guestCtaAction');
+  String get loginRequiredMessage => _string('loginRequiredMessage');
+  String get deleteAccountTitle => _string('deleteAccountTitle');
+  String get deleteAccountSubtitle => _string('deleteAccountSubtitle');
+  String get deleteAccountConfirm => _string('deleteAccountConfirm');
+  String get deleteAccountCancel => _string('deleteAccountCancel');
+  String get deleteAccountSuccess => _string('deleteAccountSuccess');
+  String get deleteAccountError => _string('deleteAccountError');
   String get welcomeBack => _string('welcomeBack');
   String get missingEmailError => _string('missingEmailError');
   String get invalidEmailError => _string('invalidEmailError');
@@ -155,6 +168,22 @@ class AppLocalizations {
       'loginAction': 'Entrar',
       'forgotPassword': '¿Olvidaste tu contraseña?',
       'createAccount': 'Crear cuenta nueva',
+      'continueWithoutAccount': 'Continuar sin cuenta',
+      'guestAccessTitle': 'Explora como invitado',
+      'guestAccessFreeMessage':
+          'La app es completamente gratis y siempre lo será.',
+      'guestAccessFeatureMessage':
+          'Para compartir, guardar, cambiar versión y configurar el widget necesitas una cuenta.',
+      'guestCtaTitle': 'Desbloquea todas las funciones',
+      'guestCtaAction': 'Crear cuenta gratis',
+      'loginRequiredMessage': 'Inicia sesión para continuar.',
+      'deleteAccountTitle': 'Eliminar cuenta',
+      'deleteAccountSubtitle':
+          'Esta acción elimina tu cuenta y tus datos guardados. No se puede deshacer.',
+      'deleteAccountConfirm': 'Eliminar cuenta',
+      'deleteAccountCancel': 'Cancelar',
+      'deleteAccountSuccess': 'Cuenta eliminada correctamente.',
+      'deleteAccountError': 'No pudimos eliminar tu cuenta. Inténtalo nuevamente.',
       'welcomeBack': '¡Bienvenido de nuevo!',
       'missingEmailError': 'Ingresa tu correo',
       'invalidEmailError': 'Correo inválido',
@@ -257,6 +286,22 @@ class AppLocalizations {
       'loginAction': 'Sign in',
       'forgotPassword': 'Forgot your password?',
       'createAccount': 'Create new account',
+      'continueWithoutAccount': 'Continue without account',
+      'guestAccessTitle': 'Explore as a guest',
+      'guestAccessFreeMessage':
+          'The app is completely free and always will be.',
+      'guestAccessFeatureMessage':
+          'To share, save, change versions, and set up the widget you need an account.',
+      'guestCtaTitle': 'Unlock all features',
+      'guestCtaAction': 'Create free account',
+      'loginRequiredMessage': 'Please sign in to continue.',
+      'deleteAccountTitle': 'Delete account',
+      'deleteAccountSubtitle':
+          'This action deletes your account and saved data. It cannot be undone.',
+      'deleteAccountConfirm': 'Delete account',
+      'deleteAccountCancel': 'Cancel',
+      'deleteAccountSuccess': 'Account deleted successfully.',
+      'deleteAccountError': 'We could not delete your account. Please try again.',
       'welcomeBack': 'Welcome back!',
       'missingEmailError': 'Enter your email',
       'invalidEmailError': 'Invalid email',

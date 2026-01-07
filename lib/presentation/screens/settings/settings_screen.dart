@@ -29,6 +29,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _isAppInfoLoading = true;
   String? _appVersion;
   String? _buildNumber;
+  bool _isDeletingAccount = false;
 
   @override
   void initState() {
@@ -349,6 +350,153 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
+  Future<void> _openDeleteAccountSheet() async {
+    final l10n = context.l10n;
+    final messenger = ScaffoldMessenger.of(context);
+    final router = GoRouter.of(context);
+
+    await showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (sheetContext) {
+        var isDeleting = false;
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            Future<void> handleDelete() async {
+              if (isDeleting) return;
+              setSheetState(() => isDeleting = true);
+              setState(() => _isDeletingAccount = true);
+
+              final success = await ref
+                  .read(authControllerProvider.notifier)
+                  .deleteAccount();
+
+              if (!mounted) return;
+              setState(() => _isDeletingAccount = false);
+
+              if (success) {
+                Navigator.of(sheetContext).pop();
+                router.go('/login');
+                return;
+              }
+
+              setSheetState(() => isDeleting = false);
+              final errorMessage = ref.read(authControllerProvider).errorMessage ??
+                  l10n.deleteAccountError;
+              messenger.showSnackBar(
+                SnackBar(
+                  content: Text(errorMessage),
+                  backgroundColor: Colors.red.shade700,
+                ),
+              );
+            }
+
+            return Container(
+              decoration: BoxDecoration(
+                color: AppColors.midnightFaith.withValues(alpha: 0.98),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(AppBorderRadius.lg),
+                ),
+                border: Border.all(
+                  color: AppColors.pureWhite.withValues(alpha: 0.08),
+                ),
+              ),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg,
+                AppSpacing.md,
+                AppSpacing.lg,
+                AppSpacing.lg,
+              ),
+              child: SafeArea(
+                top: false,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 46,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: AppColors.pureWhite.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(99),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    Text(
+                      l10n.deleteAccountTitle,
+                      style: AppTextStyles.labelLarge.copyWith(
+                        color: AppColors.pureWhite,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                    Text(
+                      l10n.deleteAccountSubtitle,
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: AppColors.softMist.withValues(alpha: 0.8),
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextButton(
+                            onPressed:
+                                isDeleting ? null : () => Navigator.of(sheetContext).pop(),
+                            style: TextButton.styleFrom(
+                              foregroundColor: AppColors.softMist,
+                              textStyle: AppTextStyles.bodyMedium.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            child: Text(l10n.deleteAccountCancel),
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.sm),
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: isDeleting ? null : handleDelete,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.red.shade700,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(
+                                vertical: AppSpacing.sm,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: AppBorderRadius.button,
+                              ),
+                              textStyle: AppTextStyles.button.copyWith(
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            child: isDeleting
+                                ? const SizedBox(
+                                    height: 18,
+                                    width: 18,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor:
+                                          AlwaysStoppedAnimation<Color>(Colors.white),
+                                    ),
+                                  )
+                                : Text(l10n.deleteAccountConfirm),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final versionsState = ref.watch(versionsControllerProvider);
@@ -526,6 +674,26 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   SectionCard(
                     addDividers: false,
                     children: [
+                      SettingTile(
+                        icon: Icons.delete_outline,
+                        title: l10n.deleteAccountTitle,
+                        trailing: _isDeletingAccount
+                            ? const SizedBox(
+                                height: 18,
+                                width: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: AppColors.holyGold,
+                                ),
+                              )
+                            : Icon(
+                                Icons.chevron_right,
+                                color:
+                                    AppColors.softMist.withValues(alpha: 0.8),
+                              ),
+                        onTap:
+                            _isDeletingAccount ? null : _openDeleteAccountSheet,
+                      ),
                       SettingTile(
                         icon: Icons.logout_rounded,
                         title: 'Cerrar sesión',
