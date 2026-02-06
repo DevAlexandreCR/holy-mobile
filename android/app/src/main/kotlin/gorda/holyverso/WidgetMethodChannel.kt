@@ -54,16 +54,28 @@ class WidgetMethodChannel(private val context: Context) : MethodChannel.MethodCa
     }
 
     private fun refreshWidgets() {
-        val intent = Intent(context, BibleWidgetProvider::class.java).apply {
+        // Refresh home screen widgets
+        val homeIntent = Intent(context, BibleWidgetProvider::class.java).apply {
             action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
         }
         val widgetManager = AppWidgetManager.getInstance(context)
-        val widgetIds = widgetManager.getAppWidgetIds(
+        val homeWidgetIds = widgetManager.getAppWidgetIds(
             ComponentName(context, BibleWidgetProvider::class.java)
         )
-        android.util.Log.d("WidgetMethodChannel", "Refreshing ${widgetIds.size} widgets")
-        intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, widgetIds)
-        context.sendBroadcast(intent)
+        homeIntent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, homeWidgetIds)
+        context.sendBroadcast(homeIntent)
+        
+        // Refresh lock screen widgets
+        val lockIntent = Intent(context, LockScreenWidgetProvider::class.java).apply {
+            action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
+        }
+        val lockWidgetIds = widgetManager.getAppWidgetIds(
+            ComponentName(context, LockScreenWidgetProvider::class.java)
+        )
+        lockIntent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, lockWidgetIds)
+        context.sendBroadcast(lockIntent)
+        
+        android.util.Log.d("WidgetMethodChannel", "Refreshing ${homeWidgetIds.size} home widgets and ${lockWidgetIds.size} lock screen widgets")
     }
 
     private fun requestImmediateUpdate() {

@@ -271,8 +271,39 @@ struct WidgetVerseView: View {
     let entry: WidgetVerseEntry
 
     private var isMedium: Bool { family == .systemMedium }
+    private var isLockScreen: Bool {
+        if #available(iOS 16.0, *) {
+            return family == .accessoryCircular || family == .accessoryRectangular || family == .accessoryInline
+        }
+        return false
+    }
 
     var body: some View {
+        if isLockScreen {
+            if #available(iOS 16.0, *) {
+                lockScreenView
+            }
+        } else {
+            homeScreenView
+        }
+    }
+    
+    @available(iOS 16.0, *)
+    @ViewBuilder
+    private var lockScreenView: some View {
+        switch family {
+        case .accessoryCircular:
+            CircularLockScreenView(entry: entry)
+        case .accessoryRectangular:
+            RectangularLockScreenView(entry: entry)
+        case .accessoryInline:
+            InlineLockScreenView(entry: entry)
+        default:
+            homeScreenView
+        }
+    }
+    
+    private var homeScreenView: some View {
         ZStack(alignment: .leading) {
             if entry.isPlaceholder || entry.verse == nil {
                 VStack(alignment: .leading, spacing: 8) {
@@ -285,7 +316,7 @@ struct WidgetVerseView: View {
                     Spacer()
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-                .padding(.vertical, isMedium ? 4 : 2)
+                .padding(isMedium ? 16 : 12)
             } else if let verse = entry.verse {
                 VStack(alignment: .leading, spacing: isMedium ? 4 : 2) {
                     Text(verse.text)
@@ -316,7 +347,7 @@ struct WidgetVerseView: View {
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-                .padding(.vertical, isMedium ? 4 : 2)
+                .padding(isMedium ? 16 : 12)
             }
         }
         .containerBackground(for: .widget) {
@@ -333,6 +364,89 @@ struct WidgetVerseView: View {
     }
 }
 
+// MARK: - Lock Screen Widget Views
+
+@available(iOS 16.0, *)
+struct CircularLockScreenView: View {
+    var entry: WidgetVerseEntry
+    
+    var body: some View {
+        ZStack {
+            AccessoryWidgetBackground()
+            VStack(spacing: 2) {
+                Image(systemName: "book.closed.fill")
+                    .font(.system(size: 20))
+                if let verse = entry.verse {
+                    Text(shortReference(from: verse.reference))
+                        .font(.system(size: 10, weight: .medium))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                } else {
+                    Text("---")
+                        .font(.system(size: 10, weight: .medium))
+                }
+            }
+        }
+    }
+    
+    private func shortReference(from reference: String) -> String {
+        // Convert "Juan 3:16" to "Jn 3:16" or similar
+        let components = reference.split(separator: " ")
+        if let bookName = components.first {
+            let abbreviated = String(bookName.prefix(2))
+            let rest = components.dropFirst().joined(separator: " ")
+            return "\(abbreviated) \(rest)"
+        }
+        return reference
+    }
+}
+
+@available(iOS 16.0, *)
+struct RectangularLockScreenView: View {
+    var entry: WidgetVerseEntry
+    
+    var body: some View {
+        HStack(spacing: 0) {
+            VStack(alignment: .leading, spacing: 2) {
+                if let verse = entry.verse {
+                    Text(verse.reference)
+                        .font(.system(size: 12, weight: .semibold))
+                        .lineLimit(1)
+                        .widgetAccentable()
+                    
+                    Text(verse.text)
+                        .font(.system(size: 11))
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.8)
+                } else {
+                    Text(WidgetVersePlaceholder.message)
+                        .font(.system(size: 11))
+                        .lineLimit(3)
+                        .widgetAccentable()
+                }
+            }
+            Spacer(minLength: 0)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+    }
+}
+
+@available(iOS 16.0, *)
+struct InlineLockScreenView: View {
+    var entry: WidgetVerseEntry
+    
+    var body: some View {
+        if let verse = entry.verse {
+            let shortText = String(verse.text.prefix(50))
+            Text("\(verse.reference): \(shortText)\(verse.text.count > 50 ? "..." : "")")
+                .lineLimit(1)
+        } else {
+            Text("HolyVerso - Abre la app")
+                .lineLimit(1)
+        }
+    }
+}
+
 struct WidgetVerseWidget: Widget {
     let kind: String = "WidgetVerse"
 
@@ -342,7 +456,21 @@ struct WidgetVerseWidget: Widget {
         }
         .configurationDisplayName("HolyVerso")
         .description("Luz y Palabra para cada día.")
-        .supportedFamilies([.systemSmall, .systemMedium])
+        .supportedFamilies(supportedFamilies())
+    }
+    
+    private func supportedFamilies() -> [WidgetFamily] {
+        if #available(iOS 16.0, *) {
+            return [
+                .systemSmall,
+                .systemMedium,
+                .accessoryCircular,
+                .accessoryRectangular,
+                .accessoryInline
+            ]
+        } else {
+            return [.systemSmall, .systemMedium]
+        }
     }
 }
 

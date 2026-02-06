@@ -200,12 +200,21 @@ class WidgetUpdateWorker(
 
     private fun updateWidgets() {
         val appWidgetManager = AppWidgetManager.getInstance(applicationContext)
-        val componentName = ComponentName(applicationContext, BibleWidgetProvider::class.java)
-        val appWidgetIds = appWidgetManager.getAppWidgetIds(componentName)
         
-        if (appWidgetIds.isNotEmpty()) {
-            BibleWidgetProvider().onUpdate(applicationContext, appWidgetManager, appWidgetIds)
-            Log.d(TAG, "Widgets updated: ${appWidgetIds.size} widget(s)")
+        // Update home screen widgets
+        val homeComponentName = ComponentName(applicationContext, BibleWidgetProvider::class.java)
+        val homeWidgetIds = appWidgetManager.getAppWidgetIds(homeComponentName)
+        if (homeWidgetIds.isNotEmpty()) {
+            BibleWidgetProvider().onUpdate(applicationContext, appWidgetManager, homeWidgetIds)
+            Log.d(TAG, "Home screen widgets updated: ${homeWidgetIds.size} widget(s)")
+        }
+        
+        // Update lock screen widgets
+        val lockComponentName = ComponentName(applicationContext, LockScreenWidgetProvider::class.java)
+        val lockWidgetIds = appWidgetManager.getAppWidgetIds(lockComponentName)
+        if (lockWidgetIds.isNotEmpty()) {
+            LockScreenWidgetProvider().onUpdate(applicationContext, appWidgetManager, lockWidgetIds)
+            Log.d(TAG, "Lock screen widgets updated: ${lockWidgetIds.size} widget(s)")
         }
     }
 

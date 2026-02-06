@@ -2,4 +2,5 @@
 <resources>
     <string name="app_name">HolyVerso</string>
     <string name="widget_description">Daily Bible verse on your home screen</string>
+    <string name="lockscreen_widget_description">Daily Bible verse on your lock screen</string>
 </resources>

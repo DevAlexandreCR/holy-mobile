@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/lockscreen_widget_container"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="8dp"
+    android:background="@drawable/widget_background">
+
+    <!-- Reference at the top -->
+    <TextView
+        android:id="@+id/lockscreen_widget_reference"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:text="Verse of the day"
+        android:textSize="11sp"
+        android:textColor="#F4D27A"
+        android:fontFamily="sans-serif-medium"
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:shadowColor="#80F4D27A"
+        android:shadowDx="0"
+        android:shadowDy="0"
+        android:shadowRadius="3" />
+
+    <!-- Verse text in the middle -->
+    <TextView
+        android:id="@+id/lockscreen_widget_text"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/lockscreen_widget_reference"
+        android:layout_above="@+id/lockscreen_widget_version"
+        android:layout_marginTop="4dp"
+        android:layout_marginBottom="4dp"
+        android:text="Tap to open HolyVerso"
+        android:textSize="14sp"
+        android:textColor="#FFFFFF"
+        android:fontFamily="sans-serif"
+        android:maxLines="2"
+        android:ellipsize="end"
+        android:shadowColor="#80000000"
+        android:shadowDx="0"
+        android:shadowDy="1"
+        android:shadowRadius="2" />
+
+    <!-- Version at the bottom -->
+    <TextView
+        android:id="@+id/lockscreen_widget_version"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:text=""
+        android:textSize="9sp"
+        android:textColor="#99FFFFFF"
+        android:fontFamily="sans-serif"
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:gravity="end" />
+
+</RelativeLayout>
