@@ -9,11 +9,15 @@ import 'package:holyverso/core/theme/app_design_tokens.dart';
 import 'package:holyverso/core/theme/app_text_styles.dart';
 import 'package:holyverso/data/auth/models/user_settings.dart';
 import 'package:holyverso/data/bible/models/bible_version.dart';
+import 'package:holyverso/domain/roles/user_role.dart';
 import 'package:holyverso/presentation/state/auth/auth_controller.dart';
+import 'package:holyverso/presentation/state/roles/role_provider.dart';
 import 'package:holyverso/presentation/state/settings/versions_controller.dart';
 import 'package:holyverso/presentation/state/settings/versions_state.dart';
+import 'package:holyverso/presentation/widgets/common/role_guard.dart';
 import 'package:holyverso/presentation/widgets/section_card.dart';
 import 'package:holyverso/presentation/widgets/setting_tile.dart';
+import 'package:holyverso/presentation/widgets/users/role_badge.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -118,6 +122,39 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         style: AppTextStyles.labelSmall.copyWith(
           color: AppColors.softMist.withValues(alpha: 0.6),
           letterSpacing: 1.2,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRoleTile(AsyncValue<UserRole> roleAsync) {
+    return roleAsync.when(
+      data: (role) => SettingTile(
+        icon: Icons.verified_user_outlined,
+        title: 'Tu rol',
+        subtitle: role.description,
+        trailing: RoleBadge(role: role),
+      ),
+      loading: () => SettingTile(
+        icon: Icons.verified_user_outlined,
+        title: 'Tu rol',
+        subtitle: 'Cargando rol...',
+        trailing: const SizedBox(
+          height: 18,
+          width: 18,
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            color: AppColors.holyGold,
+          ),
+        ),
+      ),
+      error: (_, __) => SettingTile(
+        icon: Icons.verified_user_outlined,
+        title: 'Tu rol',
+        subtitle: 'No fue posible cargar el rol',
+        trailing: Icon(
+          Icons.info_outline,
+          color: AppColors.softMist.withValues(alpha: 0.7),
         ),
       ),
     );
@@ -501,6 +538,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Widget build(BuildContext context) {
     final versionsState = ref.watch(versionsControllerProvider);
     final authState = ref.watch(authControllerProvider);
+    final roleAsync = ref.watch(myRoleProvider);
     final isUpdating = authState.isUpdatingSettings;
     final l10n = context.l10n;
     final selectedVersion = _selectedVersion(
@@ -670,10 +708,32 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     ],
                   ),
                   const SizedBox(height: AppSpacing.lg),
+                  RoleGuard(
+                    allowedRoles: const [UserRole.admin],
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _sectionLabel('Administración'),
+                        SectionCard(
+                          addDividers: false,
+                          children: [
+                            SettingTile(
+                              icon: Icons.people_alt_outlined,
+                              title: 'Gestión de usuarios',
+                              subtitle: 'Administra roles y accesos',
+                              onTap: () => GoRouter.of(context).push('/users'),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: AppSpacing.lg),
+                      ],
+                    ),
+                  ),
                   _sectionLabel('Cuenta'),
                   SectionCard(
                     addDividers: false,
                     children: [
+                      _buildRoleTile(roleAsync),
                       SettingTile(
                         icon: Icons.logout_rounded,
                         title: 'Cerrar sesión',
