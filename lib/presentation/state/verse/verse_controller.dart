@@ -38,16 +38,6 @@ class VerseController extends Notifier<VerseState> {
     final authState = ref.read(authControllerProvider);
     final isGuest = !authState.isAuthenticated;
 
-    // Check if user has selected a Bible version
-    if (!isGuest && authState.preferredVersionId == null) {
-      // Don't make API call, just mark as no version selected
-      state = const VerseState(
-        isLoading: false,
-        errorMessage: null, // No error, just no version selected
-      );
-      return;
-    }
-
     state = state.copyWith(isLoading: true, clearError: true);
 
     try {
