@@ -1,0 +1,35 @@
+{
+  "releases": [
+    {
+      "version": "1.1.0",
+      "releaseDate": "2026-02-09",
+      "changes": [
+        "Interfaz renovada con una navegación más clara y fluida.",
+        "Nuevo buscador de versículos con resultados rápidos y precisos.",
+        "Resumen de novedades al iniciar la app para que no te pierdas nada.",
+        "Mejoras de estabilidad y rendimiento en general."
+      ],
+      "isImportant": true
+    },
+    {
+      "version": "1.0.1",
+      "releaseDate": "2026-02-09",
+      "changes": [
+        "Nuevo resumen de novedades al iniciar la app.",
+        "Mejoras de estabilidad en el widget diario.",
+        "Ajustes visuales para una lectura más clara."
+      ],
+      "isImportant": true
+    },
+    {
+      "version": "1.0.0",
+      "releaseDate": "2026-01-15",
+      "changes": [
+        "Lanzamiento inicial de HolyVerso.",
+        "Versículo del día con opciones para compartir.",
+        "Configuración de versiones de Biblia y guardados."
+      ],
+      "isImportant": false
+    }
+  ]
+}

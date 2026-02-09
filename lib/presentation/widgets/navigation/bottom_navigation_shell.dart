@@ -4,8 +4,12 @@ import 'package:go_router/go_router.dart';
 import 'package:holyverso/core/l10n/app_localizations.dart';
 import 'package:holyverso/core/theme/app_colors.dart';
 import 'package:holyverso/core/theme/app_text_styles.dart';
+import 'package:holyverso/core/services/version_detector_service.dart';
+import 'package:holyverso/domain/models/release_note.dart';
 import 'package:holyverso/presentation/providers/navigation_provider.dart';
+import 'package:holyverso/presentation/providers/whats_new_provider.dart';
 import 'package:holyverso/presentation/state/roles/role_provider.dart';
+import 'package:holyverso/presentation/widgets/dialogs/whats_new_dialog.dart';
 
 class BottomNavigationShell extends ConsumerStatefulWidget {
   const BottomNavigationShell({super.key, required this.navigationShell});
@@ -20,6 +24,8 @@ class BottomNavigationShell extends ConsumerStatefulWidget {
 class _BottomNavigationShellState
     extends ConsumerState<BottomNavigationShell> {
   ProviderSubscription<int>? _navigationListener;
+  ProviderSubscription<AsyncValue<ReleaseNote?>>? _whatsNewListener;
+  bool _whatsNewHandled = false;
 
   @override
   void initState() {
@@ -32,12 +38,57 @@ class _BottomNavigationShellState
         }
       },
     );
+    _whatsNewListener = ref.listenManual<AsyncValue<ReleaseNote?>>(
+      whatsNewProvider,
+      (previous, next) {
+        next.whenData((note) {
+          if (note == null || _whatsNewHandled) {
+            return;
+          }
+          _whatsNewHandled = true;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted) return;
+            _showWhatsNewDialog(note);
+          });
+        });
+      },
+      fireImmediately: true,
+    );
   }
 
   @override
   void dispose() {
     _navigationListener?.close();
+    _whatsNewListener?.close();
     super.dispose();
+  }
+
+  Future<void> _showWhatsNewDialog(ReleaseNote note) async {
+    await showGeneralDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: 'Cerrar',
+      barrierColor: Colors.black.withValues(alpha: 0.6),
+      transitionDuration: const Duration(milliseconds: 220),
+      pageBuilder: (context, animation, secondaryAnimation) =>
+          Center(child: WhatsNewDialog(releaseNote: note)),
+      transitionBuilder: (context, animation, secondaryAnimation, child) {
+        final curved = CurvedAnimation(
+          parent: animation,
+          curve: Curves.easeOutCubic,
+        );
+        return FadeTransition(
+          opacity: curved,
+          child: ScaleTransition(
+            scale: Tween<double>(begin: 0.96, end: 1.0).animate(curved),
+            child: child,
+          ),
+        );
+      },
+    );
+
+    if (!mounted) return;
+    await ref.read(versionDetectorServiceProvider).markVersionAsSeen();
   }
 
   void _onTap(int branchIndex) {
