@@ -24,7 +24,6 @@ class _BottomNavigationShellState
   @override
   void initState() {
     super.initState();
-    _syncProviderWithShell();
     _navigationListener = ref.listenManual<int>(
       bottomNavigationIndexProvider,
       (previous, next) {
@@ -36,25 +35,9 @@ class _BottomNavigationShellState
   }
 
   @override
-  void didUpdateWidget(covariant BottomNavigationShell oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    _syncProviderWithShell();
-  }
-
-  @override
   void dispose() {
     _navigationListener?.close();
     super.dispose();
-  }
-
-  void _syncProviderWithShell() {
-    final currentIndex = widget.navigationShell.currentIndex;
-    final providerIndex = ref.read(bottomNavigationIndexProvider);
-    if (providerIndex != currentIndex) {
-      ref
-          .read(bottomNavigationIndexProvider.notifier)
-          .setIndex(currentIndex);
-    }
   }
 
   void _onTap(int branchIndex) {
@@ -69,7 +52,7 @@ class _BottomNavigationShellState
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final currentBranchIndex = ref.watch(bottomNavigationIndexProvider);
+    final currentBranchIndex = widget.navigationShell.currentIndex;
     final canManageUsers = ref.watch(canManageUsersProvider);
     final items = _buildItems(l10n, canManageUsers);
     final currentIndex = items.indexWhere(
