@@ -85,14 +85,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   AppBar _buildAppBar() {
+    final canPop = Navigator.of(context).canPop();
     return AppBar(
       backgroundColor: AppColors.midnightFaith.withValues(alpha: 0.82),
       elevation: 0,
       centerTitle: true,
-      leading: IconButton(
-        icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.pureWhite),
-        onPressed: () => Navigator.of(context).maybePop(),
-      ),
+      automaticallyImplyLeading: false,
+      leading: canPop
+          ? IconButton(
+              icon: const Icon(
+                Icons.arrow_back_ios_new,
+                color: AppColors.pureWhite,
+              ),
+              onPressed: () => Navigator.of(context).maybePop(),
+            )
+          : null,
       title: Text(
         context.l10n.settingsTitle,
         style: AppTextStyles.headline3.copyWith(

@@ -96,7 +96,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     final state = ref.read(authControllerProvider);
     if (success) {
-      context.go('/verse');
+      context.go('/home');
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(context.l10n.welcomeBack)));
@@ -263,7 +263,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     const SizedBox(height: AppSpacing.md),
                     _GuestAccessCard(
                       isLoading: state.isLoading,
-                      onContinue: () => context.go('/verse'),
+                      onContinue: () => context.go('/home'),
                     ),
                     const SizedBox(height: AppSpacing.md),
                     TextButton(

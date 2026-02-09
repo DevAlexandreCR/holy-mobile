@@ -129,6 +129,18 @@ class AppTheme {
           vertical: 12,
         ),
       ),
+      bottomNavigationBarTheme: BottomNavigationBarThemeData(
+        backgroundColor: midnightFaith,
+        selectedItemColor: holyGold,
+        unselectedItemColor: softMist.withValues(alpha: 0.65),
+        selectedLabelStyle: textTheme.labelSmall?.copyWith(
+          fontWeight: FontWeight.w600,
+        ),
+        unselectedLabelStyle: textTheme.labelSmall?.copyWith(
+          fontWeight: FontWeight.w500,
+        ),
+        type: BottomNavigationBarType.fixed,
+      ),
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
         backgroundColor: colorScheme.surfaceContainerHighest,

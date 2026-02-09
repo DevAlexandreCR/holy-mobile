@@ -302,14 +302,6 @@ class _VerseOfTheDayScreenState extends ConsumerState<VerseOfTheDayScreen> {
           ),
         ),
         actions: [
-          IconButton(
-            tooltip: l10n.verseSearchTooltip,
-            onPressed: isGuest ? _promptLogin : () => context.push('/verse/search'),
-            icon: const Icon(
-              Icons.search,
-              color: AppColors.pureWhite,
-            ),
-          ),
           Builder(
             builder: (BuildContext context) {
               return IconButton(
@@ -339,17 +331,9 @@ class _VerseOfTheDayScreenState extends ConsumerState<VerseOfTheDayScreen> {
                         color: verse == null || isGuest
                             ? AppColors.softMist.withValues(alpha: 0.4)
                             : AppColors.pureWhite,
-                      ),
+                    ),
               );
             },
-          ),
-          IconButton(
-            tooltip: l10n.settingsTooltip,
-            onPressed: isGuest ? _promptLogin : () => context.push('/settings'),
-            icon: const Icon(
-              Icons.settings_outlined,
-              color: AppColors.pureWhite,
-            ),
           ),
         ],
       ),
@@ -966,7 +950,7 @@ class _EmptyState extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.md),
         FilledButton.icon(
-          onPressed: () => context.push('/settings'),
+          onPressed: () => context.go('/settings'),
           icon: const Icon(Icons.settings_outlined),
           label: const Text('Ir a Ajustes'),
         ),

@@ -133,6 +133,9 @@ class AppLocalizations {
   String get verseSearchVoiceUnavailable => _string('verseSearchVoiceUnavailable');
 
   String get settingsTitle => _string('settingsTitle');
+  String get navHomeLabel => _string('navHomeLabel');
+  String get navSearchLabel => _string('navSearchLabel');
+  String get navSettingsLabel => _string('navSettingsLabel');
   String get preferencesTitle => _string('preferencesTitle');
   String get preferencesSubtitle => _string('preferencesSubtitle');
   String get bibleVersionsTitle => _string('bibleVersionsTitle');
@@ -275,6 +278,9 @@ class AppLocalizations {
       'verseSearchVoiceUnavailable': 'La búsqueda por voz estará disponible pronto.',
       'errorRetry': 'Reintentar',
       'settingsTitle': 'Configuración',
+      'navHomeLabel': 'Inicio',
+      'navSearchLabel': 'Búsqueda',
+      'navSettingsLabel': 'Ajustes',
       'preferencesTitle': 'Preferencias',
       'preferencesSubtitle':
           'Elige tu traducción favorita para sincronizar el versículo diario.',
@@ -404,6 +410,9 @@ class AppLocalizations {
       'verseSearchVoiceUnavailable': 'Voice search is coming soon.',
       'errorRetry': 'Retry',
       'settingsTitle': 'Settings',
+      'navHomeLabel': 'Home',
+      'navSearchLabel': 'Search',
+      'navSettingsLabel': 'Settings',
       'preferencesTitle': 'Preferences',
       'preferencesSubtitle':
           'Choose your favorite translation for the daily verse.',

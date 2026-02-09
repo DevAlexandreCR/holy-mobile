@@ -299,7 +299,7 @@ class _SavedVersesScreenState extends ConsumerState<SavedVersesScreen> {
 
     if (state.items.isEmpty) {
       return _EmptySavedState(
-        onDiscover: () => context.push('/verse'),
+        onDiscover: () => context.go('/home'),
       );
     }
 
