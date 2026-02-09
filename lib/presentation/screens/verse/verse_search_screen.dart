@@ -56,6 +56,12 @@ class _VerseSearchScreenState extends ConsumerState<VerseSearchScreen> {
 
   void _onQueryChanged(String value) {
     _debounce?.cancel();
+    if (mounted) {
+      setState(() {});
+    }
+    if (value.trim().isEmpty && _submittedQuery.isNotEmpty) {
+      setState(() => _submittedQuery = '');
+    }
     _debounce = Timer(const Duration(milliseconds: 300), () {
       if (!mounted) return;
       setState(() => _debouncedQuery = value);
@@ -69,6 +75,14 @@ class _VerseSearchScreenState extends ConsumerState<VerseSearchScreen> {
     setState(() => _submittedQuery = trimmed);
     ref.read(searchHistoryProvider.notifier).addSearch(trimmed);
     _focusNode.unfocus();
+  }
+
+  void _clearSearch() {
+    _controller.clear();
+    setState(() {
+      _submittedQuery = '';
+      _debouncedQuery = '';
+    });
   }
 
   void _applySuggestion(BookSuggestion suggestion) {
@@ -198,13 +212,7 @@ class _VerseSearchScreenState extends ConsumerState<VerseSearchScreen> {
               hintText: l10n.verseSearchPlaceholder,
               onChanged: _onQueryChanged,
               onSubmitted: _submitQuery,
-              onVoiceTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(l10n.verseSearchVoiceUnavailable),
-                  ),
-                );
-              },
+              onClear: _clearSearch,
             ),
             const SizedBox(height: AppSpacing.sm),
             if (_focusNode.hasFocus)
@@ -376,7 +384,7 @@ class _SearchBar extends StatelessWidget {
     required this.hintText,
     required this.onChanged,
     required this.onSubmitted,
-    required this.onVoiceTap,
+    required this.onClear,
   });
 
   final TextEditingController controller;
@@ -384,7 +392,7 @@ class _SearchBar extends StatelessWidget {
   final String hintText;
   final ValueChanged<String> onChanged;
   final ValueChanged<String> onSubmitted;
-  final VoidCallback onVoiceTap;
+  final VoidCallback onClear;
 
   @override
   Widget build(BuildContext context) {
@@ -392,9 +400,21 @@ class _SearchBar extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.midnightFaithDark,
         borderRadius: AppBorderRadius.input,
-        border: Border.all(color: AppColors.softMist.withValues(alpha: 0.3)),
+        border: Border.all(
+          color: AppColors.holyGold.withValues(alpha: 0.25),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.holyGold.withValues(alpha: 0.12),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.xs,
+      ),
       child: Row(
         children: [
           const Icon(Icons.search, color: AppColors.softMist),
@@ -415,17 +435,20 @@ class _SearchBar extends StatelessWidget {
                 hintStyle: AppTextStyles.bodyMedium.copyWith(
                   color: AppColors.softMist.withValues(alpha: 0.6),
                 ),
+                contentPadding: EdgeInsets.zero,
                 filled: true,
                 fillColor: Colors.transparent,
                 border: InputBorder.none,
               ),
             ),
           ),
-          IconButton(
-            onPressed: onVoiceTap,
-            icon: const Icon(Icons.mic_none),
-            color: AppColors.holyGold,
-          ),
+          if (controller.text.isNotEmpty)
+            IconButton(
+              onPressed: onClear,
+              icon: const Icon(Icons.close),
+              color: AppColors.softMist.withValues(alpha: 0.8),
+              tooltip: 'Limpiar búsqueda',
+            ),
         ],
       ),
     );
