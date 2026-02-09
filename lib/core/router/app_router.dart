@@ -92,7 +92,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               ),
               GoRoute(
                 path: '/verse/saved',
-                builder: (context, state) => const SavedVersesScreen(),
+                redirect: (context, state) => '/saved',
               ),
             ],
           ),
@@ -106,6 +106,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: '/verse/search',
                 redirect: (context, state) => '/search',
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            initialLocation: '/saved',
+            routes: [
+              GoRoute(
+                path: '/saved',
+                builder: (context, state) => const SavedVersesScreen(),
               ),
             ],
           ),
@@ -143,6 +152,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final isProtectedRoute =
           location == '/home' ||
           location == '/search' ||
+          location == '/saved' ||
           location == '/settings' ||
           location == '/users' ||
           location == '/verse' ||

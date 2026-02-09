@@ -110,26 +110,34 @@ List<_NavItem> _buildItems(AppLocalizations l10n, bool canManageUsers) {
       label: l10n.navHomeLabel,
     ),
     _NavItem(
+      branchIndex: 2,
+      icon: Icons.bookmark_rounded,
+      label: l10n.navSavedLabel,
+    ),
+    _NavItem(
       branchIndex: 1,
       icon: Icons.search_rounded,
       label: l10n.navSearchLabel,
-    ),
-    _NavItem(
-      branchIndex: 2,
-      icon: Icons.settings_rounded,
-      label: l10n.navSettingsLabel,
     ),
   ];
 
   if (canManageUsers) {
     items.add(
       _NavItem(
-        branchIndex: 3,
+        branchIndex: 4,
         icon: Icons.people_alt_rounded,
         label: l10n.navUsersLabel,
       ),
     );
   }
+
+  items.add(
+    _NavItem(
+      branchIndex: 3,
+      icon: Icons.settings_rounded,
+      label: l10n.navSettingsLabel,
+    ),
+  );
 
   return items;
 }

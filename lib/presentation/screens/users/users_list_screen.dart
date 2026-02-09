@@ -60,23 +60,17 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen> {
             )
           : null,
       title: Text(
-        'Gestión de Roles HolyVerso',
+        'Gestión de usuarios',
         style: AppTextStyles.headline3.copyWith(
-          color: AppColors.holyGold,
+          color: AppColors.pureWhite,
           fontWeight: FontWeight.w700,
-          shadows: [
-            Shadow(
-              color: AppColors.holyGold.withValues(alpha: 0.4),
-              blurRadius: 16,
-            ),
-          ],
         ),
       ),
       actions: [
         PopupMenuButton<UserRole?>(
           icon: Icon(
             Icons.tune_rounded,
-            color: AppColors.holyGold.withValues(alpha: 0.9),
+            color: AppColors.pureWhite,
           ),
           tooltip: 'Filtrar por rol',
           initialValue: state.roleFilter,

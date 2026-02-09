@@ -44,10 +44,6 @@ class _VerseOfTheDayScreenState extends ConsumerState<VerseOfTheDayScreen> {
         .loadVerse(forceRefresh: true);
   }
 
-  void _openSavedVerses() {
-    context.push('/verse/saved');
-  }
-
   void _promptLogin() {
     context.go('/login', extra: context.l10n.loginRequiredMessage);
   }
@@ -336,10 +332,7 @@ class _VerseOfTheDayScreenState extends ConsumerState<VerseOfTheDayScreen> {
                   vertical: AppSpacing.md,
                 ),
                 children: [
-                  _Header(
-                    verse: verse,
-                    onViewSaved: isGuest ? null : _openSavedVerses,
-                  ),
+                  _Header(verse: verse),
                   const SizedBox(height: AppSpacing.md),
                   _VerseCard(
                     verse: verse,
@@ -385,10 +378,9 @@ class _VerseOfTheDayScreenState extends ConsumerState<VerseOfTheDayScreen> {
 }
 
 class _Header extends StatelessWidget {
-  const _Header({this.verse, this.onViewSaved});
+  const _Header({this.verse});
 
   final VerseOfTheDay? verse;
-  final VoidCallback? onViewSaved;
 
   @override
   Widget build(BuildContext context) {
@@ -396,68 +388,12 @@ class _Header extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.md,
-            vertical: AppSpacing.sm,
-          ),
-          decoration: BoxDecoration(
-            color: AppColors.pureWhite.withValues(alpha: 0.06),
-            borderRadius: AppBorderRadius.button,
-            border: Border.all(
-              color: AppColors.pureWhite.withValues(alpha: 0.1),
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(
-                Icons.auto_awesome,
-                color: AppColors.holyGold,
-                size: AppSizes.iconSmall,
-              ),
-              const SizedBox(width: AppSpacing.xs),
-              Text(
-                l10n.verseOfDayTag,
-                style: AppTextStyles.labelMedium.copyWith(
-                  color: AppColors.pureWhite,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: AppSpacing.sm),
         Text(
           l10n.verseSubtitle,
           style: AppTextStyles.bodyLarge.copyWith(
             color: AppColors.softMist.withValues(alpha: 0.85),
           ),
         ),
-        if (onViewSaved != null) ...[
-          const SizedBox(height: AppSpacing.sm),
-          TextButton.icon(
-            style: TextButton.styleFrom(
-              foregroundColor: AppColors.holyGold,
-              backgroundColor: AppColors.pureWhite.withValues(alpha: 0.06),
-              shape: RoundedRectangleBorder(
-                borderRadius: AppBorderRadius.button,
-                side: BorderSide(
-                  color: AppColors.holyGold.withValues(alpha: 0.35),
-                ),
-              ),
-            ),
-            onPressed: onViewSaved,
-            icon: const Icon(Icons.bookmark_add_outlined),
-            label: Text(
-              l10n.viewSavedAction,
-              style: AppTextStyles.labelMedium.copyWith(
-                fontWeight: FontWeight.w700,
-                color: AppColors.holyGold,
-              ),
-            ),
-          ),
-        ],
         if (verse != null && verse!.date.isNotEmpty) ...[
           const SizedBox(height: AppSpacing.xs),
           Text(

@@ -135,6 +135,7 @@ class AppLocalizations {
   String get settingsTitle => _string('settingsTitle');
   String get navHomeLabel => _string('navHomeLabel');
   String get navSearchLabel => _string('navSearchLabel');
+  String get navSavedLabel => _string('navSavedLabel');
   String get navSettingsLabel => _string('navSettingsLabel');
   String get navUsersLabel => _string('navUsersLabel');
   String get preferencesTitle => _string('preferencesTitle');
@@ -281,6 +282,7 @@ class AppLocalizations {
       'settingsTitle': 'Configuración',
       'navHomeLabel': 'Inicio',
       'navSearchLabel': 'Búsqueda',
+      'navSavedLabel': 'Guardados',
       'navSettingsLabel': 'Ajustes',
       'navUsersLabel': 'Usuarios',
       'preferencesTitle': 'Preferencias',
@@ -414,6 +416,7 @@ class AppLocalizations {
       'settingsTitle': 'Settings',
       'navHomeLabel': 'Home',
       'navSearchLabel': 'Search',
+      'navSavedLabel': 'Saved',
       'navSettingsLabel': 'Settings',
       'navUsersLabel': 'Users',
       'preferencesTitle': 'Preferences',
