@@ -64,8 +64,14 @@ class _BottomNavigationShellState
       body: widget.navigationShell,
       bottomNavigationBar: Theme(
         data: Theme.of(context).copyWith(
-          splashColor: AppColors.holyGold.withValues(alpha: 0.18),
-          highlightColor: AppColors.holyGold.withValues(alpha: 0.08),
+          splashColor: AppColors.holyGold.withValues(alpha: 0.12),
+          highlightColor: Colors.transparent,
+          hoverColor: Colors.transparent,
+          splashFactory:
+              Theme.of(context).platform == TargetPlatform.iOS ||
+                      Theme.of(context).platform == TargetPlatform.macOS
+                  ? InkSparkle.splashFactory
+                  : Theme.of(context).splashFactory,
         ),
         child: BottomNavigationBar(
           currentIndex: currentIndex < 0 ? 0 : currentIndex,
