@@ -15,6 +15,7 @@ import 'package:holyverso/domain/verse/verse_of_the_day.dart';
 import 'package:holyverso/presentation/state/verse/autocomplete_provider.dart';
 import 'package:holyverso/presentation/state/verse/search_history_provider.dart';
 import 'package:holyverso/presentation/state/verse/search_results_provider.dart';
+import 'package:holyverso/presentation/widgets/common/holy_bottom_sheet.dart';
 import 'package:share_plus/share_plus.dart';
 
 class VerseSearchScreen extends ConsumerStatefulWidget {
@@ -291,105 +292,84 @@ class _VerseSearchScreenState extends ConsumerState<VerseSearchScreen> {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        decoration: BoxDecoration(
-          color: AppColors.midnightFaith,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        child: SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const SizedBox(height: 12),
-              Container(
-                width: 40,
-                height: 4,
+      builder: (context) => HolyBottomSheet(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              l10n.shareOptionsTitle,
+              style: AppTextStyles.headline3.copyWith(
+                color: AppColors.pureWhite,
+              ),
+            ),
+            const SizedBox(height: 24),
+            ListTile(
+              enabled: canShareImage,
+              leading: Container(
+                padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: AppColors.pureWhite.withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(2),
+                  color:
+                      (canShareImage ? AppColors.holyGold : AppColors.softMist)
+                          .withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.image_outlined,
+                  color: canShareImage ? AppColors.holyGold : AppColors.softMist,
                 ),
               ),
-              const SizedBox(height: 24),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Text(
-                  l10n.shareOptionsTitle,
-                  style: AppTextStyles.headline3.copyWith(
-                    color: AppColors.pureWhite,
-                  ),
+              title: Text(
+                l10n.shareAsImage,
+                style: AppTextStyles.bodyLarge.copyWith(
+                  color:
+                      canShareImage ? AppColors.pureWhite : AppColors.softMist,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
-              const SizedBox(height: 24),
-              ListTile(
-                enabled: canShareImage,
-                leading: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: (canShareImage
-                            ? AppColors.holyGold
-                            : AppColors.softMist)
-                        .withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(
-                    Icons.image_outlined,
-                    color:
-                        canShareImage ? AppColors.holyGold : AppColors.softMist,
-                  ),
+              subtitle: Text(
+                canShareImage
+                    ? l10n.shareAsImageDescription
+                    : l10n.verseSearchShareImageDisabled,
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: AppColors.softMist.withValues(alpha: 0.7),
                 ),
-                title: Text(
-                  l10n.shareAsImage,
-                  style: AppTextStyles.bodyLarge.copyWith(
-                    color:
-                        canShareImage ? AppColors.pureWhite : AppColors.softMist,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                subtitle: Text(
-                  canShareImage
-                      ? l10n.shareAsImageDescription
-                      : l10n.verseSearchShareImageDisabled,
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: AppColors.softMist.withValues(alpha: 0.7),
-                  ),
-                ),
-                onTap: !canShareImage
-                    ? null
-                    : () {
-                        Navigator.pop(context);
-                        _shareAsImage(result, sharePositionOrigin);
-                      },
               ),
-              ListTile(
-                leading: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: AppColors.pureWhite.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(Icons.text_fields, color: AppColors.pureWhite),
+              onTap: !canShareImage
+                  ? null
+                  : () {
+                      Navigator.pop(context);
+                      _shareAsImage(result, sharePositionOrigin);
+                    },
+            ),
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.pureWhite.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                title: Text(
-                  l10n.shareAsText,
-                  style: AppTextStyles.bodyLarge.copyWith(
-                    color: AppColors.pureWhite,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                subtitle: Text(
-                  l10n.shareAsTextDescription,
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: AppColors.softMist.withValues(alpha: 0.7),
-                  ),
-                ),
-                onTap: () {
-                  Navigator.pop(context);
-                  _shareAsText(result, sharePositionOrigin);
-                },
+                child: Icon(Icons.text_fields, color: AppColors.pureWhite),
               ),
-              const SizedBox(height: 24),
-            ],
-          ),
+              title: Text(
+                l10n.shareAsText,
+                style: AppTextStyles.bodyLarge.copyWith(
+                  color: AppColors.pureWhite,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              subtitle: Text(
+                l10n.shareAsTextDescription,
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: AppColors.softMist.withValues(alpha: 0.7),
+                ),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                _shareAsText(result, sharePositionOrigin);
+              },
+            ),
+            const SizedBox(height: 8),
+          ],
         ),
       ),
     );

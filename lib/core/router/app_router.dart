@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:holyverso/core/l10n/app_localizations.dart';
 import 'package:holyverso/presentation/state/auth/auth_controller.dart';
+import 'package:holyverso/presentation/state/roles/role_provider.dart';
 import 'package:holyverso/presentation/screens/auth/forgot_password_screen.dart';
 import 'package:holyverso/presentation/screens/auth/login_screen.dart';
 import 'package:holyverso/presentation/screens/auth/register_screen.dart';
@@ -115,6 +116,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 path: '/settings',
                 builder: (context, state) => const SettingsScreen(),
               ),
+            ],
+          ),
+          StatefulShellBranch(
+            initialLocation: '/users',
+            routes: [
               GoRoute(
                 path: '/users',
                 builder: (context, state) => const UsersListScreen(),
@@ -133,6 +139,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           state.matchedLocation == '/register' ||
           state.matchedLocation == '/forgot-password';
       final location = state.matchedLocation;
+      final canManageUsers = ref.watch(canManageUsersProvider);
       final isProtectedRoute =
           location == '/home' ||
           location == '/search' ||
@@ -159,6 +166,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         return authState.infoMessage == null || authState.infoMessage!.isEmpty
             ? '/login?message=$encodedMessage'
             : '/login';
+      }
+
+      if (authState.isAuthenticated &&
+          location == '/users' &&
+          !canManageUsers) {
+        return '/settings';
       }
 
       return null;

@@ -136,6 +136,7 @@ class AppLocalizations {
   String get navHomeLabel => _string('navHomeLabel');
   String get navSearchLabel => _string('navSearchLabel');
   String get navSettingsLabel => _string('navSettingsLabel');
+  String get navUsersLabel => _string('navUsersLabel');
   String get preferencesTitle => _string('preferencesTitle');
   String get preferencesSubtitle => _string('preferencesSubtitle');
   String get bibleVersionsTitle => _string('bibleVersionsTitle');
@@ -281,6 +282,7 @@ class AppLocalizations {
       'navHomeLabel': 'Inicio',
       'navSearchLabel': 'Búsqueda',
       'navSettingsLabel': 'Ajustes',
+      'navUsersLabel': 'Usuarios',
       'preferencesTitle': 'Preferencias',
       'preferencesSubtitle':
           'Elige tu traducción favorita para sincronizar el versículo diario.',
@@ -413,6 +415,7 @@ class AppLocalizations {
       'navHomeLabel': 'Home',
       'navSearchLabel': 'Search',
       'navSettingsLabel': 'Settings',
+      'navUsersLabel': 'Users',
       'preferencesTitle': 'Preferences',
       'preferencesSubtitle':
           'Choose your favorite translation for the daily verse.',

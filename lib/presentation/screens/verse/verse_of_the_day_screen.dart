@@ -14,6 +14,7 @@ import 'package:holyverso/presentation/state/verse/saved_verses_controller.dart'
 import 'package:holyverso/presentation/state/verse/chapter_reader_state.dart';
 import 'package:holyverso/presentation/state/verse/verse_controller.dart';
 import 'package:holyverso/presentation/widgets/holy_button.dart';
+import 'package:holyverso/presentation/widgets/common/holy_bottom_sheet.dart';
 import 'package:share_plus/share_plus.dart';
 
 class VerseOfTheDayScreen extends ConsumerStatefulWidget {
@@ -125,92 +126,73 @@ class _VerseOfTheDayScreenState extends ConsumerState<VerseOfTheDayScreen> {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        decoration: BoxDecoration(
-          color: AppColors.midnightFaith,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        child: SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const SizedBox(height: 12),
-              Container(
-                width: 40,
-                height: 4,
+      builder: (context) => HolyBottomSheet(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              l10n.shareOptionsTitle,
+              style: AppTextStyles.headline3.copyWith(
+                color: AppColors.pureWhite,
+              ),
+            ),
+            const SizedBox(height: 24),
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: AppColors.pureWhite.withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(2),
+                  color: AppColors.holyGold.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(Icons.image_outlined, color: AppColors.holyGold),
+              ),
+              title: Text(
+                l10n.shareAsImage,
+                style: AppTextStyles.bodyLarge.copyWith(
+                  color: AppColors.pureWhite,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
-              const SizedBox(height: 24),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Text(
-                  l10n.shareOptionsTitle,
-                  style: AppTextStyles.headline3.copyWith(
-                    color: AppColors.pureWhite,
-                  ),
+              subtitle: Text(
+                l10n.shareAsImageDescription,
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: AppColors.softMist.withValues(alpha: 0.7),
                 ),
               ),
-              const SizedBox(height: 24),
-              ListTile(
-                leading: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: AppColors.holyGold.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(Icons.image_outlined, color: AppColors.holyGold),
+              onTap: () {
+                Navigator.pop(context);
+                _onShareAsImage(verse, sharePositionOrigin);
+              },
+            ),
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.pureWhite.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                title: Text(
-                  l10n.shareAsImage,
-                  style: AppTextStyles.bodyLarge.copyWith(
-                    color: AppColors.pureWhite,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                subtitle: Text(
-                  l10n.shareAsImageDescription,
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: AppColors.softMist.withValues(alpha: 0.7),
-                  ),
-                ),
-                onTap: () {
-                  Navigator.pop(context);
-                  _onShareAsImage(verse, sharePositionOrigin);
-                },
+                child: Icon(Icons.text_fields, color: AppColors.pureWhite),
               ),
-              ListTile(
-                leading: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: AppColors.pureWhite.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(Icons.text_fields, color: AppColors.pureWhite),
+              title: Text(
+                l10n.shareAsText,
+                style: AppTextStyles.bodyLarge.copyWith(
+                  color: AppColors.pureWhite,
+                  fontWeight: FontWeight.w600,
                 ),
-                title: Text(
-                  l10n.shareAsText,
-                  style: AppTextStyles.bodyLarge.copyWith(
-                    color: AppColors.pureWhite,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                subtitle: Text(
-                  l10n.shareAsTextDescription,
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: AppColors.softMist.withValues(alpha: 0.7),
-                  ),
-                ),
-                onTap: () {
-                  Navigator.pop(context);
-                  _onShare(verse, sharePositionOrigin);
-                },
               ),
-              const SizedBox(height: 24),
-            ],
-          ),
+              subtitle: Text(
+                l10n.shareAsTextDescription,
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: AppColors.softMist.withValues(alpha: 0.7),
+                ),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                _onShare(verse, sharePositionOrigin);
+              },
+            ),
+            const SizedBox(height: 8),
+          ],
         ),
       ),
     );

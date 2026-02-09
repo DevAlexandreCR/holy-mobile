@@ -14,9 +14,9 @@ import 'package:holyverso/presentation/state/auth/auth_controller.dart';
 import 'package:holyverso/presentation/state/roles/role_provider.dart';
 import 'package:holyverso/presentation/state/settings/versions_controller.dart';
 import 'package:holyverso/presentation/state/settings/versions_state.dart';
-import 'package:holyverso/presentation/widgets/common/role_guard.dart';
 import 'package:holyverso/presentation/widgets/section_card.dart';
 import 'package:holyverso/presentation/widgets/setting_tile.dart';
+import 'package:holyverso/presentation/widgets/common/holy_bottom_sheet.dart';
 import 'package:holyverso/presentation/widgets/users/role_badge.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
@@ -185,77 +185,48 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (sheetContext) {
-        return Container(
-          decoration: BoxDecoration(
-            color: AppColors.midnightFaith.withValues(alpha: 0.98),
-            borderRadius: const BorderRadius.vertical(
-              top: Radius.circular(AppBorderRadius.lg),
-            ),
-            border: Border.all(
-              color: AppColors.pureWhite.withValues(alpha: 0.08),
-            ),
-          ),
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.lg,
-            AppSpacing.md,
-            AppSpacing.lg,
-            AppSpacing.lg,
-          ),
-          child: SafeArea(
-            top: false,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Container(
-                    width: 46,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: AppColors.pureWhite.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(99),
-                    ),
-                  ),
+        return HolyBottomSheet(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Tamaño de letra del widget',
+                style: AppTextStyles.labelLarge.copyWith(
+                  color: AppColors.pureWhite,
+                  fontWeight: FontWeight.w700,
                 ),
-                const SizedBox(height: AppSpacing.md),
-                Text(
-                  'Tamaño de letra del widget',
-                  style: AppTextStyles.labelLarge.copyWith(
-                    color: AppColors.pureWhite,
-                    fontWeight: FontWeight.w700,
-                  ),
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                'Selecciona el tamaño de letra para el versículo en el widget',
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: AppColors.softMist.withValues(alpha: 0.8),
                 ),
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  'Selecciona el tamaño de letra para el versículo en el widget',
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: AppColors.softMist.withValues(alpha: 0.8),
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                ListView.separated(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemBuilder: (_, index) {
-                    final size = WidgetFontSize.values[index];
-                    final isSelected = size == selectedSize;
-                    return _FontSizeOption(
-                      size: size,
-                      label: _getFontSizeLabel(size),
-                      selected: isSelected,
-                      disabled: isUpdating,
-                      onTap: () {
-                        Navigator.of(sheetContext).pop();
-                        _onChangeFontSize(size);
-                      },
-                    );
-                  },
-                  separatorBuilder: (context, index) =>
-                      const SizedBox(height: AppSpacing.sm),
-                  itemCount: WidgetFontSize.values.length,
-                ),
-              ],
-            ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemBuilder: (_, index) {
+                  final size = WidgetFontSize.values[index];
+                  final isSelected = size == selectedSize;
+                  return _FontSizeOption(
+                    size: size,
+                    label: _getFontSizeLabel(size),
+                    selected: isSelected,
+                    disabled: isUpdating,
+                    onTap: () {
+                      Navigator.of(sheetContext).pop();
+                      _onChangeFontSize(size);
+                    },
+                  );
+                },
+                separatorBuilder: (context, index) =>
+                    const SizedBox(height: AppSpacing.sm),
+                itemCount: WidgetFontSize.values.length,
+              ),
+            ],
           ),
         );
       },
@@ -292,102 +263,73 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (sheetContext) {
-        return Container(
-          decoration: BoxDecoration(
-            color: AppColors.midnightFaith.withValues(alpha: 0.98),
-            borderRadius: const BorderRadius.vertical(
-              top: Radius.circular(AppBorderRadius.lg),
-            ),
-            border: Border.all(
-              color: AppColors.pureWhite.withValues(alpha: 0.08),
-            ),
-          ),
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.lg,
-            AppSpacing.md,
-            AppSpacing.lg,
-            AppSpacing.lg,
-          ),
-          child: SafeArea(
-            top: false,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Container(
-                    width: 46,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: AppColors.pureWhite.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(99),
-                    ),
-                  ),
+        return HolyBottomSheet(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                l10n.bibleVersionsTitle,
+                style: AppTextStyles.labelLarge.copyWith(
+                  color: AppColors.pureWhite,
+                  fontWeight: FontWeight.w700,
                 ),
-                const SizedBox(height: AppSpacing.md),
-                Text(
-                  l10n.bibleVersionsTitle,
-                  style: AppTextStyles.labelLarge.copyWith(
-                    color: AppColors.pureWhite,
-                    fontWeight: FontWeight.w700,
-                  ),
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                l10n.bibleVersionsSubtitle,
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: AppColors.softMist.withValues(alpha: 0.8),
                 ),
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  l10n.bibleVersionsSubtitle,
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: AppColors.softMist.withValues(alpha: 0.8),
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                if (versionsState.isLoading && versionsState.versions.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: AppSpacing.md),
-                    child: Center(
-                      child: SizedBox(
-                        height: 26,
-                        width: 26,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2.4,
-                          color: AppColors.holyGold,
-                        ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              if (versionsState.isLoading && versionsState.versions.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: AppSpacing.md),
+                  child: Center(
+                    child: SizedBox(
+                      height: 26,
+                      width: 26,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.4,
+                        color: AppColors.holyGold,
                       ),
                     ),
-                  )
-                else if (versionsState.hasError &&
-                    versionsState.versions.isEmpty)
-                  _ErrorPill(
-                    message:
-                        versionsState.errorMessage ?? l10n.versionsLoadError,
-                  )
-                else
-                  ConstrainedBox(
-                    constraints: BoxConstraints(
-                      maxHeight: MediaQuery.of(context).size.height * 0.6,
-                    ),
-                    child: ListView.separated(
-                      shrinkWrap: true,
-                      physics: const BouncingScrollPhysics(),
-                      itemBuilder: (_, index) {
-                        final version = versionsState.versions[index];
-                        final isSelected = version.id == selectedId;
-                        return _VersionOption(
-                          version: version,
-                          selected: isSelected,
-                          disabled: isUpdating,
-                          onTap: () {
-                            Navigator.of(sheetContext).pop();
-                            _onChangeVersion(version.id);
-                          },
-                        );
-                      },
-                      separatorBuilder: (context, index) =>
-                          const SizedBox(height: AppSpacing.sm),
-                      itemCount: versionsState.versions.length,
-                    ),
                   ),
-              ],
-            ),
+                )
+              else if (versionsState.hasError &&
+                  versionsState.versions.isEmpty)
+                _ErrorPill(
+                  message:
+                      versionsState.errorMessage ?? l10n.versionsLoadError,
+                )
+              else
+                ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxHeight: MediaQuery.of(context).size.height * 0.6,
+                  ),
+                  child: ListView.separated(
+                    shrinkWrap: true,
+                    physics: const BouncingScrollPhysics(),
+                    itemBuilder: (_, index) {
+                      final version = versionsState.versions[index];
+                      final isSelected = version.id == selectedId;
+                      return _VersionOption(
+                        version: version,
+                        selected: isSelected,
+                        disabled: isUpdating,
+                        onTap: () {
+                          Navigator.of(sheetContext).pop();
+                          _onChangeVersion(version.id);
+                        },
+                      );
+                    },
+                    separatorBuilder: (context, index) =>
+                        const SizedBox(height: AppSpacing.sm),
+                    itemCount: versionsState.versions.length,
+                  ),
+                ),
+            ],
           ),
         );
       },
@@ -436,103 +378,75 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               );
             }
 
-            return Container(
-              decoration: BoxDecoration(
-                color: AppColors.midnightFaith.withValues(alpha: 0.98),
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(AppBorderRadius.lg),
-                ),
-                border: Border.all(
-                  color: AppColors.pureWhite.withValues(alpha: 0.08),
-                ),
-              ),
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.lg,
-                AppSpacing.md,
-                AppSpacing.lg,
-                AppSpacing.lg,
-              ),
-              child: SafeArea(
-                top: false,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Center(
-                      child: Container(
-                        width: 46,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: AppColors.pureWhite.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(99),
-                        ),
-                      ),
+            return HolyBottomSheet(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    l10n.deleteAccountTitle,
+                    style: AppTextStyles.labelLarge.copyWith(
+                      color: AppColors.pureWhite,
+                      fontWeight: FontWeight.w700,
                     ),
-                    const SizedBox(height: AppSpacing.md),
-                    Text(
-                      l10n.deleteAccountTitle,
-                      style: AppTextStyles.labelLarge.copyWith(
-                        color: AppColors.pureWhite,
-                        fontWeight: FontWeight.w700,
-                      ),
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    l10n.deleteAccountSubtitle,
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: AppColors.softMist.withValues(alpha: 0.8),
                     ),
-                    const SizedBox(height: AppSpacing.xs),
-                    Text(
-                      l10n.deleteAccountSubtitle,
-                      style: AppTextStyles.bodySmall.copyWith(
-                        color: AppColors.softMist.withValues(alpha: 0.8),
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextButton(
-                            onPressed:
-                                isDeleting ? null : () => Navigator.of(sheetContext).pop(),
-                            style: TextButton.styleFrom(
-                              foregroundColor: AppColors.softMist,
-                              textStyle: AppTextStyles.bodyMedium.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextButton(
+                          onPressed: isDeleting
+                              ? null
+                              : () => Navigator.of(sheetContext).pop(),
+                          style: TextButton.styleFrom(
+                            foregroundColor: AppColors.softMist,
+                            textStyle: AppTextStyles.bodyMedium.copyWith(
+                              fontWeight: FontWeight.w600,
                             ),
-                            child: Text(l10n.deleteAccountCancel),
                           ),
+                          child: Text(l10n.deleteAccountCancel),
                         ),
-                        const SizedBox(width: AppSpacing.sm),
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: isDeleting ? null : handleDelete,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.red.shade700,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(
-                                vertical: AppSpacing.sm,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: AppBorderRadius.button,
-                              ),
-                              textStyle: AppTextStyles.button.copyWith(
-                                fontWeight: FontWeight.w700,
-                              ),
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: isDeleting ? null : handleDelete,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red.shade700,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                              vertical: AppSpacing.sm,
                             ),
-                            child: isDeleting
-                                ? const SizedBox(
-                                    height: 18,
-                                    width: 18,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor:
-                                          AlwaysStoppedAnimation<Color>(Colors.white),
-                                    ),
-                                  )
-                                : Text(l10n.deleteAccountConfirm),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: AppBorderRadius.button,
+                            ),
+                            textStyle: AppTextStyles.button.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
+                          child: isDeleting
+                              ? const SizedBox(
+                                  height: 18,
+                                  width: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor:
+                                        AlwaysStoppedAnimation<Color>(Colors.white),
+                                  ),
+                                )
+                              : Text(l10n.deleteAccountConfirm),
                         ),
-                      ],
-                    ),
-                  ],
-                ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             );
           },
@@ -715,27 +629,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     ],
                   ),
                   const SizedBox(height: AppSpacing.lg),
-                  RoleGuard(
-                    allowedRoles: const [UserRole.admin],
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _sectionLabel('Administración'),
-                        SectionCard(
-                          addDividers: false,
-                          children: [
-                            SettingTile(
-                              icon: Icons.people_alt_outlined,
-                              title: 'Gestión de usuarios',
-                              subtitle: 'Administra roles y accesos',
-                              onTap: () => GoRouter.of(context).push('/users'),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: AppSpacing.lg),
-                      ],
-                    ),
-                  ),
                   _sectionLabel('Cuenta'),
                   SectionCard(
                     addDividers: false,

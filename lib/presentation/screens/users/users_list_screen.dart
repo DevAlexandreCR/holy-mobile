@@ -44,25 +44,41 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen> {
   }
 
   AppBar _buildAppBar(UsersListState state) {
+    final canPop = Navigator.of(context).canPop();
     return AppBar(
-      backgroundColor: AppColors.midnightFaith.withValues(alpha: 0.9),
+      backgroundColor: Colors.transparent,
       elevation: 0,
       centerTitle: true,
-      leading: IconButton(
-        icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.pureWhite),
-        onPressed: () => Navigator.of(context).maybePop(),
-      ),
+      automaticallyImplyLeading: false,
+      leading: canPop
+          ? IconButton(
+              icon: const Icon(
+                Icons.arrow_back_ios_new,
+                color: AppColors.pureWhite,
+              ),
+              onPressed: () => Navigator.of(context).maybePop(),
+            )
+          : null,
       title: Text(
-        'Gestión de usuarios',
+        'Gestión de Roles HolyVerso',
         style: AppTextStyles.headline3.copyWith(
-          color: AppColors.pureWhite,
+          color: AppColors.holyGold,
           fontWeight: FontWeight.w700,
+          shadows: [
+            Shadow(
+              color: AppColors.holyGold.withValues(alpha: 0.4),
+              blurRadius: 16,
+            ),
+          ],
         ),
       ),
       actions: [
         PopupMenuButton<UserRole?>(
-          icon: const Icon(Icons.filter_list, color: AppColors.pureWhite),
-          tooltip: 'Filtrar por role',
+          icon: Icon(
+            Icons.tune_rounded,
+            color: AppColors.holyGold.withValues(alpha: 0.9),
+          ),
+          tooltip: 'Filtrar por rol',
           initialValue: state.roleFilter,
           onSelected: (role) {
             ref.read(usersListControllerProvider.notifier).filterByRole(role);
@@ -263,8 +279,10 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen> {
   }
 
   Future<void> _showRoleDialog(UserWithRole user) async {
-    final result = await showDialog<UserRole>(
+    final result = await showModalBottomSheet<UserRole>(
       context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
       builder: (context) => UserRoleDialog(user: user),
     );
 

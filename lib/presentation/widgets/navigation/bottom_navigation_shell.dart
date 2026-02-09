@@ -5,6 +5,7 @@ import 'package:holyverso/core/l10n/app_localizations.dart';
 import 'package:holyverso/core/theme/app_colors.dart';
 import 'package:holyverso/core/theme/app_text_styles.dart';
 import 'package:holyverso/presentation/providers/navigation_provider.dart';
+import 'package:holyverso/presentation/state/roles/role_provider.dart';
 
 class BottomNavigationShell extends ConsumerStatefulWidget {
   const BottomNavigationShell({super.key, required this.navigationShell});
@@ -56,26 +57,31 @@ class _BottomNavigationShellState
     }
   }
 
-  void _onTap(int index) {
+  void _onTap(int branchIndex) {
     final currentIndex = widget.navigationShell.currentIndex;
     widget.navigationShell.goBranch(
-      index,
-      initialLocation: index == currentIndex,
+      branchIndex,
+      initialLocation: branchIndex == currentIndex,
     );
-    ref.read(bottomNavigationIndexProvider.notifier).setIndex(index);
+    ref.read(bottomNavigationIndexProvider.notifier).setIndex(branchIndex);
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final currentIndex = ref.watch(bottomNavigationIndexProvider);
+    final currentBranchIndex = ref.watch(bottomNavigationIndexProvider);
+    final canManageUsers = ref.watch(canManageUsersProvider);
+    final items = _buildItems(l10n, canManageUsers);
+    final currentIndex = items.indexWhere(
+      (item) => item.branchIndex == currentBranchIndex,
+    );
 
     return Scaffold(
       backgroundColor: AppColors.midnightFaith,
       body: widget.navigationShell,
       bottomNavigationBar: BottomNavigationBar(
-        currentIndex: currentIndex,
-        onTap: _onTap,
+        currentIndex: currentIndex < 0 ? 0 : currentIndex,
+        onTap: (index) => _onTap(items[index].branchIndex),
         type: BottomNavigationBarType.fixed,
         backgroundColor: AppColors.midnightFaith,
         selectedItemColor: AppColors.holyGold,
@@ -88,21 +94,59 @@ class _BottomNavigationShellState
           color: AppColors.softMist.withValues(alpha: 0.7),
           fontWeight: FontWeight.w500,
         ),
-        items: [
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.home_rounded),
-            label: l10n.navHomeLabel,
-          ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.search_rounded),
-            label: l10n.navSearchLabel,
-          ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.settings_rounded),
-            label: l10n.navSettingsLabel,
-          ),
-        ],
+        items: items
+            .map(
+              (item) => BottomNavigationBarItem(
+                icon: Icon(item.icon),
+                label: item.label,
+              ),
+            )
+            .toList(),
       ),
     );
   }
+}
+
+class _NavItem {
+  const _NavItem({
+    required this.branchIndex,
+    required this.icon,
+    required this.label,
+  });
+
+  final int branchIndex;
+  final IconData icon;
+  final String label;
+}
+
+List<_NavItem> _buildItems(AppLocalizations l10n, bool canManageUsers) {
+  final items = [
+    _NavItem(
+      branchIndex: 0,
+      icon: Icons.home_rounded,
+      label: l10n.navHomeLabel,
+    ),
+    _NavItem(
+      branchIndex: 1,
+      icon: Icons.search_rounded,
+      label: l10n.navSearchLabel,
+    ),
+    _NavItem(
+      branchIndex: 2,
+      icon: Icons.settings_rounded,
+      label: l10n.navSettingsLabel,
+    ),
+  ];
+
+  if (canManageUsers) {
+    items.add(
+      _NavItem(
+        branchIndex: 3,
+        icon: Icons.people_alt_rounded,
+        label: l10n.navUsersLabel,
+      ),
+    );
+  }
+
+  return items;
 }

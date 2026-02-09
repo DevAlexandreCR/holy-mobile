@@ -56,17 +56,17 @@ class _UserSearchBarState extends State<UserSearchBar> {
         ),
         prefixIcon: Icon(
           Icons.search,
-          color: AppColors.softMist.withValues(alpha: 0.7),
+          color: AppColors.holyGold.withValues(alpha: 0.8),
         ),
         suffixIcon: _controller.text.isNotEmpty
             ? IconButton(
                 icon: const Icon(Icons.clear),
-                color: AppColors.softMist.withValues(alpha: 0.7),
+                color: AppColors.softMist.withValues(alpha: 0.8),
                 onPressed: _clear,
               )
             : null,
         filled: true,
-        fillColor: AppColors.pureWhite.withValues(alpha: 0.06),
+        fillColor: AppColors.pureWhite.withValues(alpha: 0.05),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.md,
           vertical: AppSpacing.sm,
@@ -74,19 +74,19 @@ class _UserSearchBarState extends State<UserSearchBar> {
         border: OutlineInputBorder(
           borderRadius: AppBorderRadius.input,
           borderSide: BorderSide(
-            color: AppColors.pureWhite.withValues(alpha: 0.1),
+            color: AppColors.pureWhite.withValues(alpha: 0.12),
           ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: AppBorderRadius.input,
           borderSide: BorderSide(
-            color: AppColors.pureWhite.withValues(alpha: 0.1),
+            color: AppColors.pureWhite.withValues(alpha: 0.12),
           ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: AppBorderRadius.input,
           borderSide: BorderSide(
-            color: AppColors.holyGold.withValues(alpha: 0.7),
+            color: AppColors.holyGold.withValues(alpha: 0.9),
           ),
         ),
       ),
