@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:holyverso/data/bible/bible_api_client.dart';
 import 'package:holyverso/data/bible/models/bible_version.dart';
+import 'package:holyverso/domain/verse/book_suggestion.dart';
+import 'package:holyverso/domain/verse/search_result.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class BibleRepository {
@@ -64,6 +66,14 @@ class BibleRepository {
     _prefs ??= await SharedPreferences.getInstance();
     final serialized = jsonEncode(versions.map((v) => v.toMap()).toList());
     await _prefs!.setString(_cacheKey, serialized);
+  }
+
+  Future<SearchResult?> searchVerses(String query, {int? versionId}) {
+    return _client.searchVerses(query, versionId: versionId);
+  }
+
+  Future<List<BookSuggestion>> getAutocompleteSuggestions(String query) {
+    return _client.getAutocompleteSuggestions(query);
   }
 }
 

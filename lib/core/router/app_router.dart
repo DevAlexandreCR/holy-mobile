@@ -13,6 +13,7 @@ import 'package:holyverso/presentation/screens/users/users_list_screen.dart';
 import 'package:holyverso/presentation/screens/verse/saved_verses_screen.dart';
 import 'package:holyverso/presentation/screens/verse/chapter_reader_screen.dart';
 import 'package:holyverso/presentation/screens/verse/verse_of_the_day_screen.dart';
+import 'package:holyverso/presentation/screens/verse/verse_search_screen.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(
@@ -68,6 +69,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const VerseOfTheDayScreen(),
       ),
       GoRoute(
+        path: '/verse/search',
+        builder: (context, state) => const VerseSearchScreen(),
+      ),
+      GoRoute(
         path: '/verse/chapter',
         builder: (context, state) {
           final args = state.extra is ChapterReaderArgs
@@ -99,6 +104,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           state.matchedLocation == '/forgot-password';
       final isProtectedRoute =
           state.matchedLocation == '/verse/chapter' ||
+          state.matchedLocation == '/verse/search' ||
           state.matchedLocation == '/verse/saved' ||
           state.matchedLocation == '/settings' ||
           state.matchedLocation == '/users';

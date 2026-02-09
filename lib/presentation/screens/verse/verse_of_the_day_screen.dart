@@ -302,6 +302,14 @@ class _VerseOfTheDayScreenState extends ConsumerState<VerseOfTheDayScreen> {
           ),
         ),
         actions: [
+          IconButton(
+            tooltip: l10n.verseSearchTooltip,
+            onPressed: isGuest ? _promptLogin : () => context.push('/verse/search'),
+            icon: const Icon(
+              Icons.search,
+              color: AppColors.pureWhite,
+            ),
+          ),
           Builder(
             builder: (BuildContext context) {
               return IconButton(

@@ -120,6 +120,17 @@ class AppLocalizations {
   String get savedVersesEmptyTitle => _string('savedVersesEmptyTitle');
   String get savedVersesEmptySubtitle => _string('savedVersesEmptySubtitle');
   String get savedVersesEmptyCta => _string('savedVersesEmptyCta');
+  String get verseSearchTitle => _string('verseSearchTitle');
+  String get verseSearchTooltip => _string('verseSearchTooltip');
+  String get verseSearchPlaceholder => _string('verseSearchPlaceholder');
+  String get verseSearchRecentTitle => _string('verseSearchRecentTitle');
+  String get verseSearchEmptyTitle => _string('verseSearchEmptyTitle');
+  String get verseSearchEmptySubtitle => _string('verseSearchEmptySubtitle');
+  String get verseSearchNoResults => _string('verseSearchNoResults');
+  String get verseSearchNoResultsSubtitle => _string('verseSearchNoResultsSubtitle');
+  String get verseSearchShareImageDisabled =>
+      _string('verseSearchShareImageDisabled');
+  String get verseSearchVoiceUnavailable => _string('verseSearchVoiceUnavailable');
 
   String get settingsTitle => _string('settingsTitle');
   String get preferencesTitle => _string('preferencesTitle');
@@ -249,6 +260,19 @@ class AppLocalizations {
       'savedVersesEmptySubtitle':
           'Guarda tus versículos favoritos para releerlos y compartirlos.',
       'savedVersesEmptyCta': 'Descubrir versículo diario',
+      'verseSearchTitle': 'Buscar versículos',
+      'verseSearchTooltip': 'Buscar versículos',
+      'verseSearchPlaceholder': 'Busca un versículo o pasaje',
+      'verseSearchRecentTitle': 'Búsquedas recientes',
+      'verseSearchEmptyTitle': 'Busca por referencia',
+      'verseSearchEmptySubtitle':
+          'Escribe algo como \"Juan 3:16\" o \"Salmos 23\".',
+      'verseSearchNoResults': 'Sin resultados',
+      'verseSearchNoResultsSubtitle':
+          'No encontramos coincidencias para tu búsqueda.',
+      'verseSearchShareImageDisabled':
+          'Este pasaje es muy largo para compartirlo como imagen.',
+      'verseSearchVoiceUnavailable': 'La búsqueda por voz estará disponible pronto.',
       'errorRetry': 'Reintentar',
       'settingsTitle': 'Configuración',
       'preferencesTitle': 'Preferencias',
@@ -365,6 +389,19 @@ class AppLocalizations {
       'savedVersesEmptySubtitle':
           'Save your favorite verses to read and share later.',
       'savedVersesEmptyCta': 'See verse of the day',
+      'verseSearchTitle': 'Search verses',
+      'verseSearchTooltip': 'Search verses',
+      'verseSearchPlaceholder': 'Search a verse or passage',
+      'verseSearchRecentTitle': 'Recent searches',
+      'verseSearchEmptyTitle': 'Search by reference',
+      'verseSearchEmptySubtitle':
+          'Try something like \"John 3:16\" or \"Psalm 23\".',
+      'verseSearchNoResults': 'No results',
+      'verseSearchNoResultsSubtitle':
+          'We could not find matches for your search.',
+      'verseSearchShareImageDisabled':
+          'This passage is too long to share as an image.',
+      'verseSearchVoiceUnavailable': 'Voice search is coming soon.',
       'errorRetry': 'Retry',
       'settingsTitle': 'Settings',
       'preferencesTitle': 'Preferences',
