@@ -226,10 +226,7 @@ class _SavedVersesScreenState extends ConsumerState<SavedVersesScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         titleSpacing: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.pureWhite),
-          onPressed: () => Navigator.of(context).maybePop(),
-        ),
+        automaticallyImplyLeading: false,
         title: Text(
           l10n.savedVersesTitle,
           style: AppTextStyles.headline3.copyWith(

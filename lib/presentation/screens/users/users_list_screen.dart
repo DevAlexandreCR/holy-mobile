@@ -44,21 +44,11 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen> {
   }
 
   AppBar _buildAppBar(UsersListState state) {
-    final canPop = Navigator.of(context).canPop();
     return AppBar(
       backgroundColor: Colors.transparent,
       elevation: 0,
       centerTitle: true,
       automaticallyImplyLeading: false,
-      leading: canPop
-          ? IconButton(
-              icon: const Icon(
-                Icons.arrow_back_ios_new,
-                color: AppColors.pureWhite,
-              ),
-              onPressed: () => Navigator.of(context).maybePop(),
-            )
-          : null,
       title: Text(
         'Gestión de usuarios',
         style: AppTextStyles.headline3.copyWith(

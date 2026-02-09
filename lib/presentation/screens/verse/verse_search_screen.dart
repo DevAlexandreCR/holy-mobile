@@ -180,13 +180,6 @@ class _VerseSearchScreenState extends ConsumerState<VerseSearchScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         automaticallyImplyLeading: false,
-        leading: Navigator.of(context).canPop()
-            ? IconButton(
-                onPressed: () => context.pop(),
-                icon: const Icon(Icons.arrow_back_ios_new),
-                color: AppColors.pureWhite,
-              )
-            : null,
         title: Text(
           l10n.verseSearchTitle,
           style: AppTextStyles.headline3.copyWith(
