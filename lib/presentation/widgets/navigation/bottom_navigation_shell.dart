@@ -62,30 +62,61 @@ class _BottomNavigationShellState
     return Scaffold(
       backgroundColor: AppColors.midnightFaith,
       body: widget.navigationShell,
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: currentIndex < 0 ? 0 : currentIndex,
-        onTap: (index) => _onTap(items[index].branchIndex),
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: AppColors.midnightFaith,
-        selectedItemColor: AppColors.holyGold,
-        unselectedItemColor: AppColors.softMist.withValues(alpha: 0.65),
-        selectedLabelStyle: AppTextStyles.labelSmall.copyWith(
-          color: AppColors.holyGold,
-          fontWeight: FontWeight.w600,
+      bottomNavigationBar: Theme(
+        data: Theme.of(context).copyWith(
+          splashColor: AppColors.holyGold.withValues(alpha: 0.18),
+          highlightColor: AppColors.holyGold.withValues(alpha: 0.08),
         ),
-        unselectedLabelStyle: AppTextStyles.labelSmall.copyWith(
-          color: AppColors.softMist.withValues(alpha: 0.7),
-          fontWeight: FontWeight.w500,
+        child: BottomNavigationBar(
+          currentIndex: currentIndex < 0 ? 0 : currentIndex,
+          onTap: (index) => _onTap(items[index].branchIndex),
+          type: BottomNavigationBarType.fixed,
+          backgroundColor: AppColors.midnightFaith,
+          selectedItemColor: AppColors.holyGold,
+          unselectedItemColor: AppColors.softMist.withValues(alpha: 0.65),
+          selectedLabelStyle: AppTextStyles.labelSmall.copyWith(
+            color: AppColors.holyGold,
+            fontWeight: FontWeight.w600,
+          ),
+          unselectedLabelStyle: AppTextStyles.labelSmall.copyWith(
+            color: AppColors.softMist.withValues(alpha: 0.7),
+            fontWeight: FontWeight.w500,
+          ),
+          items: items
+              .map(
+                (item) => BottomNavigationBarItem(
+                  icon: Icon(item.icon),
+                  activeIcon: _ActiveNavIcon(icon: item.icon),
+                  label: item.label,
+                ),
+              )
+              .toList(),
         ),
-        items: items
-            .map(
-              (item) => BottomNavigationBarItem(
-                icon: Icon(item.icon),
-                label: item.label,
-              ),
-            )
-            .toList(),
       ),
+    );
+  }
+}
+
+class _ActiveNavIcon extends StatelessWidget {
+  const _ActiveNavIcon({required this.icon});
+
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(6),
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.holyGold.withValues(alpha: 0.22),
+            blurRadius: 10,
+            spreadRadius: 0,
+          ),
+        ],
+      ),
+      child: Icon(icon),
     );
   }
 }
