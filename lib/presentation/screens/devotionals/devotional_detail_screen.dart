@@ -197,6 +197,7 @@ class _DevotionalDetailScreenState
     if (devotional == null) {
       return const SizedBox.shrink();
     }
+    final publishedLabel = _formatPublishedDate(devotional.publishedAt);
 
     return RefreshIndicator(
       onRefresh: () async {
@@ -245,6 +246,51 @@ class _DevotionalDetailScreenState
               color: AppColors.softMist.withValues(alpha: 0.8),
             ),
           ),
+          if (publishedLabel.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.xs),
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.pureWhite.withValues(alpha: 0.06),
+                    borderRadius: BorderRadius.circular(AppBorderRadius.md),
+                    border: Border.all(
+                      color: AppColors.pureWhite.withValues(alpha: 0.08),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.calendar_today_rounded,
+                        size: 14,
+                        color: AppColors.holyGold,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        publishedLabel,
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: AppColors.holyGold,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Text(
+                  'Publicado',
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: AppColors.softMist.withValues(alpha: 0.7),
+                  ),
+                ),
+              ],
+            ),
+          ],
           const SizedBox(height: AppSpacing.sm),
           if (devotional.primaryReferences.isNotEmpty)
             Wrap(
@@ -288,6 +334,27 @@ class _DevotionalDetailScreenState
         ],
       ),
     );
+  }
+
+  String _formatPublishedDate(DateTime? date) {
+    if (date == null) return '';
+    final local = date.toLocal();
+    const months = [
+      'ene',
+      'feb',
+      'mar',
+      'abr',
+      'may',
+      'jun',
+      'jul',
+      'ago',
+      'sep',
+      'oct',
+      'nov',
+      'dic',
+    ];
+    final month = months[local.month - 1];
+    return '${local.day} $month ${local.year}';
   }
 
   Widget _buildActions(DevotionalDetailState state) {

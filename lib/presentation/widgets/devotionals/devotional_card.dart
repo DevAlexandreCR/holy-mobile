@@ -21,6 +21,7 @@ class DevotionalCard extends StatelessWidget {
     final referenceLabel = primaryRefs.isNotEmpty
         ? primaryRefs.map((ref) => ref.referenceLabel).join(', ')
         : '';
+    final publishedLabel = _formatPublishedDate(devotional.publishedAt);
 
     return GestureDetector(
       onTap: onTap,
@@ -81,6 +82,25 @@ class DevotionalCard extends StatelessWidget {
                       color: AppColors.softMist.withValues(alpha: 0.8),
                     ),
                   ),
+                  if (publishedLabel.isNotEmpty) ...[
+                    const SizedBox(height: AppSpacing.xs),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.calendar_today_rounded,
+                          size: 14,
+                          color: AppColors.softMist.withValues(alpha: 0.75),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Publicado • $publishedLabel',
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: AppColors.softMist.withValues(alpha: 0.75),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                   const SizedBox(height: AppSpacing.md),
                   Row(
                     children: [
@@ -107,6 +127,27 @@ class DevotionalCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _formatPublishedDate(DateTime? date) {
+    if (date == null) return '';
+    final local = date.toLocal();
+    const months = [
+      'ene',
+      'feb',
+      'mar',
+      'abr',
+      'may',
+      'jun',
+      'jul',
+      'ago',
+      'sep',
+      'oct',
+      'nov',
+      'dic',
+    ];
+    final month = months[local.month - 1];
+    return '${local.day} $month ${local.year}';
   }
 }
 
