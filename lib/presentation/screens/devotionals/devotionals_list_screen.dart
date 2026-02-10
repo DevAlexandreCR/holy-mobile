@@ -86,19 +86,20 @@ class _DevotionalsListScreenState
           SafeArea(
             child: Column(
               children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.lg,
-                    AppSpacing.md,
-                    AppSpacing.lg,
-                    AppSpacing.sm,
+                if (canEdit)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.lg,
+                      AppSpacing.md,
+                      AppSpacing.lg,
+                      AppSpacing.sm,
+                    ),
+                    child: _ModeSelector(
+                      mode: state.mode,
+                      showMine: canEdit,
+                      onSelected: _onModeSelected,
+                    ),
                   ),
-                  child: _ModeSelector(
-                    mode: state.mode,
-                    showMine: canEdit,
-                    onSelected: _onModeSelected,
-                  ),
-                ),
                 if (state.mode == DevotionalsListMode.mine && canEdit)
                   Padding(
                     padding: const EdgeInsets.fromLTRB(

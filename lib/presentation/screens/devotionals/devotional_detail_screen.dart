@@ -95,7 +95,13 @@ class _DevotionalDetailScreenState
       backgroundColor: AppColors.midnightFaith,
       appBar: AppBar(
         leading: IconButton(
-          onPressed: () => context.pop(),
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/devotionals');
+            }
+          },
           icon: const Icon(Icons.arrow_back_ios_new_rounded),
           style: IconButton.styleFrom(
             backgroundColor: AppColors.midnightFaithDark.withValues(alpha: 0.6),
@@ -142,14 +148,6 @@ class _DevotionalDetailScreenState
           ),
         ],
       ),
-      floatingActionButton: devotional == null
-          ? null
-          : FloatingActionButton(
-              onPressed: () => _shareDevotional(devotional),
-              backgroundColor: AppColors.holyGold,
-              foregroundColor: AppColors.midnightFaith,
-              child: const Icon(Icons.share_outlined),
-            ),
     );
   }
 

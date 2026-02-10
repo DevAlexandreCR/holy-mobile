@@ -14,24 +14,38 @@ class DevotionalContentView extends StatefulWidget {
 }
 
 class _DevotionalContentViewState extends State<DevotionalContentView> {
-  late final QuillController _controller;
+  late QuillController _controller;
   final ScrollController _scrollController = ScrollController();
   final FocusNode _focusNode = FocusNode();
 
   @override
   void initState() {
     super.initState();
-    _controller = QuillController(
-      document: Document.fromJson(widget.content),
-      selection: const TextSelection.collapsed(offset: 0),
-    );
+    _controller = _buildController(widget.content);
+  }
+
+  @override
+  void didUpdateWidget(covariant DevotionalContentView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.content, widget.content)) {
+      _controller.dispose();
+      _controller = _buildController(widget.content);
+    }
   }
 
   @override
   void dispose() {
+    _controller.dispose();
     _scrollController.dispose();
     _focusNode.dispose();
     super.dispose();
+  }
+
+  QuillController _buildController(List<dynamic> content) {
+    return QuillController(
+      document: Document.fromJson(content),
+      selection: const TextSelection.collapsed(offset: 0),
+    );
   }
 
   @override

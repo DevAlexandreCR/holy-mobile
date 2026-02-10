@@ -452,6 +452,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final roleAsync = ref.watch(myRoleProvider);
     final isUpdating = authState.isUpdatingSettings;
     final l10n = context.l10n;
+    final shouldShowRole = authState.user?.role != UserRole.user;
     final selectedVersion = _selectedVersion(
       versionsState,
       authState.preferredVersionId,
@@ -623,7 +624,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   SectionCard(
                     addDividers: false,
                     children: [
-                      _buildRoleTile(roleAsync),
+                      if (shouldShowRole) _buildRoleTile(roleAsync),
                       SettingTile(
                         icon: Icons.logout_rounded,
                         title: 'Cerrar sesión',

@@ -21,9 +21,10 @@ class DevotionalDetailState {
     String? errorMessage,
     bool? isTogglingLike,
     bool clearError = false,
+    bool clearDevotional = false,
   }) {
     return DevotionalDetailState(
-      devotional: devotional ?? this.devotional,
+      devotional: clearDevotional ? null : devotional ?? this.devotional,
       status: status ?? this.status,
       errorMessage: clearError ? null : errorMessage ?? this.errorMessage,
       isTogglingLike: isTogglingLike ?? this.isTogglingLike,

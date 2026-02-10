@@ -100,6 +100,27 @@ class _BottomNavigationShellState
     ref.read(bottomNavigationIndexProvider.notifier).setIndex(branchIndex);
   }
 
+  bool _shouldShowLabels(BuildContext context, List<_NavItem> items) {
+    if (items.isEmpty) return false;
+    final mediaQuery = MediaQuery.of(context);
+    final availableWidth =
+        mediaQuery.size.width - mediaQuery.padding.left - mediaQuery.padding.right;
+    final perItemWidth = availableWidth / items.length;
+    const horizontalPadding = 12.0;
+    final maxLabelWidth = items
+        .map((item) {
+          final painter = TextPainter(
+            text: TextSpan(text: item.label, style: AppTextStyles.labelSmall),
+            maxLines: 1,
+            textDirection: Directionality.of(context),
+          )..layout();
+          return painter.size.width;
+        })
+        .fold<double>(0, (max, value) => value > max ? value : max);
+
+    return maxLabelWidth <= perItemWidth - horizontalPadding;
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
@@ -109,6 +130,7 @@ class _BottomNavigationShellState
     final currentIndex = items.indexWhere(
       (item) => item.branchIndex == currentBranchIndex,
     );
+    final showLabels = _shouldShowLabels(context, items);
 
     return Scaffold(
       backgroundColor: AppColors.midnightFaith,
@@ -139,6 +161,8 @@ class _BottomNavigationShellState
             color: AppColors.softMist.withValues(alpha: 0.7),
             fontWeight: FontWeight.w500,
           ),
+          showSelectedLabels: showLabels,
+          showUnselectedLabels: showLabels,
           items: items
               .map(
                 (item) => BottomNavigationBarItem(

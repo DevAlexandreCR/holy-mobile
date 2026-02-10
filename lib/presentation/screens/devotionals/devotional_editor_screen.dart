@@ -218,7 +218,11 @@ class _DevotionalEditorScreenState
             backgroundColor: AppColors.holyGold,
           ),
         );
-        context.go('/devotionals/${saved.id}');
+        if (publish) {
+          context.go('/devotionals/${saved.id}');
+        } else {
+          context.go('/devotionals');
+        }
       }
     } catch (_) {
       if (mounted) {

@@ -7,6 +7,7 @@ import 'package:holyverso/presentation/state/devotionals/devotional_detail_state
 
 class DevotionalDetailController extends Notifier<DevotionalDetailState> {
   late final DevotionalsRepository _repository;
+  String? _activeDevotionalId;
   static const _l10n = AppLocalizations(Locale('es'));
 
   @override
@@ -16,18 +17,22 @@ class DevotionalDetailController extends Notifier<DevotionalDetailState> {
   }
 
   Future<void> load(String devotionalId) async {
+    _activeDevotionalId = devotionalId;
     state = state.copyWith(
       status: DevotionalDetailStatus.loading,
       clearError: true,
+      clearDevotional: state.devotional?.id != devotionalId,
     );
 
     try {
       final devotional = await _repository.getDevotional(devotionalId);
+      if (_activeDevotionalId != devotionalId) return;
       state = state.copyWith(
         devotional: devotional,
         status: DevotionalDetailStatus.success,
       );
     } catch (error) {
+      if (_activeDevotionalId != devotionalId) return;
       state = state.copyWith(
         status: DevotionalDetailStatus.error,
         errorMessage: _mapError(error),
