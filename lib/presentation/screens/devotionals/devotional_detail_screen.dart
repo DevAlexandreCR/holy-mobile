@@ -8,6 +8,7 @@ import 'package:holyverso/core/theme/app_design_tokens.dart';
 import 'package:holyverso/core/theme/app_text_styles.dart';
 import 'package:holyverso/domain/devotionals/devotional.dart';
 import 'package:holyverso/domain/devotionals/devotional_comment.dart';
+import 'package:holyverso/domain/devotionals/devotional_status.dart';
 import 'package:holyverso/presentation/state/auth/auth_controller.dart';
 import 'package:holyverso/presentation/state/devotionals/devotional_comments_controller.dart';
 import 'package:holyverso/presentation/state/devotionals/devotional_comments_state.dart';
@@ -110,7 +111,9 @@ class _DevotionalDetailScreenState
           ),
         ),
         actions: [
-          if (devotional != null && devotional.isOwner)
+          if (devotional != null &&
+              devotional.isOwner &&
+              devotional.status == DevotionalStatus.draft)
             Padding(
               padding: const EdgeInsets.only(right: AppSpacing.sm),
               child: IconButton(

@@ -16,6 +16,7 @@ import 'package:holyverso/domain/devotionals/devotional.dart';
 import 'package:holyverso/domain/devotionals/devotional_status.dart';
 import 'package:holyverso/domain/devotionals/devotional_verse_reference.dart';
 import 'package:holyverso/presentation/state/auth/auth_controller.dart';
+import 'package:holyverso/presentation/widgets/holy_button.dart';
 import 'package:image_picker/image_picker.dart';
 
 class DevotionalEditorScreen extends ConsumerStatefulWidget {
@@ -109,36 +110,6 @@ class _DevotionalEditorScreenState
     final count = text.isEmpty ? 0 : text.split(RegExp(r'\s+')).length;
     if (count != _wordCount) {
       setState(() => _wordCount = count);
-    }
-  }
-
-  Future<String?> _onRequestPickImage(
-    BuildContext context,
-    dynamic imagePickerService,
-  ) async {
-    try {
-      final picked = await imagePickerService.pickImage(
-        source: ImageSource.gallery,
-        maxWidth: 1920,
-        imageQuality: 85,
-      );
-
-      if (picked == null) return null;
-      final url = await ref
-          .read(devotionalsRepositoryProvider)
-          .uploadImage(File(picked.path));
-      return url;
-    } catch (_) {
-      if (mounted) {
-        final l10n = AppLocalizations.of(this.context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(l10n.devotionalsImageUploadError),
-            backgroundColor: AppColors.error,
-          ),
-        );
-      }
-      return null;
     }
   }
 
@@ -697,16 +668,14 @@ class _DevotionalEditorScreenState
                 ),
                 child: Container(
                   color: AppColors.midnightFaithDark.withValues(alpha: 0.35),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.sm,
-                    vertical: AppSpacing.xs,
-                  ),
+                  padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
                   child: QuillToolbar.simple(
                     configurations: QuillSimpleToolbarConfigurations(
                       controller: _quillController,
                       color: Colors.transparent,
                       showDividers: false,
-                      toolbarSectionSpacing: 6,
+                      toolbarSectionSpacing: AppSpacing.xs,
+                      toolbarIconAlignment: WrapAlignment.start,
                       buttonOptions: QuillSimpleToolbarButtonOptions(
                         base: QuillToolbarBaseButtonOptions(
                           iconSize: 18,
@@ -762,14 +731,6 @@ class _DevotionalEditorScreenState
                       showQuote: true,
                       showListNumbers: true,
                       showListBullets: true,
-                      embedButtons: FlutterQuillEmbeds.toolbarButtons(
-                        imageButtonOptions: QuillToolbarImageButtonOptions(
-                          imageButtonConfigurations:
-                              QuillToolbarImageConfigurations(
-                            onRequestPickImage: _onRequestPickImage,
-                          ),
-                        ),
-                      ),
                       dialogTheme: QuillDialogTheme(
                         dialogBackgroundColor: AppColors.midnightFaithDark,
                         shape: RoundedRectangleBorder(
@@ -908,9 +869,24 @@ class _DevotionalEditorScreenState
     final isPublishing = _isSaving && _isPublishing;
 
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        ElevatedButton(
+        OutlinedButton(
           onPressed: _isSaving ? null : () => _save(publish: false),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: AppColors.holyGold,
+            side: BorderSide(
+              color: AppColors.holyGold.withValues(alpha: 0.7),
+            ),
+            minimumSize: const Size(double.infinity, AppSizes.buttonHeight),
+            shape: RoundedRectangleBorder(
+              borderRadius: AppBorderRadius.button,
+            ),
+            textStyle: AppTextStyles.button.copyWith(
+              color: AppColors.holyGold,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
           child: _isSaving && !isPublishing
               ? const SizedBox(
                   height: 20,
@@ -918,35 +894,27 @@ class _DevotionalEditorScreenState
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
                     valueColor: AlwaysStoppedAnimation<Color>(
-                      AppColors.midnightFaith,
+                      AppColors.holyGold,
                     ),
                   ),
                 )
               : Text(l10n.saveDraft),
         ),
         const SizedBox(height: AppSpacing.sm),
-        ElevatedButton(
+        HolyButton(
+          label: l10n.publish,
           onPressed: _isSaving ? null : () => _save(publish: true),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.holyGold,
-            foregroundColor: AppColors.midnightFaith,
-          ),
-          child: _isSaving && isPublishing
-              ? const SizedBox(
-                  height: 20,
-                  width: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      AppColors.midnightFaith,
-                    ),
-                  ),
-                )
-              : Text(l10n.publish),
+          isLoading: isPublishing,
         ),
-        const SizedBox(height: AppSpacing.sm),
-        OutlinedButton(
-          onPressed: _openPreview,
+        const SizedBox(height: AppSpacing.xs),
+        TextButton(
+          onPressed: _isSaving ? null : _openPreview,
+          style: TextButton.styleFrom(
+            foregroundColor: AppColors.holyGold,
+            textStyle: AppTextStyles.labelMedium.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
           child: Text(l10n.preview),
         ),
       ],
