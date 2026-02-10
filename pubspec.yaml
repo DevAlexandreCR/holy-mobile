@@ -43,6 +43,12 @@ dependencies:
   shared_preferences: ^2.5.3
   google_fonts: ^6.3.3
   share_plus: ^10.0.2
+  flutter_quill: ^9.0.0
+  flutter_quill_extensions: ^9.0.0
+  image_picker: ^1.0.7
+  cached_network_image: ^3.3.1
+  url_launcher: ^6.2.4
+  emoji_picker_flutter: ^2.0.0
   flutter_dotenv: ^6.0.0
   screenshot: ^3.0.0
   path_provider: ^2.1.5
@@ -114,3 +120,7 @@ flutter_launcher_icons:
   adaptive_icon_background: "#FFFFFF"
   adaptive_icon_foreground: "assets/icon/app_icon.png"
   # Esto generará íconos que se adaptan mejor al tamaño del launcher
+
+dependency_overrides:
+  gal_linux:
+    path: third_party/gal_linux

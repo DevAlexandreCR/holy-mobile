@@ -198,6 +198,11 @@ List<_NavItem> _buildItems(AppLocalizations l10n, bool canManageUsers) {
       label: l10n.navHomeLabel,
     ),
     _NavItem(
+      branchIndex: 5,
+      icon: Icons.menu_book_rounded,
+      label: l10n.navDevotionalsLabel,
+    ),
+    _NavItem(
       branchIndex: 2,
       icon: Icons.bookmark_rounded,
       label: l10n.navSavedLabel,

@@ -1,0 +1,136 @@
+import 'dart:async';
+
+import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:holyverso/core/l10n/app_localizations.dart';
+import 'package:holyverso/data/devotionals/devotionals_repository.dart';
+import 'package:holyverso/domain/devotionals/devotional_comment.dart';
+import 'package:holyverso/presentation/state/devotionals/devotional_comments_state.dart';
+
+class DevotionalCommentsController extends Notifier<DevotionalCommentsState> {
+  late final DevotionalsRepository _repository;
+  static const _l10n = AppLocalizations(Locale('es'));
+
+  @override
+  DevotionalCommentsState build() {
+    _repository = ref.read(devotionalsRepositoryProvider);
+    return const DevotionalCommentsState();
+  }
+
+  Future<void> load(String devotionalId) async {
+    state = state.copyWith(
+      status: DevotionalCommentsStatus.loading,
+      devotionalId: devotionalId,
+      page: 1,
+      clearError: true,
+    );
+
+    await _fetchPage(devotionalId: devotionalId, page: 1);
+  }
+
+  Future<void> refresh() async {
+    final devotionalId = state.devotionalId;
+    if (devotionalId == null) return;
+    await load(devotionalId);
+  }
+
+  Future<void> loadMore() async {
+    final devotionalId = state.devotionalId;
+    if (devotionalId == null || state.isFetchingMore || !state.hasMore) return;
+
+    state = state.copyWith(isFetchingMore: true, clearError: true);
+    await _fetchPage(
+      devotionalId: devotionalId,
+      page: state.page + 1,
+      append: true,
+    );
+  }
+
+  Future<void> addComment(String content) async {
+    final devotionalId = state.devotionalId;
+    if (devotionalId == null) return;
+
+    try {
+      final comment = await _repository.addComment(
+        devotionalId: devotionalId,
+        content: content,
+      );
+      state = state.copyWith(
+        items: [comment, ...state.items],
+        total: state.total + 1,
+      );
+    } catch (error) {
+      state = state.copyWith(errorMessage: _mapError(error));
+    }
+  }
+
+  Future<void> deleteComment(DevotionalComment comment) async {
+    final devotionalId = state.devotionalId;
+    if (devotionalId == null) return;
+
+    try {
+      await _repository.deleteComment(
+        devotionalId: devotionalId,
+        commentId: comment.id,
+      );
+      state = state.copyWith(
+        items: state.items.where((item) => item.id != comment.id).toList(),
+        total: state.total > 0 ? state.total - 1 : 0,
+      );
+    } catch (error) {
+      state = state.copyWith(errorMessage: _mapError(error));
+    }
+  }
+
+  Future<void> _fetchPage({
+    required String devotionalId,
+    required int page,
+    bool append = false,
+  }) async {
+    try {
+      final result = await _repository.fetchComments(
+        devotionalId: devotionalId,
+        page: page,
+        limit: state.limit,
+      );
+
+      final items = append
+          ? [...state.items, ...result.items]
+          : result.items;
+
+      state = state.copyWith(
+        status: DevotionalCommentsStatus.success,
+        items: items,
+        page: result.page,
+        limit: result.limit,
+        total: result.total,
+      );
+    } catch (error) {
+      state = state.copyWith(
+        status: DevotionalCommentsStatus.error,
+        errorMessage: _mapError(error),
+      );
+    } finally {
+      if (state.isFetchingMore) {
+        state = state.copyWith(isFetchingMore: false);
+      }
+    }
+  }
+
+  String _mapError(Object error) {
+    if (error is DioException) {
+      final data = error.response?.data;
+      final responseMessage = data is Map && data['error']?['message'] is String
+          ? data['error']['message'] as String
+          : null;
+      return responseMessage ?? error.message ?? _l10n.genericError;
+    }
+    return _l10n.genericError;
+  }
+}
+
+final devotionalCommentsControllerProvider =
+    NotifierProvider<DevotionalCommentsController, DevotionalCommentsState>(
+  DevotionalCommentsController.new,
+);

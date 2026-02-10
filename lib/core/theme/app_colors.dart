@@ -46,9 +46,9 @@ class AppColors {
   static const Color textMuted = Color(0xFFB0B0B0);
 
   // UI State Colors
-  static const Color inputBackground = Color(0xFF27241B);
-  static const Color inputBorder = Color(0xFF544E3B);
-  static const Color inputPlaceholder = Color(0xFFBAB29C);
+  static const Color inputBackground = Color(0xFF22324B);
+  static const Color inputBorder = Color(0xFF344760);
+  static const Color inputPlaceholder = Color(0xFF9BAAC2);
 
   // Shadows & Overlays
   static const Color shadowDark = Color(0x80000000);

@@ -119,7 +119,7 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen> {
                     child: Align(
                       alignment: Alignment.centerLeft,
                       child: Chip(
-                        backgroundColor: AppColors.pureWhite.withValues(alpha: 0.1),
+                        backgroundColor: AppColors.inputBackground,
                         label: Text(
                           'Filtro: ${state.roleFilter!.displayName}',
                           style: AppTextStyles.bodySmall.copyWith(

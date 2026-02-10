@@ -13,9 +13,9 @@ class AppTheme {
   static const softMist = Color(0xFFD7DCE3);
 
   // Functional colors
-  static const inputBackground = Color(0xFF27241B);
-  static const inputBorder = Color(0xFF544E3B);
-  static const inputPlaceholder = Color(0xFFBAB29C);
+  static const inputBackground = Color(0xFF22324B);
+  static const inputBorder = Color(0xFF344760);
+  static const inputPlaceholder = Color(0xFF9BAAC2);
   static const error = Color(0xFFC8943C);
 
   static ThemeData light() {

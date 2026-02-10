@@ -8,6 +8,10 @@ import 'package:holyverso/presentation/screens/auth/forgot_password_screen.dart'
 import 'package:holyverso/presentation/screens/auth/login_screen.dart';
 import 'package:holyverso/presentation/screens/auth/register_screen.dart';
 import 'package:holyverso/presentation/screens/auth/reset_password_screen.dart';
+import 'package:holyverso/presentation/screens/devotionals/devotional_detail_screen.dart';
+import 'package:holyverso/presentation/screens/devotionals/devotional_editor_screen.dart';
+import 'package:holyverso/presentation/screens/devotionals/devotional_preview_screen.dart';
+import 'package:holyverso/presentation/screens/devotionals/devotionals_list_screen.dart';
 import 'package:holyverso/presentation/screens/search/search_screen.dart';
 import 'package:holyverso/presentation/screens/settings/settings_screen.dart';
 import 'package:holyverso/presentation/screens/splash/splash_screen.dart';
@@ -136,6 +140,40 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               ),
             ],
           ),
+          StatefulShellBranch(
+            initialLocation: '/devotionals',
+            routes: [
+              GoRoute(
+                path: '/devotionals',
+                builder: (context, state) => const DevotionalsListScreen(),
+              ),
+              GoRoute(
+                path: '/devotionals/create',
+                builder: (context, state) => const DevotionalEditorScreen(),
+              ),
+              GoRoute(
+                path: '/devotionals/preview',
+                builder: (context, state) {
+                  final payload = state.extra as DevotionalPreviewPayload;
+                  return DevotionalPreviewScreen(payload: payload);
+                },
+              ),
+              GoRoute(
+                path: '/devotionals/:id',
+                builder: (context, state) {
+                  final id = state.pathParameters['id']!;
+                  return DevotionalDetailScreen(devotionalId: id);
+                },
+              ),
+              GoRoute(
+                path: '/devotionals/:id/edit',
+                builder: (context, state) {
+                  final id = state.pathParameters['id']!;
+                  return DevotionalEditorScreen(devotionalId: id);
+                },
+              ),
+            ],
+          ),
         ],
       ),
     ],
@@ -155,6 +193,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           location == '/saved' ||
           location == '/settings' ||
           location == '/users' ||
+          location == '/devotionals' ||
+          location.startsWith('/devotionals') ||
           location == '/verse' ||
           location.startsWith('/verse/');
 

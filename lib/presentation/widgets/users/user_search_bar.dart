@@ -52,21 +52,21 @@ class _UserSearchBarState extends State<UserSearchBar> {
       decoration: InputDecoration(
         hintText: 'Buscar por nombre o email...',
         hintStyle: AppTextStyles.bodySmall.copyWith(
-          color: AppColors.softMist.withValues(alpha: 0.7),
+          color: AppColors.inputPlaceholder.withValues(alpha: 0.9),
         ),
         prefixIcon: Icon(
           Icons.search,
-          color: AppColors.holyGold.withValues(alpha: 0.8),
+          color: AppColors.holyGold.withValues(alpha: 0.9),
         ),
         suffixIcon: _controller.text.isNotEmpty
             ? IconButton(
                 icon: const Icon(Icons.clear),
-                color: AppColors.softMist.withValues(alpha: 0.8),
+                color: AppColors.softMist.withValues(alpha: 0.85),
                 onPressed: _clear,
               )
             : null,
         filled: true,
-        fillColor: AppColors.pureWhite.withValues(alpha: 0.05),
+        fillColor: AppColors.inputBackground,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.md,
           vertical: AppSpacing.sm,
@@ -74,13 +74,13 @@ class _UserSearchBarState extends State<UserSearchBar> {
         border: OutlineInputBorder(
           borderRadius: AppBorderRadius.input,
           borderSide: BorderSide(
-            color: AppColors.pureWhite.withValues(alpha: 0.12),
+            color: AppColors.inputBorder.withValues(alpha: 0.8),
           ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: AppBorderRadius.input,
           borderSide: BorderSide(
-            color: AppColors.pureWhite.withValues(alpha: 0.12),
+            color: AppColors.inputBorder.withValues(alpha: 0.7),
           ),
         ),
         focusedBorder: OutlineInputBorder(

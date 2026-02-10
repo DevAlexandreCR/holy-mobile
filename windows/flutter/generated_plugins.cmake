@@ -3,9 +3,14 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
+  emoji_picker_flutter
+  file_selector_windows
   flutter_secure_storage_windows
   flutter_timezone
+  gal
+  irondash_engine_context
   share_plus
+  super_native_extensions
   url_launcher_windows
 )
 

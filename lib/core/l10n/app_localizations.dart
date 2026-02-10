@@ -134,6 +134,7 @@ class AppLocalizations {
 
   String get settingsTitle => _string('settingsTitle');
   String get navHomeLabel => _string('navHomeLabel');
+  String get navDevotionalsLabel => _string('navDevotionalsLabel');
   String get navSearchLabel => _string('navSearchLabel');
   String get navSavedLabel => _string('navSavedLabel');
   String get navSettingsLabel => _string('navSettingsLabel');
@@ -150,6 +151,56 @@ class AppLocalizations {
   String get authRequestFailed => _string('authRequestFailed');
   String get authUnexpectedError => _string('authUnexpectedError');
   String get authInvalidCredentials => _string('authInvalidCredentials');
+
+  String get devotionalsTitle => _string('devotionalsTitle');
+  String get devotionalsAll => _string('devotionalsAll');
+  String get devotionalsMine => _string('devotionalsMine');
+  String get devotionalsDrafts => _string('devotionalsDrafts');
+  String get devotionalsPublished => _string('devotionalsPublished');
+  String get devotionalsArchived => _string('devotionalsArchived');
+  String get devotionalsStatusLabel => _string('devotionalsStatusLabel');
+  String get devotionalsEmptyTitle => _string('devotionalsEmptyTitle');
+  String get devotionalsEmptySubtitle => _string('devotionalsEmptySubtitle');
+  String get devotionalsContentMissing => _string('devotionalsContentMissing');
+  String get devotionalsLoginToComment => _string('devotionalsLoginToComment');
+  String get devotionalsShareFooter => _string('devotionalsShareFooter');
+  String get devotionalsLoadError => _string('devotionalsLoadError');
+  String get devotionalsSaveError => _string('devotionalsSaveError');
+  String get devotionalsImageUploadError => _string('devotionalsImageUploadError');
+
+  String get createDevotional => _string('createDevotional');
+  String get editDevotional => _string('editDevotional');
+  String get devotionalTitleLabel => _string('devotionalTitleLabel');
+  String get devotionalTitleHint => _string('devotionalTitleHint');
+  String get devotionalContentLabel => _string('devotionalContentLabel');
+  String get devotionalContentHint => _string('devotionalContentHint');
+  String get coverImage => _string('coverImage');
+  String get devotionalSelectCover => _string('devotionalSelectCover');
+  String get devotionalChangeCover => _string('devotionalChangeCover');
+  String get primaryVerseReferences => _string('primaryVerseReferences');
+  String get addVerseReference => _string('addVerseReference');
+  String get primaryVerseReference => _string('primaryVerseReference');
+  String get devotionalReferenceHint => _string('devotionalReferenceHint');
+  String get devotionalBookLabel => _string('devotionalBookLabel');
+  String get devotionalChapterLabel => _string('devotionalChapterLabel');
+  String get devotionalVerseStartLabel => _string('devotionalVerseStartLabel');
+  String get devotionalVerseEndLabel => _string('devotionalVerseEndLabel');
+  String get devotionalEmojiLabel => _string('devotionalEmojiLabel');
+  String get saveDraft => _string('saveDraft');
+  String get preview => _string('preview');
+  String get publish => _string('publish');
+  String get devotionalPublished => _string('devotionalPublished');
+  String get devotionalSaved => _string('devotionalSaved');
+  String get devotionalTitleRequired => _string('devotionalTitleRequired');
+  String get devotionalPrimaryReferenceRequired =>
+      _string('devotionalPrimaryReferenceRequired');
+  String get likesLabel => _string('likesLabel');
+  String get commentsLabel => _string('commentsLabel');
+  String get viewsLabel => _string('viewsLabel');
+  String get shareDevotional => _string('shareDevotional');
+  String get writeComment => _string('writeComment');
+  String get cancelAction => _string('cancelAction');
+  String get saveAction => _string('saveAction');
 
   String _string(String key) {
     final langCode =
@@ -281,6 +332,7 @@ class AppLocalizations {
       'errorRetry': 'Reintentar',
       'settingsTitle': 'Configuración',
       'navHomeLabel': 'Inicio',
+      'navDevotionalsLabel': 'Devocionales',
       'navSearchLabel': 'Búsqueda',
       'navSavedLabel': 'Guardados',
       'navSettingsLabel': 'Ajustes',
@@ -300,6 +352,58 @@ class AppLocalizations {
       'authUnexpectedError': 'Algo salió mal. Inténtalo nuevamente.',
       'authInvalidCredentials':
           'Correo o contraseña incorrectos. Verifica tus datos.',
+      'devotionalsTitle': 'Devocionales',
+      'devotionalsAll': 'Todos',
+      'devotionalsMine': 'Mis devocionales',
+      'devotionalsDrafts': 'Borradores',
+      'devotionalsPublished': 'Publicados',
+      'devotionalsArchived': 'Archivados',
+      'devotionalsStatusLabel': 'Estado',
+      'devotionalsEmptyTitle': 'Aún no hay devocionales',
+      'devotionalsEmptySubtitle':
+          'Muy pronto encontrarás reflexiones y devocionales para tu día.',
+      'devotionalsContentMissing': 'Este devocional aún no tiene contenido.',
+      'devotionalsLoginToComment':
+          'Inicia sesión para comentar y participar en la comunidad.',
+      'devotionalsShareFooter': 'Comparte este devocional con alguien.',
+      'devotionalsLoadError': 'No pudimos cargar el devocional.',
+      'devotionalsSaveError': 'No pudimos guardar el devocional.',
+      'devotionalsImageUploadError':
+          'No pudimos subir la imagen. Inténtalo nuevamente.',
+      'createDevotional': 'Crear devocional',
+      'editDevotional': 'Editar devocional',
+      'devotionalTitleLabel': 'Título del devocional',
+      'devotionalTitleHint': 'Ej. Un nuevo comienzo',
+      'devotionalContentLabel': 'Contenido',
+      'devotionalContentHint': 'Escribe aquí tu reflexión...',
+      'coverImage': 'Imagen de portada',
+      'devotionalSelectCover': 'Seleccionar imagen',
+      'devotionalChangeCover': 'Cambiar imagen',
+      'primaryVerseReferences': 'Referencias bíblicas principales',
+      'addVerseReference': 'Agregar referencia',
+      'primaryVerseReference': 'Referencia principal',
+      'devotionalReferenceHint':
+          'Agrega al menos una referencia bíblica principal.',
+      'devotionalBookLabel': 'Libro',
+      'devotionalChapterLabel': 'Capítulo',
+      'devotionalVerseStartLabel': 'Verso inicial',
+      'devotionalVerseEndLabel': 'Verso final (opcional)',
+      'devotionalEmojiLabel': 'Insertar emoji',
+      'saveDraft': 'Guardar borrador',
+      'preview': 'Vista previa',
+      'publish': 'Publicar',
+      'devotionalPublished': 'Devocional publicado exitosamente.',
+      'devotionalSaved': 'Devocional guardado.',
+      'devotionalTitleRequired': 'El título es obligatorio.',
+      'devotionalPrimaryReferenceRequired':
+          'Agrega al menos una referencia principal.',
+      'likesLabel': 'Me gusta',
+      'commentsLabel': 'Comentarios',
+      'viewsLabel': 'Vistas',
+      'shareDevotional': 'Compartir',
+      'writeComment': 'Escribe un comentario...',
+      'cancelAction': 'Cancelar',
+      'saveAction': 'Guardar',
     },
     'en': {
       'appTitle': 'HolyVerso',
@@ -415,6 +519,7 @@ class AppLocalizations {
       'errorRetry': 'Retry',
       'settingsTitle': 'Settings',
       'navHomeLabel': 'Home',
+      'navDevotionalsLabel': 'Devotionals',
       'navSearchLabel': 'Search',
       'navSavedLabel': 'Saved',
       'navSettingsLabel': 'Settings',
@@ -432,6 +537,56 @@ class AppLocalizations {
       'authUnexpectedError': 'Something went wrong. Please try again.',
       'authInvalidCredentials':
           'Incorrect email or password. Please check your credentials.',
+      'devotionalsTitle': 'Devotionals',
+      'devotionalsAll': 'All',
+      'devotionalsMine': 'My devotionals',
+      'devotionalsDrafts': 'Drafts',
+      'devotionalsPublished': 'Published',
+      'devotionalsArchived': 'Archived',
+      'devotionalsStatusLabel': 'Status',
+      'devotionalsEmptyTitle': 'No devotionals yet',
+      'devotionalsEmptySubtitle':
+          'Soon you will find reflections and devotionals for your day.',
+      'devotionalsContentMissing': 'This devotional has no content yet.',
+      'devotionalsLoginToComment': 'Sign in to comment and join the community.',
+      'devotionalsShareFooter': 'Share this devotional with someone.',
+      'devotionalsLoadError': 'We could not load the devotional.',
+      'devotionalsSaveError': 'We could not save the devotional.',
+      'devotionalsImageUploadError':
+          'We could not upload the image. Please try again.',
+      'createDevotional': 'Create devotional',
+      'editDevotional': 'Edit devotional',
+      'devotionalTitleLabel': 'Devotional title',
+      'devotionalTitleHint': 'e.g. A fresh start',
+      'devotionalContentLabel': 'Content',
+      'devotionalContentHint': 'Write your reflection here...',
+      'coverImage': 'Cover image',
+      'devotionalSelectCover': 'Select image',
+      'devotionalChangeCover': 'Change image',
+      'primaryVerseReferences': 'Primary Bible references',
+      'addVerseReference': 'Add reference',
+      'primaryVerseReference': 'Primary reference',
+      'devotionalReferenceHint': 'Add at least one primary reference.',
+      'devotionalBookLabel': 'Book',
+      'devotionalChapterLabel': 'Chapter',
+      'devotionalVerseStartLabel': 'Starting verse',
+      'devotionalVerseEndLabel': 'Ending verse (optional)',
+      'devotionalEmojiLabel': 'Insert emoji',
+      'saveDraft': 'Save draft',
+      'preview': 'Preview',
+      'publish': 'Publish',
+      'devotionalPublished': 'Devotional published successfully.',
+      'devotionalSaved': 'Devotional saved.',
+      'devotionalTitleRequired': 'Title is required.',
+      'devotionalPrimaryReferenceRequired':
+          'Add at least one primary reference.',
+      'likesLabel': 'Likes',
+      'commentsLabel': 'Comments',
+      'viewsLabel': 'Views',
+      'shareDevotional': 'Share',
+      'writeComment': 'Write a comment...',
+      'cancelAction': 'Cancel',
+      'saveAction': 'Save',
     },
   };
 }

@@ -29,12 +29,14 @@ class UserListItem extends StatelessWidget {
           vertical: AppSpacing.sm,
         ),
         decoration: BoxDecoration(
-          color: AppColors.pureWhite.withValues(alpha: 0.07),
+          color: AppColors.inputBackground,
           borderRadius: BorderRadius.circular(22),
-          border: Border.all(color: AppColors.pureWhite.withValues(alpha: 0.1)),
+          border: Border.all(
+            color: AppColors.inputBorder.withValues(alpha: 0.8),
+          ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.2),
+              color: Colors.black.withValues(alpha: 0.18),
               blurRadius: 18,
               offset: const Offset(0, 8),
             ),
