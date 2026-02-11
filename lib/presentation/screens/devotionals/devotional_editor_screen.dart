@@ -683,10 +683,18 @@ class _DevotionalEditorScreenState
                           iconTheme: QuillIconTheme(
                             iconButtonUnselectedData: IconButtonData(
                               color: AppColors.softMist.withValues(alpha: 0.85),
+                              padding: EdgeInsets.zero,
+                              visualDensity: VisualDensity.compact,
+                              constraints:
+                                  BoxConstraints(minWidth: 0, minHeight: 0),
                               splashRadius: 18,
                             ),
                             iconButtonSelectedData: IconButtonData(
                               color: AppColors.holyGold,
+                              padding: EdgeInsets.zero,
+                              visualDensity: VisualDensity.compact,
+                              constraints:
+                                  BoxConstraints(minWidth: 0, minHeight: 0),
                               style: ButtonStyle(
                                 backgroundColor: MaterialStatePropertyAll(
                                   AppColors.holyGold.withValues(alpha: 0.18),
