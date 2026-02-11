@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -5,11 +6,23 @@ import 'package:holyverso/core/l10n/app_localizations.dart';
 import 'package:holyverso/core/theme/app_colors.dart';
 import 'package:holyverso/core/theme/app_design_tokens.dart';
 import 'package:holyverso/core/theme/app_text_styles.dart';
+import 'package:holyverso/data/devotionals/devotionals_repository.dart';
+import 'package:holyverso/domain/devotionals/devotional.dart';
+import 'package:holyverso/domain/devotionals/devotional_comment.dart';
 import 'package:holyverso/domain/devotionals/devotional_status.dart';
 import 'package:holyverso/presentation/state/auth/auth_controller.dart';
+import 'package:holyverso/presentation/state/devotionals/devotional_comments_controller.dart';
+import 'package:holyverso/presentation/state/devotionals/devotional_comments_state.dart';
 import 'package:holyverso/presentation/state/devotionals/devotionals_list_controller.dart';
 import 'package:holyverso/presentation/state/devotionals/devotionals_list_state.dart';
 import 'package:holyverso/presentation/widgets/devotionals/devotional_card.dart';
+import 'package:share_plus/share_plus.dart';
+
+final devotionalContentProvider =
+    FutureProvider.family<Devotional, String>((ref, devotionalId) async {
+  final repository = ref.watch(devotionalsRepositoryProvider);
+  return repository.getDevotional(devotionalId);
+});
 
 class DevotionalsListScreen extends ConsumerStatefulWidget {
   const DevotionalsListScreen({super.key});
@@ -22,6 +35,8 @@ class DevotionalsListScreen extends ConsumerStatefulWidget {
 class _DevotionalsListScreenState
     extends ConsumerState<DevotionalsListScreen> {
   final ScrollController _scrollController = ScrollController();
+  final TextEditingController _commentController = TextEditingController();
+  String? _expandedDevotionalId;
 
   @override
   void initState() {
@@ -35,6 +50,7 @@ class _DevotionalsListScreenState
   @override
   void dispose() {
     _scrollController.dispose();
+    _commentController.dispose();
     super.dispose();
   }
 
@@ -46,11 +62,80 @@ class _DevotionalsListScreenState
   }
 
   void _onModeSelected(DevotionalsListMode mode) {
+    setState(() {
+      _expandedDevotionalId = null;
+    });
     ref.read(devotionalsListControllerProvider.notifier).setMode(mode);
   }
 
   void _onStatusSelected(DevotionalStatus status) {
+    setState(() {
+      _expandedDevotionalId = null;
+    });
     ref.read(devotionalsListControllerProvider.notifier).setStatusFilter(status);
+  }
+
+  void _toggleExpanded(String devotionalId) {
+    final isExpanding = _expandedDevotionalId != devotionalId;
+    setState(() {
+      _expandedDevotionalId = isExpanding ? devotionalId : null;
+    });
+    if (isExpanding) {
+      _commentController.clear();
+      ref
+          .read(devotionalCommentsControllerProvider.notifier)
+          .load(devotionalId);
+    }
+  }
+
+  String _mapContentError(Object error, AppLocalizations l10n) {
+    if (error is DioException) {
+      final data = error.response?.data;
+      final responseMessage = data is Map && data['error']?['message'] is String
+          ? data['error']['message'] as String
+          : null;
+      return responseMessage ?? error.message ?? l10n.genericError;
+    }
+    return l10n.genericError;
+  }
+
+  void _shareDevotional(Devotional devotional) {
+    final l10n = context.l10n;
+    final referenceLabel = devotional.primaryReferences.isNotEmpty
+        ? devotional.primaryReferences.map((ref) => ref.referenceLabel).join(', ')
+        : '';
+    final shareText = [
+      devotional.title,
+      if (referenceLabel.isNotEmpty) referenceLabel,
+      l10n.devotionalsShareFooter,
+    ].join('\n');
+
+    final box = context.findRenderObject() as RenderBox?;
+    final origin = box != null
+        ? (box.localToGlobal(Offset.zero) & box.size)
+        : const Rect.fromLTWH(0, 0, 1, 1);
+
+    Share.share(
+      shareText,
+      subject: l10n.shareDevotional,
+      sharePositionOrigin: origin,
+    );
+  }
+
+  Future<void> _addComment(Devotional devotional) async {
+    final content = _commentController.text.trim();
+    if (content.isEmpty) return;
+
+    await ref
+        .read(devotionalCommentsControllerProvider.notifier)
+        .addComment(content);
+    _commentController.clear();
+    final commentsState = ref.read(devotionalCommentsControllerProvider);
+    if (commentsState.devotionalId == devotional.id) {
+      ref
+          .read(devotionalsListControllerProvider.notifier)
+          .updateCommentsCount(devotional.id, commentsState.total);
+    }
   }
 
   @override
@@ -59,6 +144,7 @@ class _DevotionalsListScreenState
     final state = ref.watch(devotionalsListControllerProvider);
     final authState = ref.watch(authControllerProvider);
     final canEdit = authState.user?.role.canEditContent ?? false;
+    final commentsState = ref.watch(devotionalCommentsControllerProvider);
 
     return Scaffold(
       backgroundColor: AppColors.midnightFaith,
@@ -122,7 +208,11 @@ class _DevotionalsListScreenState
                     child: _ErrorBanner(message: state.errorMessage!),
                   ),
                 Expanded(
-                  child: _buildBody(state),
+                  child: _buildBody(
+                    state,
+                    commentsState,
+                    authState.isAuthenticated,
+                  ),
                 ),
               ],
             ),
@@ -140,7 +230,11 @@ class _DevotionalsListScreenState
     );
   }
 
-  Widget _buildBody(DevotionalsListState state) {
+  Widget _buildBody(
+    DevotionalsListState state,
+    DevotionalCommentsState commentsState,
+    bool isAuthenticated,
+  ) {
     final l10n = context.l10n;
 
     if (state.status == DevotionalsListStatus.loading && state.items.isEmpty) {
@@ -229,11 +323,274 @@ class _DevotionalsListScreenState
           }
 
           final devotional = state.items[index];
+          final isExpanded = devotional.id == _expandedDevotionalId;
+          final matchingComments = commentsState.devotionalId == devotional.id;
+          final effectiveCommentsState = matchingComments
+              ? commentsState
+              : const DevotionalCommentsState(
+                  status: DevotionalCommentsStatus.loading,
+                );
+          final shouldFetchContent = isExpanded &&
+              (devotional.content == null || devotional.content!.isEmpty);
+          final contentState = shouldFetchContent
+              ? ref.watch(devotionalContentProvider(devotional.id))
+              : null;
+          final content = devotional.content ?? contentState?.value?.content;
+          final isLoadingContent =
+              shouldFetchContent && contentState?.isLoading == true;
+          final contentError = shouldFetchContent &&
+                  contentState?.hasError == true
+              ? _mapContentError(contentState!.error!, l10n)
+              : null;
           return DevotionalCard(
             devotional: devotional,
-            onTap: () => context.push('/devotionals/${devotional.id}'),
+            isExpanded: isExpanded,
+            onToggle: () => _toggleExpanded(devotional.id),
+            content: content,
+            isLoadingContent: isLoadingContent,
+            contentError: contentError,
+            onRetryContent: contentError != null
+                ? () =>
+                    ref.invalidate(devotionalContentProvider(devotional.id))
+                : null,
+            expandedFooter: isExpanded
+                ? _buildExpandedFooter(
+                    devotional: devotional,
+                    commentsState: effectiveCommentsState,
+                    isAuthenticated: isAuthenticated,
+                    isTogglingLike: state.likingDevotionalId == devotional.id,
+                  )
+                : null,
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildExpandedFooter({
+    required Devotional devotional,
+    required DevotionalCommentsState commentsState,
+    required bool isAuthenticated,
+    required bool isTogglingLike,
+  }) {
+    final l10n = context.l10n;
+    final commentsTotal = commentsState.devotionalId == devotional.id
+        ? commentsState.total
+        : devotional.commentsCount;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (devotional.isOwner && devotional.status == DevotionalStatus.draft)
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () =>
+                  context.push('/devotionals/${devotional.id}/edit'),
+              icon: const Icon(Icons.edit_outlined),
+              label: Text(l10n.editDevotional),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.holyGold,
+                side: BorderSide(
+                  color: AppColors.holyGold.withValues(alpha: 0.6),
+                ),
+              ),
+            ),
+          ),
+        if (devotional.isOwner && devotional.status == DevotionalStatus.draft)
+          const SizedBox(height: AppSpacing.md),
+        Row(
+          children: [
+            Expanded(
+              child: ElevatedButton.icon(
+                onPressed: isTogglingLike
+                    ? null
+                    : () => ref
+                        .read(devotionalsListControllerProvider.notifier)
+                        .toggleLike(devotional.id),
+                icon: Icon(
+                  devotional.liked ? Icons.favorite : Icons.favorite_border,
+                  color: devotional.liked ? Colors.redAccent : AppColors.holyGold,
+                ),
+                label: Text(
+                  '${l10n.likesLabel} ${devotional.likesCount}',
+                  style: AppTextStyles.labelMedium.copyWith(
+                    color: AppColors.midnightFaith,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.holyGold,
+                  foregroundColor: AppColors.midnightFaith,
+                ),
+              ),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: () => _shareDevotional(devotional),
+                icon: const Icon(Icons.share_outlined),
+                label: Text(l10n.shareDevotional),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.holyGold,
+                  side: BorderSide(
+                    color: AppColors.holyGold.withValues(alpha: 0.6),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.lg),
+        Text(
+          '${l10n.commentsLabel} ($commentsTotal)',
+          style: AppTextStyles.headline3.copyWith(
+            color: AppColors.pureWhite,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        if (!isAuthenticated)
+          _LoginPrompt(onLogin: () {
+            context.go('/login', extra: l10n.loginRequiredMessage);
+          }),
+        if (isAuthenticated)
+          _CommentInput(
+            controller: _commentController,
+            onSubmit: () => _addComment(devotional),
+          ),
+        if (commentsState.errorMessage != null)
+          Padding(
+            padding: const EdgeInsets.only(top: AppSpacing.sm),
+            child: Text(
+              commentsState.errorMessage!,
+              style: AppTextStyles.bodySmall.copyWith(
+                color: AppColors.error,
+              ),
+            ),
+          ),
+        const SizedBox(height: AppSpacing.md),
+        if (commentsState.status == DevotionalCommentsStatus.loading &&
+            commentsState.items.isEmpty)
+          const Center(
+            child: CircularProgressIndicator(color: AppColors.holyGold),
+          ),
+        if (commentsState.status == DevotionalCommentsStatus.error &&
+            commentsState.items.isEmpty)
+          Text(
+            commentsState.errorMessage ?? l10n.genericError,
+            style: AppTextStyles.bodySmall.copyWith(
+              color: AppColors.softMist.withValues(alpha: 0.8),
+            ),
+          ),
+        ...commentsState.items
+            .map((comment) => _CommentItem(comment: comment))
+            .toList(),
+      ],
+    );
+  }
+}
+
+class _CommentInput extends StatelessWidget {
+  const _CommentInput({required this.controller, required this.onSubmit});
+
+  final TextEditingController controller;
+  final VoidCallback onSubmit;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return Row(
+      children: [
+        Expanded(
+          child: TextField(
+            controller: controller,
+            minLines: 1,
+            maxLines: 3,
+            decoration: InputDecoration(
+              hintText: l10n.writeComment,
+              fillColor: AppColors.pureWhite.withValues(alpha: 0.08),
+            ),
+            style: AppTextStyles.bodyMedium.copyWith(color: AppColors.pureWhite),
+          ),
+        ),
+        const SizedBox(width: AppSpacing.sm),
+        IconButton(
+          onPressed: onSubmit,
+          icon: const Icon(Icons.send_rounded, color: AppColors.holyGold),
+        ),
+      ],
+    );
+  }
+}
+
+class _LoginPrompt extends StatelessWidget {
+  const _LoginPrompt({required this.onLogin});
+
+  final VoidCallback onLogin;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: AppColors.pureWhite.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(AppBorderRadius.md),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.lock_outline, color: AppColors.holyGold),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Text(
+              l10n.devotionalsLoginToComment,
+              style: AppTextStyles.bodySmall.copyWith(
+                color: AppColors.softMist,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: onLogin,
+            child: Text(l10n.loginAction),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CommentItem extends StatelessWidget {
+  const _CommentItem({required this.comment});
+
+  final DevotionalComment comment;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: AppColors.pureWhite.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(AppBorderRadius.md),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            comment.author.name,
+            style: AppTextStyles.bodySmall.copyWith(
+              color: AppColors.holyGold,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            comment.content,
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: AppColors.pureWhite.withValues(alpha: 0.9),
+            ),
+          ),
+        ],
       ),
     );
   }

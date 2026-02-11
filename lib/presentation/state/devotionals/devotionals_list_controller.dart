@@ -27,6 +27,7 @@ class DevotionalsListController extends Notifier<DevotionalsListState> {
     state = state.copyWith(
       status: DevotionalsListStatus.loading,
       page: 1,
+      likingDevotionalId: null,
       clearError: true,
     );
 
@@ -106,6 +107,39 @@ class DevotionalsListController extends Notifier<DevotionalsListState> {
         state = state.copyWith(isFetchingMore: false);
       }
     }
+  }
+
+  Future<void> toggleLike(String devotionalId) async {
+    if (state.likingDevotionalId == devotionalId) return;
+    final index = state.items.indexWhere((item) => item.id == devotionalId);
+    if (index == -1) return;
+
+    state = state.copyWith(likingDevotionalId: devotionalId, clearError: true);
+    try {
+      final result = await _repository.toggleLike(devotionalId);
+      final updated = state.items[index].copyWith(
+        likesCount: result.likesCount,
+        liked: result.liked,
+      );
+      final items = [...state.items];
+      items[index] = updated;
+      state = state.copyWith(items: items);
+    } catch (error) {
+      state = state.copyWith(errorMessage: _mapError(error));
+    } finally {
+      if (state.likingDevotionalId == devotionalId) {
+        state = state.copyWith(likingDevotionalId: null);
+      }
+    }
+  }
+
+  void updateCommentsCount(String devotionalId, int total) {
+    final index = state.items.indexWhere((item) => item.id == devotionalId);
+    if (index == -1) return;
+    final updated = state.items[index].copyWith(commentsCount: total);
+    final items = [...state.items];
+    items[index] = updated;
+    state = state.copyWith(items: items);
   }
 
   String _mapError(Object error) {

@@ -10,6 +10,7 @@ import 'package:holyverso/presentation/state/devotionals/devotional_comments_sta
 
 class DevotionalCommentsController extends Notifier<DevotionalCommentsState> {
   late final DevotionalsRepository _repository;
+  String? _activeDevotionalId;
   static const _l10n = AppLocalizations(Locale('es'));
 
   @override
@@ -19,6 +20,7 @@ class DevotionalCommentsController extends Notifier<DevotionalCommentsState> {
   }
 
   Future<void> load(String devotionalId) async {
+    _activeDevotionalId = devotionalId;
     state = state.copyWith(
       status: DevotionalCommentsStatus.loading,
       devotionalId: devotionalId,
@@ -95,6 +97,7 @@ class DevotionalCommentsController extends Notifier<DevotionalCommentsState> {
         limit: state.limit,
       );
 
+      if (_activeDevotionalId != devotionalId) return;
       final items = append
           ? [...state.items, ...result.items]
           : result.items;
@@ -107,11 +110,13 @@ class DevotionalCommentsController extends Notifier<DevotionalCommentsState> {
         total: result.total,
       );
     } catch (error) {
+      if (_activeDevotionalId != devotionalId) return;
       state = state.copyWith(
         status: DevotionalCommentsStatus.error,
         errorMessage: _mapError(error),
       );
     } finally {
+      if (_activeDevotionalId != devotionalId) return;
       if (state.isFetchingMore) {
         state = state.copyWith(isFetchingMore: false);
       }

@@ -159,6 +159,8 @@ class AppLocalizations {
   String get devotionalsPublished => _string('devotionalsPublished');
   String get devotionalsArchived => _string('devotionalsArchived');
   String get devotionalsStatusLabel => _string('devotionalsStatusLabel');
+  String get devotionalsExpand => _string('devotionalsExpand');
+  String get devotionalsCollapse => _string('devotionalsCollapse');
   String get devotionalsEmptyTitle => _string('devotionalsEmptyTitle');
   String get devotionalsEmptySubtitle => _string('devotionalsEmptySubtitle');
   String get devotionalsContentMissing => _string('devotionalsContentMissing');
@@ -359,6 +361,8 @@ class AppLocalizations {
       'devotionalsPublished': 'Publicados',
       'devotionalsArchived': 'Archivados',
       'devotionalsStatusLabel': 'Estado',
+      'devotionalsExpand': 'Leer completo',
+      'devotionalsCollapse': 'Mostrar menos',
       'devotionalsEmptyTitle': 'Aún no hay devocionales',
       'devotionalsEmptySubtitle':
           'Muy pronto encontrarás reflexiones y devocionales para tu día.',
@@ -544,6 +548,8 @@ class AppLocalizations {
       'devotionalsPublished': 'Published',
       'devotionalsArchived': 'Archived',
       'devotionalsStatusLabel': 'Status',
+      'devotionalsExpand': 'Read full',
+      'devotionalsCollapse': 'Show less',
       'devotionalsEmptyTitle': 'No devotionals yet',
       'devotionalsEmptySubtitle':
           'Soon you will find reflections and devotionals for your day.',
