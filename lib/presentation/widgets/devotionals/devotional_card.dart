@@ -37,7 +37,6 @@ class DevotionalCard extends StatelessWidget {
         ? primaryRefs.map((ref) => ref.referenceLabel).join(', ')
         : '';
     final publishedLabel = _formatPublishedDate(devotional.publishedAt);
-    final navGlowColor = AppColors.holyGold.withValues(alpha: 0.22);
 
     return Container(
       margin: const EdgeInsets.only(bottom: AppSpacing.md),
@@ -74,8 +73,10 @@ class DevotionalCard extends StatelessWidget {
             InkWell(
               borderRadius: AppBorderRadius.card,
               onTap: onToggle,
-              splashColor: navGlowColor,
-              highlightColor: navGlowColor,
+              splashColor: Colors.transparent,
+              highlightColor: Colors.transparent,
+              hoverColor: Colors.transparent,
+              splashFactory: NoSplash.splashFactory,
               child: Padding(
                 padding: const EdgeInsets.all(AppSpacing.lg),
                 child: Column(
@@ -355,8 +356,8 @@ class _ExpandableSectionState extends State<_ExpandableSection>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 320),
-      reverseDuration: const Duration(milliseconds: 220),
+      duration: const Duration(milliseconds: 520),
+      reverseDuration: const Duration(milliseconds: 260),
     );
     _height = CurvedAnimation(
       parent: _controller,
