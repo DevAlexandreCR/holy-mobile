@@ -42,7 +42,6 @@ class _DevotionalEditorScreenState
   bool _isPublishing = false;
   bool _isUploadingCover = false;
   int _wordCount = 0;
-  Devotional? _loadedDevotional;
 
   @override
   void initState() {
@@ -71,7 +70,6 @@ class _DevotionalEditorScreenState
       final devotional = await ref
           .read(devotionalsRepositoryProvider)
           .getDevotional(widget.devotionalId!);
-      _loadedDevotional = devotional;
       _titleController.text = devotional.title;
       _coverImageUrl = devotional.coverImageUrl;
       _references
@@ -87,7 +85,7 @@ class _DevotionalEditorScreenState
       _updateWordCount();
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(this.context).showSnackBar(
+        ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(context.l10n.devotionalsLoadError),
             backgroundColor: Colors.red.shade700,
@@ -700,10 +698,10 @@ class _DevotionalEditorScreenState
                               constraints:
                                   BoxConstraints(minWidth: 0, minHeight: 0),
                               style: ButtonStyle(
-                                backgroundColor: MaterialStatePropertyAll(
+                                backgroundColor: WidgetStatePropertyAll(
                                   AppColors.holyGold.withValues(alpha: 0.18),
                                 ),
-                                shape: MaterialStatePropertyAll(
+                                shape: WidgetStatePropertyAll(
                                   RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(10),
                                   ),

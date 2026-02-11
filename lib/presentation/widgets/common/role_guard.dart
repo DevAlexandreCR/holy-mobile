@@ -27,7 +27,7 @@ class RoleGuard extends ConsumerWidget {
         return fallback ?? const SizedBox.shrink();
       },
       loading: () => fallback ?? const SizedBox.shrink(),
-      error: (_, __) => fallback ?? const SizedBox.shrink(),
+      error: (_, stackTrace) => fallback ?? const SizedBox.shrink(),
     );
   }
 }

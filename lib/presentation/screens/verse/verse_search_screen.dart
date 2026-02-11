@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:holyverso/core/l10n/app_localizations.dart';
 import 'package:holyverso/core/theme/app_colors.dart';
 import 'package:holyverso/core/theme/app_design_tokens.dart';
@@ -224,7 +223,7 @@ class _VerseSearchScreenState extends ConsumerState<VerseSearchScreen> {
                         onSelected: _applySuggestion,
                       ),
                 loading: () => const SizedBox.shrink(),
-                error: (_, __) => const SizedBox.shrink(),
+                error: (_, stackTrace) => const SizedBox.shrink(),
               ),
             if (_submittedQuery.isEmpty && history.isNotEmpty) ...[
               const SizedBox(height: AppSpacing.md),
@@ -476,7 +475,7 @@ class _SuggestionsList extends StatelessWidget {
         itemCount: suggestions.length,
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
-        separatorBuilder: (_, __) => Divider(
+        separatorBuilder: (_, index) => Divider(
           height: 1,
           color: AppColors.softMist.withValues(alpha: 0.2),
         ),

@@ -18,22 +18,18 @@ class ChapterReaderArgs {
     this.libraryVerseId,
   });
 
-  const ChapterReaderArgs.today({ChapterHighlightRange? highlightRange})
+  const ChapterReaderArgs.today({this.highlightRange})
     : book = null,
       chapter = null,
       versionCode = null,
-      highlightRange = highlightRange,
       libraryVerseId = null;
 
   const ChapterReaderArgs.saved({
-    required int libraryVerseId,
-    ChapterHighlightRange? highlightRange,
-    String? versionCode,
+    required this.libraryVerseId,
+    this.highlightRange,
+    this.versionCode,
   })  : book = null,
-        chapter = null,
-        versionCode = versionCode,
-        highlightRange = highlightRange,
-        libraryVerseId = libraryVerseId;
+        chapter = null;
 
   final String? book;
   final int? chapter;
@@ -338,7 +334,7 @@ class _ChapterContent extends StatelessWidget {
               isHighlighted: isHighlighted,
             );
           },
-          separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.md),
+          separatorBuilder: (_, index) => const SizedBox(height: AppSpacing.md),
           itemCount: chapter.verses.length,
         ),
         if (isRefreshing)

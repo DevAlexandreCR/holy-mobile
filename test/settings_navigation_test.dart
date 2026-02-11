@@ -6,6 +6,9 @@ import 'package:holyverso/data/auth/models/user_settings.dart';
 import 'package:holyverso/data/bible/bible_repository.dart';
 import 'package:holyverso/data/bible/bible_api_client.dart';
 import 'package:holyverso/data/bible/models/bible_version.dart';
+import 'package:holyverso/domain/roles/user_role.dart';
+import 'package:holyverso/domain/verse/book_suggestion.dart';
+import 'package:holyverso/domain/verse/search_result.dart';
 import 'package:holyverso/domain/verse/verse_of_the_day.dart';
 import 'package:holyverso/presentation/state/auth/auth_controller.dart';
 import 'package:holyverso/presentation/state/auth/auth_state.dart';
@@ -18,7 +21,12 @@ class _FakeAuthController extends AuthController {
   @override
   AuthState build() {
     return const AuthState(
-      user: User(id: '1', name: 'Test User', email: 'test@example.com'),
+      user: User(
+        id: '1',
+        name: 'Test User',
+        email: 'test@example.com',
+        role: UserRole.user,
+      ),
       settings: UserSettings(preferredVersionId: 4),
     );
   }
@@ -73,6 +81,16 @@ class _FakeBibleRepository extends BibleRepository {
 class _FakeBibleApiClient implements BibleApiClient {
   @override
   Future<List<BibleVersion>> getVersions() async => const [];
+
+  @override
+  Future<SearchResult?> searchVerses(String query, {int? versionId}) async {
+    return null;
+  }
+
+  @override
+  Future<List<BookSuggestion>> getAutocompleteSuggestions(String query) async {
+    return const [];
+  }
 }
 
 void main() {

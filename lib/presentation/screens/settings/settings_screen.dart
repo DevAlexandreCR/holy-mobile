@@ -145,7 +145,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
         ),
       ),
-      error: (_, __) => SettingTile(
+      error: (_, stackTrace) => SettingTile(
         icon: Icons.verified_user_outlined,
         title: 'Tu rol',
         subtitle: 'No fue posible cargar el rol',
@@ -327,15 +327,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   Future<void> _openDeleteAccountSheet() async {
-    final l10n = context.l10n;
-    final messenger = ScaffoldMessenger.of(context);
-    final router = GoRouter.of(context);
-
     await showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (sheetContext) {
+      builder: (_) {
         var isDeleting = false;
         return StatefulBuilder(
           builder: (context, setSheetState) {
@@ -348,19 +344,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   .read(authControllerProvider.notifier)
                   .deleteAccount();
 
-              if (!mounted) return;
+              if (!mounted || !context.mounted) return;
               setState(() => _isDeletingAccount = false);
 
               if (success) {
-                Navigator.of(sheetContext).pop();
-                router.go('/login');
+                Navigator.of(context).pop();
+                GoRouter.of(context).go('/login');
                 return;
               }
 
               setSheetState(() => isDeleting = false);
               final errorMessage = ref.read(authControllerProvider).errorMessage ??
-                  l10n.deleteAccountError;
-              messenger.showSnackBar(
+                  context.l10n.deleteAccountError;
+              ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(errorMessage),
                   backgroundColor: Colors.red.shade700,
@@ -368,6 +364,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               );
             }
 
+            final l10n = context.l10n;
             return HolyBottomSheet(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -394,7 +391,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         child: TextButton(
                           onPressed: isDeleting
                               ? null
-                              : () => Navigator.of(sheetContext).pop(),
+                              : () => Navigator.of(context).pop(),
                           style: TextButton.styleFrom(
                             foregroundColor: AppColors.softMist,
                             textStyle: AppTextStyles.bodyMedium.copyWith(

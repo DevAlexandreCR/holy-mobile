@@ -484,8 +484,7 @@ class _DevotionalsListScreenState
             ),
           ),
         ...commentsState.items
-            .map((comment) => _CommentItem(comment: comment))
-            .toList(),
+            .map((comment) => _CommentItem(comment: comment)),
       ],
     );
   }

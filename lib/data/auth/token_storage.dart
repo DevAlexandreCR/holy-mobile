@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -16,7 +17,7 @@ class AuthTokenService {
     try {
       await _channel.invokeMethod<void>('setApiUrl', apiUrl);
     } catch (e) {
-      print('Warning: Failed to set API URL in native storage: $e');
+      debugPrint('Warning: Failed to set API URL in native storage: $e');
     }
   }
 
@@ -27,7 +28,7 @@ class AuthTokenService {
       await _channel.invokeMethod<void>('saveJwtToken', token);
     } catch (e) {
       // Non-critical if it fails because the token is in secure storage
-      print('Warning: Failed to save JWT token to native storage: $e');
+      debugPrint('Warning: Failed to save JWT token to native storage: $e');
     }
   }
 
@@ -41,7 +42,7 @@ class AuthTokenService {
     try {
       await _channel.invokeMethod<void>('clearJwtToken');
     } catch (e) {
-      print('Warning: Failed to clear JWT token from native storage: $e');
+      debugPrint('Warning: Failed to clear JWT token from native storage: $e');
     }
   }
 }

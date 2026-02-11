@@ -116,8 +116,8 @@ class DevotionalCommentsController extends Notifier<DevotionalCommentsState> {
         errorMessage: _mapError(error),
       );
     } finally {
-      if (_activeDevotionalId != devotionalId) return;
-      if (state.isFetchingMore) {
+      final shouldUpdate = _activeDevotionalId == devotionalId;
+      if (shouldUpdate && state.isFetchingMore) {
         state = state.copyWith(isFetchingMore: false);
       }
     }

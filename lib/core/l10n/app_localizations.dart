@@ -324,7 +324,7 @@ class AppLocalizations {
       'verseSearchRecentTitle': 'Búsquedas recientes',
       'verseSearchEmptyTitle': 'Busca por referencia',
       'verseSearchEmptySubtitle':
-          'Escribe algo como \"Juan 3:16\" o \"Salmos 23\".',
+          'Escribe algo como "Juan 3:16" o "Salmos 23".',
       'verseSearchNoResults': 'Sin resultados',
       'verseSearchNoResultsSubtitle':
           'No encontramos coincidencias para tu búsqueda.',
@@ -513,7 +513,7 @@ class AppLocalizations {
       'verseSearchRecentTitle': 'Recent searches',
       'verseSearchEmptyTitle': 'Search by reference',
       'verseSearchEmptySubtitle':
-          'Try something like \"John 3:16\" or \"Psalm 23\".',
+          'Try something like "John 3:16" or "Psalm 23".',
       'verseSearchNoResults': 'No results',
       'verseSearchNoResultsSubtitle':
           'We could not find matches for your search.',

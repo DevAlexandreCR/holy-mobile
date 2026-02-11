@@ -4,6 +4,9 @@ import 'package:holyverso/data/auth/models/user.dart';
 import 'package:holyverso/data/auth/models/user_settings.dart';
 import 'package:holyverso/data/bible/bible_repository.dart';
 import 'package:holyverso/data/bible/models/bible_version.dart';
+import 'package:holyverso/domain/roles/user_role.dart';
+import 'package:holyverso/domain/verse/book_suggestion.dart';
+import 'package:holyverso/domain/verse/search_result.dart';
 import 'package:holyverso/presentation/state/auth/auth_controller.dart';
 import 'package:holyverso/presentation/state/auth/auth_state.dart';
 import 'package:holyverso/presentation/state/settings/versions_controller.dart';
@@ -91,6 +94,16 @@ class _StubBibleRepository implements BibleRepository {
   Future<List<BibleVersion>> fetchVersions({bool forceRefresh = false}) async {
     return _versions;
   }
+
+  @override
+  Future<SearchResult?> searchVerses(String query, {int? versionId}) async {
+    return null;
+  }
+
+  @override
+  Future<List<BookSuggestion>> getAutocompleteSuggestions(String query) async {
+    return const [];
+  }
 }
 
 class FakeAuthController extends AuthController {
@@ -100,7 +113,12 @@ class FakeAuthController extends AuthController {
   @override
   AuthState build() {
     return const AuthState(
-      user: User(id: '1', name: 'Tester', email: 'tester@example.com'),
+      user: User(
+        id: '1',
+        name: 'Tester',
+        email: 'tester@example.com',
+        role: UserRole.user,
+      ),
       settings: UserSettings(preferredVersionId: 1, timezone: 'UTC'),
     );
   }

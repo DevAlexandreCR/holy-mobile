@@ -414,7 +414,8 @@ class _ExpandableSectionState extends State<_ExpandableSection>
                 opacity: _fade.value,
                 child: Transform(
                   alignment: Alignment.topCenter,
-                  transform: Matrix4.identity()..scale(1.0, _stretch.value),
+                  transform: Matrix4.identity()
+                    ..scaleByDouble(1.0, _stretch.value, 1.0, 1.0),
                   child: child,
                 ),
               ),
