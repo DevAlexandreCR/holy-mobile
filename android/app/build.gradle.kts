@@ -17,7 +17,7 @@ val hasKeystore = keystorePropertiesFile.exists()
 android {
     namespace = "gorda.holyverso"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    ndkVersion = "28.2.13676358"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -36,6 +36,9 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        ndk {
+            abiFilters += listOf("arm64-v8a", "x86_64")
+        }
     }
 
     signingConfigs {
@@ -50,6 +53,12 @@ android {
     }
 
     buildTypes {
+        all {
+            ndk {
+                abiFilters.clear()
+                abiFilters += listOf("arm64-v8a", "x86_64")
+            }
+        }
         release {
             signingConfig = if (hasKeystore) {
                 signingConfigs.getByName("release")
@@ -57,6 +66,13 @@ android {
                 signingConfigs.getByName("debug")
             }
         }
+    }
+}
+
+configurations.configureEach {
+    resolutionStrategy {
+        force("androidx.datastore:datastore-core-android:1.2.0")
+        force("androidx.datastore:datastore-preferences-android:1.2.0")
     }
 }
 
