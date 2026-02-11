@@ -124,3 +124,5 @@ flutter_launcher_icons:
 dependency_overrides:
   gal_linux:
     path: third_party/gal_linux
+  flutter_inappwebview: ^6.1.5
+  youtube_player_flutter: ^9.1.3
