@@ -37,6 +37,7 @@ class DevotionalCard extends StatelessWidget {
         ? primaryRefs.map((ref) => ref.referenceLabel).join(', ')
         : '';
     final publishedLabel = _formatPublishedDate(devotional.publishedAt);
+    final navGlowColor = AppColors.holyGold.withValues(alpha: 0.22);
 
     return Container(
       margin: const EdgeInsets.only(bottom: AppSpacing.md),
@@ -73,6 +74,8 @@ class DevotionalCard extends StatelessWidget {
             InkWell(
               borderRadius: AppBorderRadius.card,
               onTap: onToggle,
+              splashColor: navGlowColor,
+              highlightColor: navGlowColor,
               child: Padding(
                 padding: const EdgeInsets.all(AppSpacing.lg),
                 child: Column(

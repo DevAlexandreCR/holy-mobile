@@ -631,6 +631,7 @@ class _DevotionalEditorScreenState
   }
 
   Widget _buildEditor(AppLocalizations l10n) {
+    final isAndroid = Theme.of(context).platform == TargetPlatform.android;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -668,7 +669,10 @@ class _DevotionalEditorScreenState
                 ),
                 child: Container(
                   color: AppColors.midnightFaithDark.withValues(alpha: 0.35),
-                  padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+                  padding: EdgeInsets.symmetric(
+                    vertical: AppSpacing.xs,
+                    horizontal: isAndroid ? AppSpacing.sm : 0,
+                  ),
                   child: QuillToolbar.simple(
                     configurations: QuillSimpleToolbarConfigurations(
                       controller: _quillController,
