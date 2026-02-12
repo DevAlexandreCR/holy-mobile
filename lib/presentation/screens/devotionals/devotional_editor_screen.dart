@@ -41,6 +41,7 @@ class _DevotionalEditorScreenState
   bool _isSaving = false;
   bool _isPublishing = false;
   bool _isUploadingCover = false;
+  bool _isEditorFullscreen = false;
   int _wordCount = 0;
 
   @override
@@ -101,6 +102,25 @@ class _DevotionalEditorScreenState
 
   void _handleEditorChange() {
     _updateWordCount();
+  }
+
+  void _enterFullscreenEditor() {
+    if (_isEditorFullscreen) return;
+    setState(() => _isEditorFullscreen = true);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      FocusScope.of(context).requestFocus(_editorFocusNode);
+    });
+  }
+
+  void _exitFullscreenEditor() {
+    if (!_isEditorFullscreen) return;
+    FocusScope.of(context).unfocus();
+    setState(() => _isEditorFullscreen = false);
+  }
+
+  void _hideKeyboard() {
+    FocusScope.of(context).unfocus();
   }
 
   void _updateWordCount() {
@@ -417,46 +437,63 @@ class _DevotionalEditorScreenState
 
     return Scaffold(
       backgroundColor: AppColors.midnightFaith,
-      appBar: AppBar(
-        title: Text(
-          widget.devotionalId == null
-              ? l10n.createDevotional
-              : l10n.editDevotional,
-          style: AppTextStyles.headline3.copyWith(
-            color: AppColors.pureWhite,
-            fontWeight: FontWeight.w700,
-          ),
+      appBar: _isEditorFullscreen
+          ? null
+          : AppBar(
+              title: Text(
+                widget.devotionalId == null
+                    ? l10n.createDevotional
+                    : l10n.editDevotional,
+                style: AppTextStyles.headline3.copyWith(
+                  color: AppColors.pureWhite,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+      body: WillPopScope(
+        onWillPop: () async {
+          if (_isEditorFullscreen) {
+            _exitFullscreenEditor();
+            return false;
+          }
+          return true;
+        },
+        child: Stack(
+          children: [
+            Container(
+              decoration: BoxDecoration(gradient: AppColors.midnightGradient),
+            ),
+            SafeArea(
+              child: _isLoading
+                  ? const Center(
+                      child: CircularProgressIndicator(
+                        color: AppColors.holyGold,
+                      ),
+                    )
+                  : _isEditorFullscreen
+                      ? _buildFullscreenEditor(l10n)
+                      : ListView(
+                          padding: const EdgeInsets.fromLTRB(
+                            AppSpacing.lg,
+                            AppSpacing.sm,
+                            AppSpacing.lg,
+                            AppSpacing.xl,
+                          ),
+                          children: [
+                            _buildTitleField(l10n),
+                            const SizedBox(height: AppSpacing.lg),
+                            _buildCoverImage(l10n),
+                            const SizedBox(height: AppSpacing.lg),
+                            _buildReferencesSection(l10n),
+                            const SizedBox(height: AppSpacing.lg),
+                            _buildEditor(l10n),
+                            const SizedBox(height: AppSpacing.xl),
+                            _buildActions(l10n),
+                          ],
+                        ),
+            ),
+          ],
         ),
-      ),
-      body: Stack(
-        children: [
-          Container(decoration: BoxDecoration(gradient: AppColors.midnightGradient)),
-          SafeArea(
-            child: _isLoading
-                ? const Center(
-                    child: CircularProgressIndicator(color: AppColors.holyGold),
-                  )
-                : ListView(
-                    padding: const EdgeInsets.fromLTRB(
-                      AppSpacing.lg,
-                      AppSpacing.sm,
-                      AppSpacing.lg,
-                      AppSpacing.xl,
-                    ),
-                    children: [
-                      _buildTitleField(l10n),
-                      const SizedBox(height: AppSpacing.lg),
-                      _buildCoverImage(l10n),
-                      const SizedBox(height: AppSpacing.lg),
-                      _buildReferencesSection(l10n),
-                      const SizedBox(height: AppSpacing.lg),
-                      _buildEditor(l10n),
-                      const SizedBox(height: AppSpacing.xl),
-                      _buildActions(l10n),
-                    ],
-                  ),
-          ),
-        ],
       ),
     );
   }
@@ -629,7 +666,7 @@ class _DevotionalEditorScreenState
   }
 
   Widget _buildEditor(AppLocalizations l10n) {
-    final isAndroid = Theme.of(context).platform == TargetPlatform.android;
+    final previewText = _quillController.document.toPlainText().trim();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -651,227 +688,356 @@ class _DevotionalEditorScreenState
           ],
         ),
         const SizedBox(height: AppSpacing.sm),
-        Container(
-          decoration: BoxDecoration(
-            color: AppColors.inputBackground,
+        Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: _enterFullscreenEditor,
             borderRadius: BorderRadius.circular(AppBorderRadius.md),
-            border: Border.all(
-              color: AppColors.inputBorder.withValues(alpha: 0.7),
+            child: Ink(
+              decoration: BoxDecoration(
+                color: AppColors.inputBackground,
+                borderRadius: BorderRadius.circular(AppBorderRadius.md),
+                border: Border.all(
+                  color: AppColors.inputBorder.withValues(alpha: 0.7),
+                ),
+              ),
+              padding: const EdgeInsets.all(AppSpacing.md),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    previewText.isEmpty
+                        ? l10n.devotionalContentHint
+                        : previewText,
+                    maxLines: 6,
+                    overflow: TextOverflow.ellipsis,
+                    style: previewText.isEmpty
+                        ? AppTextStyles.bodyLarge.copyWith(
+                            color: AppColors.inputPlaceholder.withValues(
+                              alpha: 0.9,
+                            ),
+                            height: 1.6,
+                          )
+                        : AppTextStyles.bodyLarge.copyWith(
+                            color: AppColors.pureWhite.withValues(alpha: 0.95),
+                            height: 1.6,
+                          ),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.open_in_full,
+                        size: 16,
+                        color: AppColors.holyGold.withValues(alpha: 0.9),
+                      ),
+                      const SizedBox(width: AppSpacing.xs),
+                      Text(
+                        l10n.devotionalEditorTapToEdit,
+                        style: AppTextStyles.caption.copyWith(
+                          color: AppColors.softMist.withValues(alpha: 0.8),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
-          child: Column(
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFullscreenEditor(AppLocalizations l10n) {
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            AppSpacing.sm,
+            AppSpacing.lg,
+            AppSpacing.sm,
+          ),
+          child: Row(
             children: [
-              ClipRRect(
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(AppBorderRadius.md),
-                ),
-                child: Container(
-                  color: AppColors.midnightFaithDark.withValues(alpha: 0.35),
-                  padding: EdgeInsets.symmetric(
-                    vertical: AppSpacing.xs,
-                    horizontal: isAndroid ? AppSpacing.sm : 0,
-                  ),
-                  child: QuillToolbar.simple(
-                    configurations: QuillSimpleToolbarConfigurations(
-                      controller: _quillController,
-                      color: Colors.transparent,
-                      showDividers: false,
-                      toolbarSectionSpacing: AppSpacing.xs,
-                      toolbarIconAlignment: WrapAlignment.start,
-                      buttonOptions: QuillSimpleToolbarButtonOptions(
-                        base: QuillToolbarBaseButtonOptions(
-                          iconSize: 18,
-                          iconButtonFactor: 1.8,
-                          iconTheme: QuillIconTheme(
-                            iconButtonUnselectedData: IconButtonData(
-                              color: AppColors.softMist.withValues(alpha: 0.85),
-                              padding: EdgeInsets.zero,
-                              visualDensity: VisualDensity.compact,
-                              constraints:
-                                  BoxConstraints(minWidth: 0, minHeight: 0),
-                              splashRadius: 18,
-                            ),
-                            iconButtonSelectedData: IconButtonData(
-                              color: AppColors.holyGold,
-                              padding: EdgeInsets.zero,
-                              visualDensity: VisualDensity.compact,
-                              constraints:
-                                  BoxConstraints(minWidth: 0, minHeight: 0),
-                              style: ButtonStyle(
-                                backgroundColor: WidgetStatePropertyAll(
-                                  AppColors.holyGold.withValues(alpha: 0.18),
-                                ),
-                                shape: WidgetStatePropertyAll(
-                                  RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      customButtons: [
-                        QuillToolbarCustomButtonOptions(
-                          icon: Icon(
-                            Icons.emoji_emotions_outlined,
-                            color: AppColors.softMist.withValues(alpha: 0.85),
-                          ),
-                          tooltip: l10n.devotionalEmojiLabel,
-                          onPressed: _showEmojiPicker,
-                        ),
-                      ],
-                      showFontFamily: false,
-                      showFontSize: false,
-                      showHeaderStyle: false,
-                      showInlineCode: false,
-                      showCodeBlock: false,
-                      showStrikeThrough: false,
-                      showSubscript: false,
-                      showSuperscript: false,
-                      showSmallButton: false,
-                      showBackgroundColorButton: false,
-                      showColorButton: false,
-                      showClearFormat: false,
-                      showSearchButton: false,
-                      showDirection: false,
-                      showIndent: false,
-                      showListCheck: false,
-                      showAlignmentButtons: false,
-                      showQuote: true,
-                      showListNumbers: true,
-                      showListBullets: true,
-                      dialogTheme: QuillDialogTheme(
-                        dialogBackgroundColor: AppColors.midnightFaithDark,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        labelTextStyle: AppTextStyles.bodySmall.copyWith(
-                          color: AppColors.softMist,
-                        ),
-                        inputTextStyle: AppTextStyles.bodyMedium.copyWith(
-                          color: AppColors.pureWhite,
-                        ),
-                        buttonTextStyle: AppTextStyles.labelMedium.copyWith(
-                          color: AppColors.holyGold,
-                        ),
-                        buttonStyle: TextButton.styleFrom(
-                          foregroundColor: AppColors.holyGold,
-                        ),
-                        linkDialogConstraints:
-                            const BoxConstraints(maxWidth: 360),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              Divider(
-                height: 1,
-                color: AppColors.inputBorder.withValues(alpha: 0.6),
-              ),
-              SizedBox(
-                height: 340,
-                child: QuillEditor.basic(
-                  focusNode: _editorFocusNode,
-                  scrollController: _editorScrollController,
-                  configurations: QuillEditorConfigurations(
-                    controller: _quillController,
-                    scrollable: true,
-                    autoFocus: false,
-                    readOnly: false,
-                    expands: false,
-                    padding: const EdgeInsets.all(AppSpacing.md),
-                    placeholder: l10n.devotionalContentHint,
-                    keyboardAppearance: Brightness.dark,
-                    scrollBottomInset: 120,
-                    textSelectionThemeData: TextSelectionThemeData(
-                      cursorColor: AppColors.holyGold,
-                      selectionColor:
-                          AppColors.holyGold.withValues(alpha: 0.25),
-                      selectionHandleColor: AppColors.holyGold,
-                    ),
-                    embedBuilders: FlutterQuillEmbeds.defaultEditorBuilders(),
-                    customStyles: DefaultStyles(
-                      paragraph: DefaultTextBlockStyle(
-                        AppTextStyles.bodyLarge.copyWith(
-                          color: AppColors.pureWhite.withValues(alpha: 0.95),
-                          height: 1.6,
-                        ),
-                        const VerticalSpacing(0, 10),
-                        const VerticalSpacing(0, 0),
-                        null,
-                      ),
-                      placeHolder: DefaultTextBlockStyle(
-                        AppTextStyles.bodyLarge.copyWith(
-                          color: AppColors.inputPlaceholder.withValues(
-                            alpha: 0.9,
-                          ),
-                          height: 1.6,
-                        ),
-                        const VerticalSpacing(0, 0),
-                        const VerticalSpacing(0, 0),
-                        null,
-                      ),
-                      lists: DefaultListBlockStyle(
-                        AppTextStyles.bodyLarge.copyWith(
-                          color: AppColors.pureWhite.withValues(alpha: 0.95),
-                          height: 1.6,
-                        ),
-                        const VerticalSpacing(0, 6),
-                        const VerticalSpacing(0, 0),
-                        null,
-                        null,
-                      ),
-                      quote: DefaultTextBlockStyle(
-                        AppTextStyles.bodyLarge.copyWith(
-                          color: AppColors.softMist.withValues(alpha: 0.9),
-                          height: 1.6,
-                          fontStyle: FontStyle.italic,
-                        ),
-                        const VerticalSpacing(0, 8),
-                        const VerticalSpacing(0, 0),
-                        BoxDecoration(
-                          border: Border(
-                            left: BorderSide(
-                              color: AppColors.holyGold.withValues(alpha: 0.5),
-                              width: 3,
-                            ),
-                          ),
-                        ),
-                      ),
-                      link: AppTextStyles.bodyLarge.copyWith(
-                        color: AppColors.holyGold,
-                        decoration: TextDecoration.underline,
-                      ),
-                    ),
-                    dialogTheme: QuillDialogTheme(
-                      dialogBackgroundColor: AppColors.midnightFaithDark,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      labelTextStyle: AppTextStyles.bodySmall.copyWith(
-                        color: AppColors.softMist,
-                      ),
-                      inputTextStyle: AppTextStyles.bodyMedium.copyWith(
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l10n.devotionalEditorFullscreenTitle,
+                      style: AppTextStyles.labelLarge.copyWith(
                         color: AppColors.pureWhite,
                       ),
-                      buttonTextStyle: AppTextStyles.labelMedium.copyWith(
-                        color: AppColors.holyGold,
-                      ),
-                      buttonStyle: TextButton.styleFrom(
-                        foregroundColor: AppColors.holyGold,
-                      ),
-                      linkDialogConstraints: const BoxConstraints(
-                        maxWidth: 360,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '$_wordCount palabras',
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.softMist.withValues(alpha: 0.8),
                       ),
                     ),
+                  ],
+                ),
+              ),
+              IconButton(
+                onPressed: _hideKeyboard,
+                tooltip: l10n.devotionalHideKeyboard,
+                icon: const Icon(Icons.keyboard_hide_outlined),
+                color: AppColors.softMist,
+              ),
+              TextButton(
+                onPressed: _exitFullscreenEditor,
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.holyGold,
+                  textStyle: AppTextStyles.labelMedium.copyWith(
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
+                child: Text(l10n.devotionalEditorDone),
               ),
             ],
           ),
         ),
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.lg,
+              0,
+              AppSpacing.lg,
+              AppSpacing.lg,
+            ),
+            child: Container(
+              decoration: BoxDecoration(
+                color: AppColors.inputBackground,
+                borderRadius: BorderRadius.circular(AppBorderRadius.md),
+                border: Border.all(
+                  color: AppColors.inputBorder.withValues(alpha: 0.7),
+                ),
+              ),
+              child: Column(
+                children: [
+                  ClipRRect(
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(AppBorderRadius.md),
+                    ),
+                    child: Container(
+                      color: AppColors.midnightFaithDark.withValues(alpha: 0.35),
+                      padding: EdgeInsets.symmetric(
+                        vertical: AppSpacing.xs,
+                        horizontal:
+                            Theme.of(context).platform == TargetPlatform.android
+                                ? AppSpacing.sm
+                                : 0,
+                      ),
+                      child: _buildQuillToolbar(l10n),
+                    ),
+                  ),
+                  Divider(
+                    height: 1,
+                    color: AppColors.inputBorder.withValues(alpha: 0.6),
+                  ),
+                  Expanded(
+                    child: QuillEditor.basic(
+                      focusNode: _editorFocusNode,
+                      scrollController: _editorScrollController,
+                      configurations: QuillEditorConfigurations(
+                        controller: _quillController,
+                        scrollable: true,
+                        autoFocus: false,
+                        readOnly: false,
+                        expands: true,
+                        padding: const EdgeInsets.all(AppSpacing.md),
+                        placeholder: l10n.devotionalContentHint,
+                        keyboardAppearance: Brightness.dark,
+                        scrollBottomInset: bottomInset + AppSpacing.lg,
+                        textSelectionThemeData: TextSelectionThemeData(
+                          cursorColor: AppColors.holyGold,
+                          selectionColor:
+                              AppColors.holyGold.withValues(alpha: 0.25),
+                          selectionHandleColor: AppColors.holyGold,
+                        ),
+                        embedBuilders:
+                            FlutterQuillEmbeds.defaultEditorBuilders(),
+                        customStyles: DefaultStyles(
+                          paragraph: DefaultTextBlockStyle(
+                            AppTextStyles.bodyLarge.copyWith(
+                              color: AppColors.pureWhite.withValues(alpha: 0.95),
+                              height: 1.6,
+                            ),
+                            const VerticalSpacing(0, 10),
+                            const VerticalSpacing(0, 0),
+                            null,
+                          ),
+                          placeHolder: DefaultTextBlockStyle(
+                            AppTextStyles.bodyLarge.copyWith(
+                              color: AppColors.inputPlaceholder.withValues(
+                                alpha: 0.9,
+                              ),
+                              height: 1.6,
+                            ),
+                            const VerticalSpacing(0, 0),
+                            const VerticalSpacing(0, 0),
+                            null,
+                          ),
+                          lists: DefaultListBlockStyle(
+                            AppTextStyles.bodyLarge.copyWith(
+                              color: AppColors.pureWhite.withValues(alpha: 0.95),
+                              height: 1.6,
+                            ),
+                            const VerticalSpacing(0, 6),
+                            const VerticalSpacing(0, 0),
+                            null,
+                            null,
+                          ),
+                          quote: DefaultTextBlockStyle(
+                            AppTextStyles.bodyLarge.copyWith(
+                              color: AppColors.softMist.withValues(alpha: 0.9),
+                              height: 1.6,
+                              fontStyle: FontStyle.italic,
+                            ),
+                            const VerticalSpacing(0, 8),
+                            const VerticalSpacing(0, 0),
+                            BoxDecoration(
+                              border: Border(
+                                left: BorderSide(
+                                  color:
+                                      AppColors.holyGold.withValues(alpha: 0.5),
+                                  width: 3,
+                                ),
+                              ),
+                            ),
+                          ),
+                          link: AppTextStyles.bodyLarge.copyWith(
+                            color: AppColors.holyGold,
+                            decoration: TextDecoration.underline,
+                          ),
+                        ),
+                        dialogTheme: QuillDialogTheme(
+                          dialogBackgroundColor: AppColors.midnightFaithDark,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          labelTextStyle: AppTextStyles.bodySmall.copyWith(
+                            color: AppColors.softMist,
+                          ),
+                          inputTextStyle: AppTextStyles.bodyMedium.copyWith(
+                            color: AppColors.pureWhite,
+                          ),
+                          buttonTextStyle: AppTextStyles.labelMedium.copyWith(
+                            color: AppColors.holyGold,
+                          ),
+                          buttonStyle: TextButton.styleFrom(
+                            foregroundColor: AppColors.holyGold,
+                          ),
+                          linkDialogConstraints: const BoxConstraints(
+                            maxWidth: 360,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
       ],
+    );
+  }
+
+  Widget _buildQuillToolbar(AppLocalizations l10n) {
+    return QuillToolbar.simple(
+      configurations: QuillSimpleToolbarConfigurations(
+        controller: _quillController,
+        color: Colors.transparent,
+        showDividers: false,
+        toolbarSectionSpacing: AppSpacing.xs,
+        toolbarIconAlignment: WrapAlignment.start,
+        buttonOptions: QuillSimpleToolbarButtonOptions(
+          base: QuillToolbarBaseButtonOptions(
+            iconSize: 18,
+            iconButtonFactor: 1.8,
+            iconTheme: QuillIconTheme(
+              iconButtonUnselectedData: IconButtonData(
+                color: AppColors.softMist.withValues(alpha: 0.85),
+                padding: EdgeInsets.zero,
+                visualDensity: VisualDensity.compact,
+                constraints: const BoxConstraints(minWidth: 0, minHeight: 0),
+                splashRadius: 18,
+              ),
+              iconButtonSelectedData: IconButtonData(
+                color: AppColors.holyGold,
+                padding: EdgeInsets.zero,
+                visualDensity: VisualDensity.compact,
+                constraints: const BoxConstraints(minWidth: 0, minHeight: 0),
+                style: ButtonStyle(
+                  backgroundColor: WidgetStatePropertyAll(
+                    AppColors.holyGold.withValues(alpha: 0.18),
+                  ),
+                  shape: WidgetStatePropertyAll(
+                    RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+        customButtons: [
+          QuillToolbarCustomButtonOptions(
+            icon: Icon(
+              Icons.emoji_emotions_outlined,
+              color: AppColors.softMist.withValues(alpha: 0.85),
+            ),
+            tooltip: l10n.devotionalEmojiLabel,
+            onPressed: _showEmojiPicker,
+          ),
+        ],
+        showFontFamily: false,
+        showFontSize: false,
+        showHeaderStyle: false,
+        showInlineCode: false,
+        showCodeBlock: false,
+        showStrikeThrough: false,
+        showSubscript: false,
+        showSuperscript: false,
+        showSmallButton: false,
+        showBackgroundColorButton: false,
+        showColorButton: false,
+        showClearFormat: false,
+        showSearchButton: false,
+        showDirection: false,
+        showIndent: false,
+        showListCheck: false,
+        showAlignmentButtons: false,
+        showQuote: true,
+        showListNumbers: true,
+        showListBullets: true,
+        dialogTheme: QuillDialogTheme(
+          dialogBackgroundColor: AppColors.midnightFaithDark,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          labelTextStyle: AppTextStyles.bodySmall.copyWith(
+            color: AppColors.softMist,
+          ),
+          inputTextStyle: AppTextStyles.bodyMedium.copyWith(
+            color: AppColors.pureWhite,
+          ),
+          buttonTextStyle: AppTextStyles.labelMedium.copyWith(
+            color: AppColors.holyGold,
+          ),
+          buttonStyle: TextButton.styleFrom(
+            foregroundColor: AppColors.holyGold,
+          ),
+          linkDialogConstraints: const BoxConstraints(maxWidth: 360),
+        ),
+      ),
     );
   }
 

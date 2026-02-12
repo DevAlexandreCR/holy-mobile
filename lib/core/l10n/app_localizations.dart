@@ -176,6 +176,11 @@ class AppLocalizations {
   String get devotionalTitleHint => _string('devotionalTitleHint');
   String get devotionalContentLabel => _string('devotionalContentLabel');
   String get devotionalContentHint => _string('devotionalContentHint');
+  String get devotionalEditorFullscreenTitle =>
+      _string('devotionalEditorFullscreenTitle');
+  String get devotionalEditorDone => _string('devotionalEditorDone');
+  String get devotionalHideKeyboard => _string('devotionalHideKeyboard');
+  String get devotionalEditorTapToEdit => _string('devotionalEditorTapToEdit');
   String get coverImage => _string('coverImage');
   String get devotionalSelectCover => _string('devotionalSelectCover');
   String get devotionalChangeCover => _string('devotionalChangeCover');
@@ -380,6 +385,10 @@ class AppLocalizations {
       'devotionalTitleHint': 'Ej. Un nuevo comienzo',
       'devotionalContentLabel': 'Contenido',
       'devotionalContentHint': 'Escribe aquí tu reflexión...',
+      'devotionalEditorFullscreenTitle': 'Editor',
+      'devotionalEditorDone': 'Listo',
+      'devotionalHideKeyboard': 'Ocultar teclado',
+      'devotionalEditorTapToEdit': 'Toca para editar en pantalla completa',
       'coverImage': 'Imagen de portada',
       'devotionalSelectCover': 'Seleccionar imagen',
       'devotionalChangeCover': 'Cambiar imagen',
@@ -566,6 +575,10 @@ class AppLocalizations {
       'devotionalTitleHint': 'e.g. A fresh start',
       'devotionalContentLabel': 'Content',
       'devotionalContentHint': 'Write your reflection here...',
+      'devotionalEditorFullscreenTitle': 'Editor',
+      'devotionalEditorDone': 'Done',
+      'devotionalHideKeyboard': 'Hide keyboard',
+      'devotionalEditorTapToEdit': 'Tap to edit in full screen',
       'coverImage': 'Cover image',
       'devotionalSelectCover': 'Select image',
       'devotionalChangeCover': 'Change image',
