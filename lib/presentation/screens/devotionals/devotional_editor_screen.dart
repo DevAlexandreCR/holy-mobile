@@ -18,6 +18,7 @@ import 'package:holyverso/domain/devotionals/devotional_verse_reference.dart';
 import 'package:holyverso/presentation/state/auth/auth_controller.dart';
 import 'package:holyverso/presentation/widgets/holy_button.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class DevotionalEditorScreen extends ConsumerStatefulWidget {
   const DevotionalEditorScreen({super.key, this.devotionalId});
@@ -128,6 +129,25 @@ class _DevotionalEditorScreenState
     final count = text.isEmpty ? 0 : text.split(RegExp(r'\s+')).length;
     if (count != _wordCount) {
       setState(() => _wordCount = count);
+    }
+  }
+
+  Future<void> _launchExternalUrl(String rawUrl) async {
+    final uri = Uri.tryParse(rawUrl);
+    if (uri == null) {
+      return;
+    }
+
+    try {
+      final launched = await launchUrl(
+        uri,
+        mode: LaunchMode.externalApplication,
+      );
+      if (!launched) {
+        await launchUrl(uri);
+      }
+    } catch (_) {
+      await launchUrl(uri);
     }
   }
 
@@ -272,7 +292,9 @@ class _DevotionalEditorScreenState
     context.push('/devotionals/preview', extra: payload);
   }
 
-  Future<void> _showReferenceDialog({DevotionalVerseReference? existing}) async {
+  Future<void> _showReferenceDialog({
+    DevotionalVerseReference? existing,
+  }) async {
     final l10n = context.l10n;
     final bookController = TextEditingController(text: existing?.book ?? '');
     final chapterController = TextEditingController(
@@ -344,8 +366,9 @@ class _DevotionalEditorScreenState
               onPressed: () {
                 final book = bookController.text.trim();
                 final chapter = int.tryParse(chapterController.text.trim());
-                final verseStart =
-                    int.tryParse(verseStartController.text.trim());
+                final verseStart = int.tryParse(
+                  verseStartController.text.trim(),
+                );
                 final verseEnd = int.tryParse(verseEndController.text.trim());
 
                 if (book.isEmpty || chapter == null || verseStart == null) {
@@ -355,7 +378,8 @@ class _DevotionalEditorScreenState
                 Navigator.pop(
                   context,
                   DevotionalVerseReference(
-                    id: existing?.id ??
+                    id:
+                        existing?.id ??
                         DateTime.now().millisecondsSinceEpoch.toString(),
                     book: book,
                     chapter: chapter,
@@ -471,26 +495,26 @@ class _DevotionalEditorScreenState
                       ),
                     )
                   : _isEditorFullscreen
-                      ? _buildFullscreenEditor(l10n)
-                      : ListView(
-                          padding: const EdgeInsets.fromLTRB(
-                            AppSpacing.lg,
-                            AppSpacing.sm,
-                            AppSpacing.lg,
-                            AppSpacing.xl,
-                          ),
-                          children: [
-                            _buildTitleField(l10n),
-                            const SizedBox(height: AppSpacing.lg),
-                            _buildCoverImage(l10n),
-                            const SizedBox(height: AppSpacing.lg),
-                            _buildReferencesSection(l10n),
-                            const SizedBox(height: AppSpacing.lg),
-                            _buildEditor(l10n),
-                            const SizedBox(height: AppSpacing.xl),
-                            _buildActions(l10n),
-                          ],
-                        ),
+                  ? _buildFullscreenEditor(l10n)
+                  : ListView(
+                      padding: const EdgeInsets.fromLTRB(
+                        AppSpacing.lg,
+                        AppSpacing.sm,
+                        AppSpacing.lg,
+                        AppSpacing.xl,
+                      ),
+                      children: [
+                        _buildTitleField(l10n),
+                        const SizedBox(height: AppSpacing.lg),
+                        _buildCoverImage(l10n),
+                        const SizedBox(height: AppSpacing.lg),
+                        _buildReferencesSection(l10n),
+                        const SizedBox(height: AppSpacing.lg),
+                        _buildEditor(l10n),
+                        const SizedBox(height: AppSpacing.xl),
+                        _buildActions(l10n),
+                      ],
+                    ),
             ),
           ],
         ),
@@ -548,10 +572,8 @@ class _DevotionalEditorScreenState
               height: 180,
               width: double.infinity,
               fit: BoxFit.cover,
-              errorWidget: (context, url, error) => Container(
-                height: 180,
-                color: AppColors.midnightFaithDark,
-              ),
+              errorWidget: (context, url, error) =>
+                  Container(height: 180, color: AppColors.midnightFaithDark),
             ),
           ),
         const SizedBox(height: AppSpacing.sm),
@@ -825,13 +847,15 @@ class _DevotionalEditorScreenState
                       top: Radius.circular(AppBorderRadius.md),
                     ),
                     child: Container(
-                      color: AppColors.midnightFaithDark.withValues(alpha: 0.35),
+                      color: AppColors.midnightFaithDark.withValues(
+                        alpha: 0.35,
+                      ),
                       padding: EdgeInsets.symmetric(
                         vertical: AppSpacing.xs,
                         horizontal:
                             Theme.of(context).platform == TargetPlatform.android
-                                ? AppSpacing.sm
-                                : 0,
+                            ? AppSpacing.sm
+                            : 0,
                       ),
                       child: _buildQuillToolbar(l10n),
                     ),
@@ -856,16 +880,22 @@ class _DevotionalEditorScreenState
                         scrollBottomInset: bottomInset + AppSpacing.lg,
                         textSelectionThemeData: TextSelectionThemeData(
                           cursorColor: AppColors.holyGold,
-                          selectionColor:
-                              AppColors.holyGold.withValues(alpha: 0.25),
+                          selectionColor: AppColors.holyGold.withValues(
+                            alpha: 0.25,
+                          ),
                           selectionHandleColor: AppColors.holyGold,
                         ),
+                        onLaunchUrl: (url) {
+                          _launchExternalUrl(url);
+                        },
                         embedBuilders:
                             FlutterQuillEmbeds.defaultEditorBuilders(),
                         customStyles: DefaultStyles(
                           paragraph: DefaultTextBlockStyle(
                             AppTextStyles.bodyLarge.copyWith(
-                              color: AppColors.pureWhite.withValues(alpha: 0.95),
+                              color: AppColors.pureWhite.withValues(
+                                alpha: 0.95,
+                              ),
                               height: 1.6,
                             ),
                             const VerticalSpacing(0, 10),
@@ -885,7 +915,9 @@ class _DevotionalEditorScreenState
                           ),
                           lists: DefaultListBlockStyle(
                             AppTextStyles.bodyLarge.copyWith(
-                              color: AppColors.pureWhite.withValues(alpha: 0.95),
+                              color: AppColors.pureWhite.withValues(
+                                alpha: 0.95,
+                              ),
                               height: 1.6,
                             ),
                             const VerticalSpacing(0, 6),
@@ -904,8 +936,9 @@ class _DevotionalEditorScreenState
                             BoxDecoration(
                               border: Border(
                                 left: BorderSide(
-                                  color:
-                                      AppColors.holyGold.withValues(alpha: 0.5),
+                                  color: AppColors.holyGold.withValues(
+                                    alpha: 0.5,
+                                  ),
                                   width: 3,
                                 ),
                               ),
@@ -1051,13 +1084,9 @@ class _DevotionalEditorScreenState
           onPressed: _isSaving ? null : () => _save(publish: false),
           style: OutlinedButton.styleFrom(
             foregroundColor: AppColors.holyGold,
-            side: BorderSide(
-              color: AppColors.holyGold.withValues(alpha: 0.7),
-            ),
+            side: BorderSide(color: AppColors.holyGold.withValues(alpha: 0.7)),
             minimumSize: const Size(double.infinity, AppSizes.buttonHeight),
-            shape: RoundedRectangleBorder(
-              borderRadius: AppBorderRadius.button,
-            ),
+            shape: RoundedRectangleBorder(borderRadius: AppBorderRadius.button),
             textStyle: AppTextStyles.button.copyWith(
               color: AppColors.holyGold,
               fontWeight: FontWeight.w600,

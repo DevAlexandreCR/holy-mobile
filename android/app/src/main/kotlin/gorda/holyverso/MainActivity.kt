@@ -5,6 +5,7 @@ import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
+import io.flutter.plugins.urllauncher.UrlLauncherPlugin
 
 class MainActivity : FlutterActivity() {
     private val VERSE_CHANNEL = "bible_widget/shared_verse"
@@ -12,6 +13,9 @@ class MainActivity : FlutterActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        if (!flutterEngine.plugins.has(UrlLauncherPlugin::class.java)) {
+            flutterEngine.plugins.add(UrlLauncherPlugin())
+        }
         
         // Channel para sincronizar versos con el widget
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, VERSE_CHANNEL).setMethodCallHandler(
