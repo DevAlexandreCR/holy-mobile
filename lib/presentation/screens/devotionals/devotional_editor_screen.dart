@@ -4,8 +4,10 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
+import 'package:flutter_quill/quill_delta.dart';
 import 'package:flutter_quill_extensions/flutter_quill_extensions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:holyverso/core/l10n/app_localizations.dart';
 import 'package:holyverso/core/theme/app_colors.dart';
@@ -44,6 +46,7 @@ class _DevotionalEditorScreenState
   bool _isUploadingCover = false;
   bool _isEditorFullscreen = false;
   int _wordCount = 0;
+  bool _isApplyingWhatsappAutoFormat = false;
 
   @override
   void initState() {
@@ -85,6 +88,7 @@ class _DevotionalEditorScreenState
         selection: const TextSelection.collapsed(offset: 0),
       )..addListener(_handleEditorChange);
       _updateWordCount();
+      _maybeAutoFormatWhatsappText();
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -103,6 +107,133 @@ class _DevotionalEditorScreenState
 
   void _handleEditorChange() {
     _updateWordCount();
+    _maybeAutoFormatWhatsappText();
+  }
+
+  void _maybeAutoFormatWhatsappText() {
+    if (_isApplyingWhatsappAutoFormat) {
+      return;
+    }
+
+    final transformedDelta = _convertWhatsappMarkersInDelta(
+      _quillController.document.toDelta(),
+    );
+    if (transformedDelta == null) {
+      return;
+    }
+
+    final selection = _quillController.selection;
+
+    _isApplyingWhatsappAutoFormat = true;
+    try {
+      _quillController.setContents(transformedDelta);
+      final maxOffset = _quillController.document.length - 1;
+      final clampedBase = selection.baseOffset.clamp(0, maxOffset).toInt();
+      final clampedExtent = selection.extentOffset.clamp(0, maxOffset).toInt();
+      _quillController.updateSelection(
+        TextSelection(baseOffset: clampedBase, extentOffset: clampedExtent),
+        ChangeSource.local,
+      );
+    } finally {
+      _isApplyingWhatsappAutoFormat = false;
+    }
+  }
+
+  bool _looksLikeWhatsappMarkup(String text) {
+    if (text.isEmpty) {
+      return false;
+    }
+    if (!RegExp(r'[*_~`]').hasMatch(text)) {
+      return false;
+    }
+    return text.contains('*') ||
+        text.contains('_') ||
+        text.contains('~') ||
+        text.contains('`');
+  }
+
+  Delta? _convertWhatsappMarkersInDelta(Delta source) {
+    final result = Delta();
+    var changed = false;
+
+    for (final op in source.toList()) {
+      if (!op.isInsert) {
+        result.push(op);
+        continue;
+      }
+
+      final data = op.data;
+      if (data is! String || data.isEmpty || !_looksLikeWhatsappMarkup(data)) {
+        result.insert(
+          data,
+          op.attributes == null
+              ? null
+              : Map<String, dynamic>.from(op.attributes!),
+        );
+        continue;
+      }
+
+      final parsed = _parseWhatsappFormattedText(data);
+      final hasStyles = parsed.runs.any(
+        (run) => run.bold || run.italic || run.strike || run.monospace,
+      );
+      if (!hasStyles && parsed.text == data) {
+        result.insert(
+          data,
+          op.attributes == null
+              ? null
+              : Map<String, dynamic>.from(op.attributes!),
+        );
+        continue;
+      }
+
+      changed = true;
+      final baseAttributes = op.attributes == null
+          ? <String, dynamic>{}
+          : Map<String, dynamic>.from(op.attributes!);
+
+      for (final run in parsed.runs) {
+        if (run.length <= 0) {
+          continue;
+        }
+
+        final segment = parsed.text.substring(
+          run.start,
+          run.start + run.length,
+        );
+        final segmentAttributes = Map<String, dynamic>.from(baseAttributes);
+        if (run.bold) {
+          segmentAttributes[Attribute.bold.key] = Attribute.bold.value;
+        }
+        if (run.italic) {
+          segmentAttributes[Attribute.italic.key] = Attribute.italic.value;
+        }
+        if (run.strike) {
+          segmentAttributes[Attribute.strikeThrough.key] =
+              Attribute.strikeThrough.value;
+        }
+        if (run.monospace) {
+          segmentAttributes[Attribute.inlineCode.key] =
+              Attribute.inlineCode.value;
+        }
+
+        result.insert(
+          segment,
+          segmentAttributes.isEmpty ? null : segmentAttributes,
+        );
+      }
+    }
+
+    if (!changed) {
+      return null;
+    }
+
+    if (result.isEmpty ||
+        result.last.data is! String ||
+        !(result.last.data as String).endsWith('\n')) {
+      result.insert('\n');
+    }
+    return result;
   }
 
   void _enterFullscreenEditor() {
@@ -149,6 +280,91 @@ class _DevotionalEditorScreenState
     } catch (_) {
       await launchUrl(uri);
     }
+  }
+
+  Future<void> _pasteFromClipboard(SelectionChangedCause cause) async {
+    final selection = _quillController.selection;
+    if (!selection.isValid) {
+      return;
+    }
+
+    final clipboardData = await Clipboard.getData(Clipboard.kTextPlain);
+    final rawText = clipboardData?.text;
+    if (rawText == null || rawText.isEmpty) {
+      return;
+    }
+
+    final parsed = _parseWhatsappFormattedText(
+      rawText.replaceAll('\r\n', '\n').replaceAll('\r', '\n'),
+    );
+    final start = selection.start;
+    final replaceLength = selection.end - start;
+
+    _quillController.replaceText(
+      start,
+      replaceLength,
+      parsed.text,
+      TextSelection.collapsed(offset: start + parsed.text.length),
+    );
+
+    for (final run in parsed.runs) {
+      if (run.length <= 0) {
+        continue;
+      }
+
+      final offset = start + run.start;
+      if (run.bold) {
+        _quillController.formatText(offset, run.length, Attribute.bold);
+      }
+      if (run.italic) {
+        _quillController.formatText(offset, run.length, Attribute.italic);
+      }
+      if (run.strike) {
+        _quillController.formatText(
+          offset,
+          run.length,
+          Attribute.strikeThrough,
+        );
+      }
+      if (run.monospace) {
+        _quillController.formatText(offset, run.length, Attribute.inlineCode);
+      }
+    }
+
+    _quillController.updateSelection(
+      TextSelection.collapsed(offset: start + parsed.text.length),
+      ChangeSource.local,
+    );
+    _quillController.ignoreFocusOnTextChange = false;
+
+    if (cause == SelectionChangedCause.toolbar && mounted) {
+      FocusScope.of(context).requestFocus(_editorFocusNode);
+    }
+  }
+
+  Widget _buildCustomContextMenu(
+    BuildContext context,
+    QuillRawEditorState state,
+  ) {
+    final buttonItems = state.contextMenuButtonItems
+        .map(
+          (item) => item.type == ContextMenuButtonType.paste
+              ? item.copyWith(
+                  onPressed: () {
+                    _pasteFromClipboard(SelectionChangedCause.toolbar);
+                    state.hideToolbar();
+                  },
+                )
+              : item,
+        )
+        .toList();
+
+    return TextFieldTapRegion(
+      child: AdaptiveTextSelectionToolbar.buttonItems(
+        buttonItems: buttonItems,
+        anchors: state.contextMenuAnchors,
+      ),
+    );
   }
 
   Future<void> _pickCoverImage() async {
@@ -888,6 +1104,15 @@ class _DevotionalEditorScreenState
                         onLaunchUrl: (url) {
                           _launchExternalUrl(url);
                         },
+                        contextMenuBuilder: _buildCustomContextMenu,
+                        customActions: <Type, Action<Intent>>{
+                          PasteTextIntent: CallbackAction<PasteTextIntent>(
+                            onInvoke: (intent) {
+                              _pasteFromClipboard(intent.cause);
+                              return null;
+                            },
+                          ),
+                        },
                         embedBuilders:
                             FlutterQuillEmbeds.defaultEditorBuilders(),
                         customStyles: DefaultStyles(
@@ -1141,4 +1366,250 @@ class DevotionalPreviewPayload {
   final String? coverImageUrl;
   final List<DevotionalVerseReference> references;
   final String authorName;
+}
+
+_ParsedWhatsappText _parseWhatsappFormattedText(String text) {
+  final buffer = StringBuffer();
+  final runs = <_WhatsappTextRun>[];
+  var state = const _WhatsappStyleState();
+  var i = 0;
+
+  bool appendChar(String char) {
+    final start = buffer.length;
+    buffer.write(char);
+    final length = buffer.length - start;
+    if (length <= 0) {
+      return false;
+    }
+
+    if (runs.isNotEmpty && runs.last.canMergeWith(state)) {
+      final last = runs.removeLast();
+      runs.add(last.copyWith(length: last.length + length));
+      return true;
+    }
+
+    runs.add(
+      _WhatsappTextRun(
+        start: start,
+        length: length,
+        bold: state.bold,
+        italic: state.italic,
+        strike: state.strike,
+        monospace: state.monospace,
+      ),
+    );
+    return true;
+  }
+
+  while (i < text.length) {
+    final marker = _markerAt(text, i);
+    if (marker == null) {
+      appendChar(String.fromCharCode(text.codeUnitAt(i)));
+      i += 1;
+      continue;
+    }
+
+    final isActive = state.isActive(marker.kind);
+    if (isActive) {
+      if (_isValidClosingMarker(text, i, marker.value)) {
+        state = state.toggle(marker.kind);
+        i += marker.value.length;
+        continue;
+      }
+      appendChar(String.fromCharCode(text.codeUnitAt(i)));
+      i += 1;
+      continue;
+    }
+
+    if (_isValidOpeningMarker(text, i, marker.value) &&
+        _findClosingMarker(text, i + marker.value.length, marker.value) != -1) {
+      state = state.toggle(marker.kind);
+      i += marker.value.length;
+      continue;
+    }
+
+    appendChar(String.fromCharCode(text.codeUnitAt(i)));
+    i += 1;
+  }
+
+  return _ParsedWhatsappText(text: buffer.toString(), runs: runs);
+}
+
+_WhatsappMarker? _markerAt(String text, int index) {
+  if (_matchesAt(text, index, '```')) {
+    return const _WhatsappMarker('```', _WhatsappFormat.monospace);
+  }
+  if (_matchesAt(text, index, '*')) {
+    return const _WhatsappMarker('*', _WhatsappFormat.bold);
+  }
+  if (_matchesAt(text, index, '_')) {
+    return const _WhatsappMarker('_', _WhatsappFormat.italic);
+  }
+  if (_matchesAt(text, index, '~')) {
+    return const _WhatsappMarker('~', _WhatsappFormat.strike);
+  }
+  if (_matchesAt(text, index, '`')) {
+    return const _WhatsappMarker('`', _WhatsappFormat.monospace);
+  }
+  return null;
+}
+
+bool _matchesAt(String text, int index, String marker) {
+  if (index < 0 || index + marker.length > text.length) {
+    return false;
+  }
+  return text.substring(index, index + marker.length) == marker;
+}
+
+int _findClosingMarker(String text, int from, String marker) {
+  var index = from;
+  while (index != -1) {
+    index = text.indexOf(marker, index);
+    if (index == -1) {
+      return -1;
+    }
+    if (_isValidClosingMarker(text, index, marker)) {
+      return index;
+    }
+    index += marker.length;
+  }
+  return -1;
+}
+
+bool _isValidOpeningMarker(String text, int index, String marker) {
+  final before = index > 0 ? text.codeUnitAt(index - 1) : null;
+  final afterIndex = index + marker.length;
+  final after = afterIndex < text.length ? text.codeUnitAt(afterIndex) : null;
+
+  final validBefore = before == null || _isBoundaryCodeUnit(before);
+  final validAfter = after != null && !_isBoundaryCodeUnit(after);
+  return validBefore && validAfter;
+}
+
+bool _isValidClosingMarker(String text, int index, String marker) {
+  final beforeIndex = index - 1;
+  final afterIndex = index + marker.length;
+  final before = beforeIndex >= 0 ? text.codeUnitAt(beforeIndex) : null;
+  final after = afterIndex < text.length ? text.codeUnitAt(afterIndex) : null;
+
+  final validBefore = before != null && !_isBoundaryCodeUnit(before);
+  final validAfter = after == null || _isBoundaryCodeUnit(after);
+  return validBefore && validAfter;
+}
+
+bool _isBoundaryCodeUnit(int codeUnit) {
+  const boundaryChars = ' \n\t\r.,;:!?()[]{}"\'<>/\\|-*_~`';
+  return boundaryChars.contains(String.fromCharCode(codeUnit));
+}
+
+class _ParsedWhatsappText {
+  const _ParsedWhatsappText({required this.text, required this.runs});
+
+  final String text;
+  final List<_WhatsappTextRun> runs;
+}
+
+enum _WhatsappFormat { bold, italic, strike, monospace }
+
+class _WhatsappMarker {
+  const _WhatsappMarker(this.value, this.kind);
+
+  final String value;
+  final _WhatsappFormat kind;
+}
+
+class _WhatsappStyleState {
+  const _WhatsappStyleState({
+    this.bold = false,
+    this.italic = false,
+    this.strike = false,
+    this.monospace = false,
+  });
+
+  final bool bold;
+  final bool italic;
+  final bool strike;
+  final bool monospace;
+
+  bool isActive(_WhatsappFormat format) {
+    switch (format) {
+      case _WhatsappFormat.bold:
+        return bold;
+      case _WhatsappFormat.italic:
+        return italic;
+      case _WhatsappFormat.strike:
+        return strike;
+      case _WhatsappFormat.monospace:
+        return monospace;
+    }
+  }
+
+  _WhatsappStyleState toggle(_WhatsappFormat format) {
+    switch (format) {
+      case _WhatsappFormat.bold:
+        return _WhatsappStyleState(
+          bold: !bold,
+          italic: italic,
+          strike: strike,
+          monospace: monospace,
+        );
+      case _WhatsappFormat.italic:
+        return _WhatsappStyleState(
+          bold: bold,
+          italic: !italic,
+          strike: strike,
+          monospace: monospace,
+        );
+      case _WhatsappFormat.strike:
+        return _WhatsappStyleState(
+          bold: bold,
+          italic: italic,
+          strike: !strike,
+          monospace: monospace,
+        );
+      case _WhatsappFormat.monospace:
+        return _WhatsappStyleState(
+          bold: bold,
+          italic: italic,
+          strike: strike,
+          monospace: !monospace,
+        );
+    }
+  }
+}
+
+class _WhatsappTextRun {
+  const _WhatsappTextRun({
+    required this.start,
+    required this.length,
+    required this.bold,
+    required this.italic,
+    required this.strike,
+    required this.monospace,
+  });
+
+  final int start;
+  final int length;
+  final bool bold;
+  final bool italic;
+  final bool strike;
+  final bool monospace;
+
+  bool canMergeWith(_WhatsappStyleState style) {
+    return bold == style.bold &&
+        italic == style.italic &&
+        strike == style.strike &&
+        monospace == style.monospace;
+  }
+
+  _WhatsappTextRun copyWith({int? length}) {
+    return _WhatsappTextRun(
+      start: start,
+      length: length ?? this.length,
+      bold: bold,
+      italic: italic,
+      strike: strike,
+      monospace: monospace,
+    );
+  }
 }
