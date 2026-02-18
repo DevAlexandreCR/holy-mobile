@@ -127,10 +127,12 @@ class AppLocalizations {
   String get verseSearchEmptyTitle => _string('verseSearchEmptyTitle');
   String get verseSearchEmptySubtitle => _string('verseSearchEmptySubtitle');
   String get verseSearchNoResults => _string('verseSearchNoResults');
-  String get verseSearchNoResultsSubtitle => _string('verseSearchNoResultsSubtitle');
+  String get verseSearchNoResultsSubtitle =>
+      _string('verseSearchNoResultsSubtitle');
   String get verseSearchShareImageDisabled =>
       _string('verseSearchShareImageDisabled');
-  String get verseSearchVoiceUnavailable => _string('verseSearchVoiceUnavailable');
+  String get verseSearchVoiceUnavailable =>
+      _string('verseSearchVoiceUnavailable');
 
   String get settingsTitle => _string('settingsTitle');
   String get navHomeLabel => _string('navHomeLabel');
@@ -168,7 +170,8 @@ class AppLocalizations {
   String get devotionalsShareFooter => _string('devotionalsShareFooter');
   String get devotionalsLoadError => _string('devotionalsLoadError');
   String get devotionalsSaveError => _string('devotionalsSaveError');
-  String get devotionalsImageUploadError => _string('devotionalsImageUploadError');
+  String get devotionalsImageUploadError =>
+      _string('devotionalsImageUploadError');
 
   String get createDevotional => _string('createDevotional');
   String get editDevotional => _string('editDevotional');
@@ -184,6 +187,8 @@ class AppLocalizations {
   String get coverImage => _string('coverImage');
   String get devotionalSelectCover => _string('devotionalSelectCover');
   String get devotionalChangeCover => _string('devotionalChangeCover');
+  String get devotionalCoverAdjustHint => _string('devotionalCoverAdjustHint');
+  String get devotionalCoverCenter => _string('devotionalCoverCenter');
   String get primaryVerseReferences => _string('primaryVerseReferences');
   String get addVerseReference => _string('addVerseReference');
   String get primaryVerseReference => _string('primaryVerseReference');
@@ -257,7 +262,8 @@ class AppLocalizations {
       'deleteAccountConfirm': 'Eliminar cuenta',
       'deleteAccountCancel': 'Cancelar',
       'deleteAccountSuccess': 'Cuenta eliminada correctamente.',
-      'deleteAccountError': 'No pudimos eliminar tu cuenta. Inténtalo nuevamente.',
+      'deleteAccountError':
+          'No pudimos eliminar tu cuenta. Inténtalo nuevamente.',
       'welcomeBack': '¡Bienvenido de nuevo!',
       'missingEmailError': 'Ingresa tu correo',
       'invalidEmailError': 'Correo inválido',
@@ -335,7 +341,8 @@ class AppLocalizations {
           'No encontramos coincidencias para tu búsqueda.',
       'verseSearchShareImageDisabled':
           'Este pasaje es muy largo para compartirlo como imagen.',
-      'verseSearchVoiceUnavailable': 'La búsqueda por voz estará disponible pronto.',
+      'verseSearchVoiceUnavailable':
+          'La búsqueda por voz estará disponible pronto.',
       'errorRetry': 'Reintentar',
       'settingsTitle': 'Configuración',
       'navHomeLabel': 'Inicio',
@@ -392,6 +399,8 @@ class AppLocalizations {
       'coverImage': 'Imagen de portada',
       'devotionalSelectCover': 'Seleccionar imagen',
       'devotionalChangeCover': 'Cambiar imagen',
+      'devotionalCoverAdjustHint': 'Arrastra la imagen para centrarla mejor.',
+      'devotionalCoverCenter': 'Centrar',
       'primaryVerseReferences': 'Referencias bíblicas principales',
       'addVerseReference': 'Agregar referencia',
       'primaryVerseReference': 'Referencia principal',
@@ -452,7 +461,8 @@ class AppLocalizations {
       'deleteAccountConfirm': 'Delete account',
       'deleteAccountCancel': 'Cancel',
       'deleteAccountSuccess': 'Account deleted successfully.',
-      'deleteAccountError': 'We could not delete your account. Please try again.',
+      'deleteAccountError':
+          'We could not delete your account. Please try again.',
       'welcomeBack': 'Welcome back!',
       'missingEmailError': 'Enter your email',
       'invalidEmailError': 'Invalid email',
@@ -582,6 +592,8 @@ class AppLocalizations {
       'coverImage': 'Cover image',
       'devotionalSelectCover': 'Select image',
       'devotionalChangeCover': 'Change image',
+      'devotionalCoverAdjustHint': 'Drag the image to frame it better.',
+      'devotionalCoverCenter': 'Center',
       'primaryVerseReferences': 'Primary Bible references',
       'addVerseReference': 'Add reference',
       'primaryVerseReference': 'Primary reference',

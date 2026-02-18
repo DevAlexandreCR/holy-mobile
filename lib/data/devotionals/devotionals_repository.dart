@@ -36,6 +36,7 @@ class DevotionalsRepository {
     required List<dynamic> content,
     required List<DevotionalVerseReference> verseReferences,
     String? coverImageUrl,
+    double? coverImageFocusY,
     DevotionalStatus status = DevotionalStatus.draft,
   }) {
     return _client.createDevotional(
@@ -43,6 +44,7 @@ class DevotionalsRepository {
       content: content,
       verseReferences: verseReferences,
       coverImageUrl: coverImageUrl,
+      coverImageFocusY: coverImageFocusY,
       status: status,
     );
   }
@@ -53,6 +55,7 @@ class DevotionalsRepository {
     List<dynamic>? content,
     List<DevotionalVerseReference>? verseReferences,
     String? coverImageUrl,
+    double? coverImageFocusY,
   }) {
     return _client.updateDevotional(
       devotionalId: devotionalId,
@@ -60,6 +63,7 @@ class DevotionalsRepository {
       content: content,
       verseReferences: verseReferences,
       coverImageUrl: coverImageUrl,
+      coverImageFocusY: coverImageFocusY,
     );
   }
 

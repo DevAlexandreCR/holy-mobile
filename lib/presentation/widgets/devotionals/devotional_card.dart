@@ -44,9 +44,7 @@ class DevotionalCard extends StatelessWidget {
         color: AppColors.midnightFaith.withValues(alpha: 0.85),
         borderRadius: AppBorderRadius.card,
         boxShadow: AppShadows.cardShadow,
-        border: Border.all(
-          color: AppColors.pureWhite.withValues(alpha: 0.08),
-        ),
+        border: Border.all(color: AppColors.pureWhite.withValues(alpha: 0.08)),
       ),
       child: Material(
         color: Colors.transparent,
@@ -64,6 +62,7 @@ class DevotionalCard extends StatelessWidget {
                   height: 160,
                   width: double.infinity,
                   fit: BoxFit.cover,
+                  alignment: Alignment(0, devotional.coverImageFocusY),
                   errorWidget: (context, url, error) => Container(
                     height: 160,
                     color: AppColors.midnightFaithDark,
@@ -256,9 +255,7 @@ class _StatChip extends StatelessWidget {
           const SizedBox(width: 6),
           Text(
             value,
-            style: AppTextStyles.bodySmall.copyWith(
-              color: AppColors.softMist,
-            ),
+            style: AppTextStyles.bodySmall.copyWith(color: AppColors.softMist),
           ),
         ],
       ),
@@ -305,16 +302,12 @@ class _ExpandedContent extends StatelessWidget {
         children: [
           Text(
             contentError!,
-            style: AppTextStyles.bodySmall.copyWith(
-              color: AppColors.error,
-            ),
+            style: AppTextStyles.bodySmall.copyWith(color: AppColors.error),
           ),
           const SizedBox(height: AppSpacing.sm),
           TextButton(
             onPressed: onRetryContent,
-            style: TextButton.styleFrom(
-              foregroundColor: AppColors.holyGold,
-            ),
+            style: TextButton.styleFrom(foregroundColor: AppColors.holyGold),
             child: Text(l10n.errorRetry),
           ),
         ],

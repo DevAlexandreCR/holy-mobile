@@ -16,7 +16,9 @@ class DevotionalPreviewScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final references = payload.references.where((ref) => ref.isPrimary).toList();
+    final references = payload.references
+        .where((ref) => ref.isPrimary)
+        .toList();
 
     return Scaffold(
       backgroundColor: AppColors.midnightFaith,
@@ -31,7 +33,9 @@ class DevotionalPreviewScreen extends StatelessWidget {
       ),
       body: Stack(
         children: [
-          Container(decoration: BoxDecoration(gradient: AppColors.midnightGradient)),
+          Container(
+            decoration: BoxDecoration(gradient: AppColors.midnightGradient),
+          ),
           SafeArea(
             child: ListView(
               padding: const EdgeInsets.fromLTRB(
@@ -49,6 +53,7 @@ class DevotionalPreviewScreen extends StatelessWidget {
                       height: 220,
                       width: double.infinity,
                       fit: BoxFit.cover,
+                      alignment: Alignment(0, payload.coverImageFocusY),
                       errorWidget: (context, url, error) => Container(
                         height: 220,
                         color: AppColors.midnightFaithDark,
@@ -106,9 +111,7 @@ class _ReferenceChip extends StatelessWidget {
       ),
       child: Text(
         reference.referenceLabel,
-        style: AppTextStyles.reference.copyWith(
-          color: AppColors.holyGold,
-        ),
+        style: AppTextStyles.reference.copyWith(color: AppColors.holyGold),
       ),
     );
   }

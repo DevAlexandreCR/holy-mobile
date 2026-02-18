@@ -40,6 +40,7 @@ class _DevotionalEditorScreenState
   final FocusNode _editorFocusNode = FocusNode();
   final List<DevotionalVerseReference> _references = [];
   String? _coverImageUrl;
+  double _coverImageFocusY = 0;
   bool _isLoading = false;
   bool _isSaving = false;
   bool _isPublishing = false;
@@ -77,6 +78,7 @@ class _DevotionalEditorScreenState
           .getDevotional(widget.devotionalId!);
       _titleController.text = devotional.title;
       _coverImageUrl = devotional.coverImageUrl;
+      _coverImageFocusY = devotional.coverImageFocusY;
       _references
         ..clear()
         ..addAll(devotional.verseReferences);
@@ -383,7 +385,10 @@ class _DevotionalEditorScreenState
       final url = await ref
           .read(devotionalsRepositoryProvider)
           .uploadImage(File(image.path));
-      setState(() => _coverImageUrl = url);
+      setState(() {
+        _coverImageUrl = url;
+        _coverImageFocusY = 0;
+      });
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -445,6 +450,7 @@ class _DevotionalEditorScreenState
           content: contentOps,
           verseReferences: _references,
           coverImageUrl: _coverImageUrl,
+          coverImageFocusY: _coverImageUrl == null ? null : _coverImageFocusY,
           status: publish ? DevotionalStatus.published : DevotionalStatus.draft,
         );
       } else {
@@ -454,6 +460,7 @@ class _DevotionalEditorScreenState
           content: contentOps,
           verseReferences: _references,
           coverImageUrl: _coverImageUrl,
+          coverImageFocusY: _coverImageUrl == null ? null : _coverImageFocusY,
         );
 
         if (publish && saved.status != DevotionalStatus.published) {
@@ -501,6 +508,7 @@ class _DevotionalEditorScreenState
       title: _titleController.text.trim(),
       content: _quillController.document.toDelta().toJson(),
       coverImageUrl: _coverImageUrl,
+      coverImageFocusY: _coverImageFocusY,
       references: List<DevotionalVerseReference>.from(_references),
       authorName: authState.user?.name ?? '',
     );
@@ -690,13 +698,12 @@ class _DevotionalEditorScreenState
                 ),
               ),
             ),
-      body: WillPopScope(
-        onWillPop: () async {
-          if (_isEditorFullscreen) {
+      body: PopScope(
+        canPop: !_isEditorFullscreen,
+        onPopInvokedWithResult: (didPop, _) {
+          if (!didPop && _isEditorFullscreen) {
             _exitFullscreenEditor();
-            return false;
           }
-          return true;
         },
         child: Stack(
           children: [
@@ -771,6 +778,26 @@ class _DevotionalEditorScreenState
     );
   }
 
+  double _normalizeCoverImageFocusY(double value) {
+    if (value < -1) return -1;
+    if (value > 1) return 1;
+    return value;
+  }
+
+  void _adjustCoverFocus(DragUpdateDetails details) {
+    if (_coverImageUrl == null) return;
+    setState(() {
+      _coverImageFocusY = _normalizeCoverImageFocusY(
+        _coverImageFocusY + (details.delta.dy / 140),
+      );
+    });
+  }
+
+  void _centerCoverImage() {
+    if (_coverImageUrl == null || _coverImageFocusY == 0) return;
+    setState(() => _coverImageFocusY = 0);
+  }
+
   Widget _buildCoverImage(AppLocalizations l10n) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -780,18 +807,46 @@ class _DevotionalEditorScreenState
           style: AppTextStyles.labelLarge.copyWith(color: AppColors.pureWhite),
         ),
         const SizedBox(height: AppSpacing.sm),
-        if (_coverImageUrl != null)
+        if (_coverImageUrl != null) ...[
           ClipRRect(
             borderRadius: AppBorderRadius.card,
-            child: CachedNetworkImage(
-              imageUrl: _coverImageUrl!,
-              height: 180,
-              width: double.infinity,
-              fit: BoxFit.cover,
-              errorWidget: (context, url, error) =>
-                  Container(height: 180, color: AppColors.midnightFaithDark),
+            child: GestureDetector(
+              onVerticalDragUpdate: _adjustCoverFocus,
+              child: CachedNetworkImage(
+                imageUrl: _coverImageUrl!,
+                height: 180,
+                width: double.infinity,
+                fit: BoxFit.cover,
+                alignment: Alignment(0, _coverImageFocusY),
+                errorWidget: (context, url, error) =>
+                    Container(height: 180, color: AppColors.midnightFaithDark),
+              ),
             ),
           ),
+          const SizedBox(height: AppSpacing.xs),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  l10n.devotionalCoverAdjustHint,
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: AppColors.softMist.withValues(alpha: 0.8),
+                  ),
+                ),
+              ),
+              TextButton.icon(
+                onPressed: _centerCoverImage,
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.holyGold,
+                  minimumSize: const Size(0, 0),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                icon: const Icon(Icons.filter_center_focus_outlined, size: 18),
+                label: Text(l10n.devotionalCoverCenter),
+              ),
+            ],
+          ),
+        ],
         const SizedBox(height: AppSpacing.sm),
         ElevatedButton.icon(
           onPressed: _isUploadingCover ? null : _pickCoverImage,
@@ -1357,6 +1412,7 @@ class DevotionalPreviewPayload {
     required this.title,
     required this.content,
     required this.coverImageUrl,
+    required this.coverImageFocusY,
     required this.references,
     required this.authorName,
   });
@@ -1364,6 +1420,7 @@ class DevotionalPreviewPayload {
   final String title;
   final List<dynamic> content;
   final String? coverImageUrl;
+  final double coverImageFocusY;
   final List<DevotionalVerseReference> references;
   final String authorName;
 }

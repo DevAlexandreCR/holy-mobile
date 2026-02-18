@@ -8,6 +8,7 @@ class Devotional {
     required this.title,
     required this.status,
     required this.coverImageUrl,
+    required this.coverImageFocusY,
     required this.viewCount,
     required this.publishedAt,
     required this.createdAt,
@@ -25,6 +26,7 @@ class Devotional {
   final String title;
   final DevotionalStatus status;
   final String? coverImageUrl;
+  final double coverImageFocusY;
   final int viewCount;
   final DateTime? publishedAt;
   final DateTime createdAt;
@@ -41,7 +43,8 @@ class Devotional {
       verseReferences.where((ref) => ref.isPrimary).toList();
 
   factory Devotional.fromMap(Map<String, dynamic> map) {
-    final rawReferences = map['verse_references'] as List? ??
+    final rawReferences =
+        map['verse_references'] as List? ??
         map['verseReferences'] as List? ??
         const [];
 
@@ -58,20 +61,25 @@ class Devotional {
       title: map['title']?.toString() ?? '',
       status: DevotionalStatus.fromString(map['status']?.toString() ?? ''),
       coverImageUrl: map['cover_image_url']?.toString(),
+      coverImageFocusY: _parseCoverImageFocusY(map['cover_image_focus_y']),
       viewCount: (map['view_count'] as num?)?.toInt() ?? 0,
       publishedAt: DateTime.tryParse(map['published_at']?.toString() ?? ''),
-      createdAt: DateTime.tryParse(map['created_at']?.toString() ?? '') ??
+      createdAt:
+          DateTime.tryParse(map['created_at']?.toString() ?? '') ??
           DateTime.fromMillisecondsSinceEpoch(0),
-      updatedAt: DateTime.tryParse(map['updated_at']?.toString() ?? '') ??
+      updatedAt:
+          DateTime.tryParse(map['updated_at']?.toString() ?? '') ??
           DateTime.fromMillisecondsSinceEpoch(0),
       author: DevotionalAuthor.fromMap(
         Map<String, dynamic>.from(map['author'] as Map? ?? const {}),
       ),
       verseReferences: rawReferences
           .whereType<Map>()
-          .map((item) => DevotionalVerseReference.fromMap(
-                Map<String, dynamic>.from(item),
-              ))
+          .map(
+            (item) => DevotionalVerseReference.fromMap(
+              Map<String, dynamic>.from(item),
+            ),
+          )
           .toList(),
       likesCount: (map['likes_count'] as num?)?.toInt() ?? 0,
       commentsCount: (map['comments_count'] as num?)?.toInt() ?? 0,
@@ -92,6 +100,7 @@ class Devotional {
       title: title,
       status: status,
       coverImageUrl: coverImageUrl,
+      coverImageFocusY: coverImageFocusY,
       viewCount: viewCount,
       publishedAt: publishedAt,
       createdAt: createdAt,
@@ -104,5 +113,12 @@ class Devotional {
       isOwner: isOwner,
       content: content ?? this.content,
     );
+  }
+
+  static double _parseCoverImageFocusY(dynamic rawValue) {
+    final value = (rawValue as num?)?.toDouble() ?? 0;
+    if (value < -1) return -1;
+    if (value > 1) return 1;
+    return value;
   }
 }

@@ -22,7 +22,9 @@ class DevotionalsApiClient {
     if (rawUrl.startsWith('http')) return rawUrl;
 
     final base = _dio.options.baseUrl;
-    final normalizedBase = base.endsWith('/') ? base.substring(0, base.length - 1) : base;
+    final normalizedBase = base.endsWith('/')
+        ? base.substring(0, base.length - 1)
+        : base;
     final normalizedPath = rawUrl.startsWith('/') ? rawUrl : '/$rawUrl';
     return '$normalizedBase$normalizedPath';
   }
@@ -30,16 +32,10 @@ class DevotionalsApiClient {
   Map<String, dynamic> _normalizeDevotional(Map<String, dynamic> map) {
     final cover = map['cover_image_url']?.toString();
     if (cover == null || cover.isEmpty) return map;
-    return {
-      ...map,
-      'cover_image_url': _resolveUrl(cover),
-    };
+    return {...map, 'cover_image_url': _resolveUrl(cover)};
   }
 
-  Map<String, dynamic> _unwrapData(
-    dynamic rawData, {
-    String? errorMessage,
-  }) {
+  Map<String, dynamic> _unwrapData(dynamic rawData, {String? errorMessage}) {
     final data = rawData is Map ? rawData['data'] ?? rawData : rawData;
 
     if (data is Map<String, dynamic>) {
@@ -94,6 +90,7 @@ class DevotionalsApiClient {
     required List<dynamic> content,
     required List<DevotionalVerseReference> verseReferences,
     String? coverImageUrl,
+    double? coverImageFocusY,
     DevotionalStatus status = DevotionalStatus.draft,
   }) async {
     final response = await _dio.post(
@@ -102,8 +99,10 @@ class DevotionalsApiClient {
         'title': title,
         'content': content,
         'cover_image_url': coverImageUrl,
-        'verse_references':
-            verseReferences.map((reference) => reference.toMap()).toList(),
+        'cover_image_focus_y': coverImageFocusY,
+        'verse_references': verseReferences
+            .map((reference) => reference.toMap())
+            .toList(),
         'status': status.apiValue,
       },
     );
@@ -118,17 +117,25 @@ class DevotionalsApiClient {
     List<dynamic>? content,
     List<DevotionalVerseReference>? verseReferences,
     String? coverImageUrl,
+    double? coverImageFocusY,
   }) async {
     final payload = <String, dynamic>{};
     if (title != null) payload['title'] = title;
     if (content != null) payload['content'] = content;
     if (coverImageUrl != null) payload['cover_image_url'] = coverImageUrl;
+    if (coverImageFocusY != null) {
+      payload['cover_image_focus_y'] = coverImageFocusY;
+    }
     if (verseReferences != null) {
-      payload['verse_references'] =
-          verseReferences.map((reference) => reference.toMap()).toList();
+      payload['verse_references'] = verseReferences
+          .map((reference) => reference.toMap())
+          .toList();
     }
 
-    final response = await _dio.put('/devotionals/$devotionalId', data: payload);
+    final response = await _dio.put(
+      '/devotionals/$devotionalId',
+      data: payload,
+    );
     final data = _unwrapData(response.data);
     return Devotional.fromMap(_normalizeDevotional(data));
   }
@@ -165,10 +172,7 @@ class DevotionalsApiClient {
   }) async {
     final response = await _dio.get(
       '/devotionals/$devotionalId/comments',
-      queryParameters: {
-        'page': page,
-        'limit': limit,
-      },
+      queryParameters: {'page': page, 'limit': limit},
     );
 
     final data = _unwrapData(response.data);
@@ -178,9 +182,8 @@ class DevotionalsApiClient {
       items: itemsRaw
           .whereType<Map>()
           .map(
-            (item) => DevotionalComment.fromMap(
-              Map<String, dynamic>.from(item),
-            ),
+            (item) =>
+                DevotionalComment.fromMap(Map<String, dynamic>.from(item)),
           )
           .toList(),
       page: (data['page'] as num?)?.toInt() ?? page,
