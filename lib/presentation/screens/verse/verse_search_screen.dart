@@ -21,8 +21,7 @@ class VerseSearchScreen extends ConsumerStatefulWidget {
   const VerseSearchScreen({super.key});
 
   @override
-  ConsumerState<VerseSearchScreen> createState() =>
-      _VerseSearchScreenState();
+  ConsumerState<VerseSearchScreen> createState() => _VerseSearchScreenState();
 }
 
 class _VerseSearchScreenState extends ConsumerState<VerseSearchScreen> {
@@ -77,11 +76,13 @@ class _VerseSearchScreenState extends ConsumerState<VerseSearchScreen> {
   }
 
   void _clearSearch() {
+    _debounce?.cancel();
     _controller.clear();
     setState(() {
       _submittedQuery = '';
       _debouncedQuery = '';
     });
+    _focusNode.unfocus();
   }
 
   void _applySuggestion(BookSuggestion suggestion) {
@@ -203,6 +204,7 @@ class _VerseSearchScreenState extends ConsumerState<VerseSearchScreen> {
       ),
       body: SafeArea(
         child: ListView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           padding: const EdgeInsets.all(AppSpacing.lg),
           children: [
             _SearchBar(
@@ -234,10 +236,7 @@ class _VerseSearchScreenState extends ConsumerState<VerseSearchScreen> {
                 ),
               ),
               const SizedBox(height: AppSpacing.sm),
-              _HistoryList(
-                items: history,
-                onSelected: _applyHistory,
-              ),
+              _HistoryList(items: history, onSelected: _applyHistory),
             ],
             if (_submittedQuery.isEmpty && history.isEmpty) ...[
               const SizedBox(height: AppSpacing.xl),
@@ -274,9 +273,7 @@ class _VerseSearchScreenState extends ConsumerState<VerseSearchScreen> {
                 ),
                 error: (error, _) => Padding(
                   padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
-                  child: _ErrorPill(
-                    message: _resolveErrorMessage(error, l10n),
-                  ),
+                  child: _ErrorPill(message: _resolveErrorMessage(error, l10n)),
                 ),
               ),
             ],
@@ -315,14 +312,17 @@ class _VerseSearchScreenState extends ConsumerState<VerseSearchScreen> {
                 ),
                 child: Icon(
                   Icons.image_outlined,
-                  color: canShareImage ? AppColors.holyGold : AppColors.softMist,
+                  color: canShareImage
+                      ? AppColors.holyGold
+                      : AppColors.softMist,
                 ),
               ),
               title: Text(
                 l10n.shareAsImage,
                 style: AppTextStyles.bodyLarge.copyWith(
-                  color:
-                      canShareImage ? AppColors.pureWhite : AppColors.softMist,
+                  color: canShareImage
+                      ? AppColors.pureWhite
+                      : AppColors.softMist,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -399,9 +399,7 @@ class _SearchBar extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.midnightFaithDark,
         borderRadius: AppBorderRadius.input,
-        border: Border.all(
-          color: AppColors.holyGold.withValues(alpha: 0.25),
-        ),
+        border: Border.all(color: AppColors.holyGold.withValues(alpha: 0.25)),
         boxShadow: [
           BoxShadow(
             color: AppColors.holyGold.withValues(alpha: 0.12),
@@ -424,6 +422,7 @@ class _SearchBar extends StatelessWidget {
               focusNode: focusNode,
               onChanged: onChanged,
               onSubmitted: onSubmitted,
+              onTapOutside: (_) => focusNode.unfocus(),
               cursorColor: AppColors.holyGold,
               style: AppTextStyles.bodyLarge.copyWith(
                 color: AppColors.pureWhite,
@@ -455,10 +454,7 @@ class _SearchBar extends StatelessWidget {
 }
 
 class _SuggestionsList extends StatelessWidget {
-  const _SuggestionsList({
-    required this.suggestions,
-    required this.onSelected,
-  });
+  const _SuggestionsList({required this.suggestions, required this.onSelected});
 
   final List<BookSuggestion> suggestions;
   final ValueChanged<BookSuggestion> onSelected;
@@ -676,11 +672,7 @@ class _EmptyState extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        const Icon(
-          Icons.search_off,
-          size: 48,
-          color: AppColors.softMist,
-        ),
+        const Icon(Icons.search_off, size: 48, color: AppColors.softMist),
         const SizedBox(height: AppSpacing.sm),
         Text(
           title,
@@ -722,9 +714,7 @@ class _ErrorPill extends StatelessWidget {
       ),
       child: Text(
         message,
-        style: AppTextStyles.bodySmall.copyWith(
-          color: AppColors.pureWhite,
-        ),
+        style: AppTextStyles.bodySmall.copyWith(color: AppColors.pureWhite),
       ),
     );
   }

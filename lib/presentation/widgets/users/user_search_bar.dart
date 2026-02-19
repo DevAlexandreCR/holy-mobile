@@ -21,12 +21,14 @@ class UserSearchBar extends StatefulWidget {
 
 class _UserSearchBarState extends State<UserSearchBar> {
   final TextEditingController _controller = TextEditingController();
+  final FocusNode _focusNode = FocusNode();
   Timer? _debounce;
 
   @override
   void dispose() {
     _debounce?.cancel();
     _controller.dispose();
+    _focusNode.dispose();
     super.dispose();
   }
 
@@ -39,15 +41,24 @@ class _UserSearchBarState extends State<UserSearchBar> {
   }
 
   void _clear() {
+    _debounce?.cancel();
     _controller.clear();
     widget.onSearch('');
+    _focusNode.unfocus();
     setState(() {});
+  }
+
+  void _submit(String query) {
+    _debounce?.cancel();
+    widget.onSearch(query);
+    _focusNode.unfocus();
   }
 
   @override
   Widget build(BuildContext context) {
     return TextField(
       controller: _controller,
+      focusNode: _focusNode,
       style: AppTextStyles.bodyMedium.copyWith(color: AppColors.pureWhite),
       decoration: InputDecoration(
         hintText: 'Buscar por nombre o email...',
@@ -91,7 +102,8 @@ class _UserSearchBarState extends State<UserSearchBar> {
         ),
       ),
       onChanged: _onSearchChanged,
-      onSubmitted: widget.onSearch,
+      onSubmitted: _submit,
+      onTapOutside: (_) => _focusNode.unfocus(),
     );
   }
 }
