@@ -144,13 +144,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 builder: (context, state) => const DevotionalsListScreen(),
               ),
               GoRoute(
-                path: '/devotionals/:id',
-                builder: (context, state) {
-                  final id = state.pathParameters['id']!;
-                  return DevotionalsListScreen(initialDevotionalId: id);
-                },
-              ),
-              GoRoute(
                 path: '/devotionals/create',
                 builder: (context, state) => const DevotionalEditorScreen(),
               ),
@@ -166,6 +159,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 builder: (context, state) {
                   final id = state.pathParameters['id']!;
                   return DevotionalEditorScreen(devotionalId: id);
+                },
+              ),
+              GoRoute(
+                path: '/devotionals/:id',
+                builder: (context, state) {
+                  final id = state.pathParameters['id']!;
+                  return DevotionalsListScreen(initialDevotionalId: id);
                 },
               ),
             ],
