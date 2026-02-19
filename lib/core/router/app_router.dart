@@ -80,10 +80,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 path: '/home',
                 builder: (context, state) => const VerseOfTheDayScreen(),
               ),
-              GoRoute(
-                path: '/verse',
-                redirect: (context, state) => '/home',
-              ),
+              GoRoute(path: '/verse', redirect: (context, state) => '/home'),
               GoRoute(
                 path: '/verse/chapter',
                 builder: (context, state) {
@@ -145,6 +142,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: '/devotionals',
                 builder: (context, state) => const DevotionalsListScreen(),
+              ),
+              GoRoute(
+                path: '/devotionals/:id',
+                builder: (context, state) {
+                  final id = state.pathParameters['id']!;
+                  return DevotionalsListScreen(initialDevotionalId: id);
+                },
               ),
               GoRoute(
                 path: '/devotionals/create',

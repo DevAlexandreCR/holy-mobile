@@ -37,6 +37,27 @@
                 <data
                     android:scheme="holyverso"
                     android:host="app"
+                    android:pathPrefix="/" />
+            </intent-filter>
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="https"
+                    android:host="holyverso.com"
+                    android:pathPrefix="/devotionals/" />
+                <data
+                    android:scheme="https"
+                    android:host="holyverso.com"
+                    android:pathPrefix="/reset-password" />
+                <data
+                    android:scheme="https"
+                    android:host="www.holyverso.com"
+                    android:pathPrefix="/devotionals/" />
+                <data
+                    android:scheme="https"
+                    android:host="www.holyverso.com"
                     android:pathPrefix="/reset-password" />
             </intent-filter>
         </activity>
