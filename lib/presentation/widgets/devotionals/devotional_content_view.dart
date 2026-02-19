@@ -124,6 +124,23 @@ class _DevotionalContentViewState extends State<DevotionalContentView> {
             null,
             null,
           ),
+          quote: DefaultTextBlockStyle(
+            AppTextStyles.bodyLarge.copyWith(
+              color: AppColors.softMist.withValues(alpha: 0.9),
+              height: 1.6,
+              fontStyle: FontStyle.italic,
+            ),
+            const VerticalSpacing(0, 8),
+            const VerticalSpacing(0, 0),
+            BoxDecoration(
+              border: Border(
+                left: BorderSide(
+                  color: AppColors.holyGold.withValues(alpha: 0.5),
+                  width: 3,
+                ),
+              ),
+            ),
+          ),
         ),
       ),
     );
