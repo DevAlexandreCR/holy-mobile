@@ -18,10 +18,7 @@ final myRoleProvider = FutureProvider<UserRole>((ref) async {
 
 final isAdminProvider = Provider<bool>((ref) {
   final roleAsync = ref.watch(myRoleProvider);
-  return roleAsync.maybeWhen(
-    data: (role) => role.isAdmin,
-    orElse: () => false,
-  );
+  return roleAsync.maybeWhen(data: (role) => role.isAdmin, orElse: () => false);
 });
 
 final canManageUsersProvider = Provider<bool>((ref) {

@@ -10,19 +10,17 @@ class ChapterRequest {
       versionCode = null,
       isToday = true;
 
-  const ChapterRequest.saved({
-    required this.libraryVerseId,
-    this.versionCode,
-  })  : book = null,
-        chapter = null,
-        isToday = false;
+  const ChapterRequest.saved({required this.libraryVerseId, this.versionCode})
+    : book = null,
+      chapter = null,
+      isToday = false;
 
   const ChapterRequest({
     required this.book,
     required this.chapter,
     this.versionCode,
-  })  : libraryVerseId = null,
-        isToday = false;
+  }) : libraryVerseId = null,
+       isToday = false;
 
   final String? book;
   final int? chapter;

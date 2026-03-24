@@ -28,10 +28,7 @@ class BibleApiClient {
   Future<SearchResult?> searchVerses(String query, {int? versionId}) async {
     final response = await _dio.post(
       '/bible/search',
-      data: {
-        'query': query,
-        if (versionId != null) 'versionId': versionId,
-      },
+      data: {'query': query, if (versionId != null) 'versionId': versionId},
     );
 
     final rawData = response.data;
@@ -55,7 +52,9 @@ class BibleApiClient {
     if (suggestionsRaw is List) {
       return suggestionsRaw
           .whereType<Map>()
-          .map((item) => BookSuggestion.fromMap(Map<String, dynamic>.from(item)))
+          .map(
+            (item) => BookSuggestion.fromMap(Map<String, dynamic>.from(item)),
+          )
           .toList();
     }
 

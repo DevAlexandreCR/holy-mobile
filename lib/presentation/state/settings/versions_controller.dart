@@ -1,7 +1,7 @@
 import 'dart:async';
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:holyverso/core/errors/app_error_mapper.dart';
 import 'package:holyverso/core/l10n/app_localizations.dart';
 import 'package:holyverso/data/bible/bible_repository.dart';
 import 'package:holyverso/presentation/state/auth/auth_controller.dart';
@@ -29,7 +29,9 @@ class VersionsController extends Notifier<VersionsState> {
     if (state.isLoading) return;
     state = state.copyWith(isLoading: true, clearError: true);
     try {
-      final versions = await _repository.fetchVersions(forceRefresh: forceRefresh);
+      final versions = await _repository.fetchVersions(
+        forceRefresh: forceRefresh,
+      );
       state = state.copyWith(
         versions: versions,
         isLoading: false,
@@ -46,8 +48,9 @@ class VersionsController extends Notifier<VersionsState> {
 
   Future<bool> selectVersion(int versionId) async {
     state = state.copyWith(clearError: true);
-    final success =
-        await ref.read(authControllerProvider.notifier).updatePreferredVersion(versionId);
+    final success = await ref
+        .read(authControllerProvider.notifier)
+        .updatePreferredVersion(versionId);
 
     if (!success) {
       final authState = ref.read(authControllerProvider);
@@ -58,23 +61,22 @@ class VersionsController extends Notifier<VersionsState> {
 
     if (success) {
       // Refresh verse of the day with the newly selected version without blocking the UI.
-      unawaited(ref.read(verseControllerProvider.notifier).loadVerse(forceRefresh: true));
+      unawaited(
+        ref
+            .read(verseControllerProvider.notifier)
+            .loadVerse(forceRefresh: true),
+      );
     }
 
     return success;
   }
 
   String _mapError(Object error) {
-    if (error is DioException) {
-      final data = error.response?.data;
-      final responseMessage =
-          data is Map && data['message'] is String ? data['message'] as String : null;
-      return responseMessage ??
-          error.message ??
-          _l10n.versionsLoadError;
-    }
-
-    return _l10n.versionsLoadError;
+    return AppErrorMapper.toMessage(
+      error,
+      l10n: _l10n,
+      fallbackMessage: _l10n.versionsLoadError,
+    );
   }
 }
 

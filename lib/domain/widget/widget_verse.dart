@@ -56,9 +56,7 @@ class WidgetVerse {
       libraryVerseId:
           (json['library_verse_id'] as num?)?.toInt() ??
           (json['libraryVerseId'] as num?)?.toInt(),
-      isSaved: json['is_saved'] as bool? ??
-          json['isSaved'] as bool? ??
-          false,
+      isSaved: json['is_saved'] as bool? ?? json['isSaved'] as bool? ?? false,
       theme: json['theme'] as String?,
     );
   }

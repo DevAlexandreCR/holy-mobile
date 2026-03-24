@@ -52,7 +52,9 @@ class BibleRepository {
       if (decoded is List) {
         return decoded
             .whereType<Map>()
-            .map((item) => BibleVersion.fromMap(Map<String, dynamic>.from(item)))
+            .map(
+              (item) => BibleVersion.fromMap(Map<String, dynamic>.from(item)),
+            )
             .toList();
       }
     } catch (_) {

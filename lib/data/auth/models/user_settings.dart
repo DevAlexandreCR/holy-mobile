@@ -55,4 +55,12 @@ class UserSettings {
       ),
     );
   }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'preferred_version_id': preferredVersionId,
+      'timezone': timezone,
+      'widget_font_size': widgetFontSize.toApiString(),
+    };
+  }
 }

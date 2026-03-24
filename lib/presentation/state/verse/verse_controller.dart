@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:holyverso/core/errors/app_error_mapper.dart';
 import 'package:holyverso/core/l10n/app_localizations.dart';
 import 'package:holyverso/data/verse/verse_repository.dart';
 import 'package:holyverso/data/widget/widget_sync_service.dart';
@@ -36,16 +37,27 @@ class VerseController extends Notifier<VerseState> {
     if (state.isLoading && !forceRefresh) return;
 
     final authState = ref.read(authControllerProvider);
-    final isGuest = !authState.isAuthenticated;
 
     state = state.copyWith(isLoading: true, clearError: true);
 
     try {
       final result = await _repository.fetchTodayVerse(
-        forceRefresh: forceRefresh || isGuest,
+        forceRefresh: forceRefresh,
       );
-      state = state.copyWith(verse: result.verse, isLoading: false);
-      if (!isGuest) {
+      final softMessage = result.wasFromNetwork
+          ? null
+          : result.usedFallback
+          ? (forceRefresh
+                ? _l10n.unableToRefreshRightNowMessage
+                : _l10n.showingLastAvailableContentMessage)
+          : null;
+      state = state.copyWith(
+        verse: result.verse,
+        isLoading: false,
+        errorMessage: softMessage,
+        clearError: softMessage == null,
+      );
+      if (authState.isAuthenticated) {
         ref
             .read(savedVersesControllerProvider.notifier)
             .syncFromTodayVerse(result.verse);
@@ -57,7 +69,6 @@ class VerseController extends Notifier<VerseState> {
         );
       }
     } catch (error) {
-      // Check if it's a 404 or NO_VERSION_SELECTED error
       final is404 = error is DioException && error.response?.statusCode == 404;
       final isNoVersionError =
           error is DioException &&
@@ -87,15 +98,11 @@ class VerseController extends Notifier<VerseState> {
   }
 
   String _mapError(Object error) {
-    if (error is DioException) {
-      final data = error.response?.data;
-      final responseMessage = data is Map && data['message'] is String
-          ? data['message'] as String
-          : null;
-      return responseMessage ?? error.message ?? _l10n.verseRequestError;
-    }
-
-    return _l10n.verseRequestError;
+    return AppErrorMapper.toMessage(
+      error,
+      l10n: _l10n,
+      fallbackMessage: _l10n.verseRequestError,
+    );
   }
 
   Future<void> likeVerse(int libraryVerseId) async {

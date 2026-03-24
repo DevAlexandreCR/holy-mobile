@@ -287,11 +287,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     ),
                   ),
                 )
-              else if (versionsState.hasError &&
-                  versionsState.versions.isEmpty)
+              else if (versionsState.hasError && versionsState.versions.isEmpty)
                 _ErrorPill(
-                  message:
-                      versionsState.errorMessage ?? l10n.versionsLoadError,
+                  message: versionsState.errorMessage ?? l10n.versionsLoadError,
                 )
               else
                 ConstrainedBox(
@@ -354,7 +352,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               }
 
               setSheetState(() => isDeleting = false);
-              final errorMessage = ref.read(authControllerProvider).errorMessage ??
+              final errorMessage =
+                  ref.read(authControllerProvider).errorMessage ??
                   context.l10n.deleteAccountError;
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
@@ -424,8 +423,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                   width: 18,
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2,
-                                    valueColor:
-                                        AlwaysStoppedAnimation<Color>(Colors.white),
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.white,
+                                    ),
                                   ),
                                 )
                               : Text(l10n.deleteAccountConfirm),
@@ -653,11 +653,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                               )
                             : Icon(
                                 Icons.chevron_right,
-                                color:
-                                    AppColors.softMist.withValues(alpha: 0.8),
+                                color: AppColors.softMist.withValues(
+                                  alpha: 0.8,
+                                ),
                               ),
-                        onTap:
-                            _isDeletingAccount ? null : _openDeleteAccountSheet,
+                        onTap: _isDeletingAccount
+                            ? null
+                            : _openDeleteAccountSheet,
                       ),
                     ],
                   ),

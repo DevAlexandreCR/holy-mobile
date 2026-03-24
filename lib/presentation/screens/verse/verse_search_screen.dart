@@ -1,8 +1,8 @@
 import 'dart:async';
 
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:holyverso/core/errors/app_error_mapper.dart';
 import 'package:holyverso/core/l10n/app_localizations.dart';
 import 'package:holyverso/core/theme/app_colors.dart';
 import 'package:holyverso/core/theme/app_design_tokens.dart';
@@ -171,14 +171,11 @@ class _VerseSearchScreenState extends ConsumerState<VerseSearchScreen> {
   }
 
   String _resolveErrorMessage(Object error, AppLocalizations l10n) {
-    if (error is DioException) {
-      final data = error.response?.data;
-      if (data is Map) {
-        final message = data['error']?['message']?.toString();
-        if (message != null && message.isNotEmpty) return message;
-      }
-    }
-    return l10n.genericError;
+    return AppErrorMapper.toMessage(
+      error,
+      l10n: l10n,
+      fallbackMessage: l10n.genericError,
+    );
   }
 
   @override

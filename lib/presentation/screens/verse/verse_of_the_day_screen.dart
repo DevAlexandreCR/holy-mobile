@@ -13,6 +13,7 @@ import 'package:holyverso/presentation/state/auth/auth_controller.dart';
 import 'package:holyverso/presentation/state/verse/saved_verses_controller.dart';
 import 'package:holyverso/presentation/state/verse/chapter_reader_state.dart';
 import 'package:holyverso/presentation/state/verse/verse_controller.dart';
+import 'package:holyverso/presentation/state/verse/verse_state.dart';
 import 'package:holyverso/presentation/widgets/holy_button.dart';
 import 'package:holyverso/presentation/widgets/common/holy_bottom_sheet.dart';
 import 'package:share_plus/share_plus.dart';
@@ -29,6 +30,7 @@ class _VerseOfTheDayScreenState extends ConsumerState<VerseOfTheDayScreen> {
   bool _isFavorite = false;
   final VerseImageService _verseImageService = VerseImageService();
   bool _isGeneratingImage = false;
+  String? _lastSoftErrorMessage;
 
   @override
   void initState() {
@@ -215,15 +217,15 @@ class _VerseOfTheDayScreenState extends ConsumerState<VerseOfTheDayScreen> {
     }
 
     final isSavedNow = savedNotifier.isSaved(libraryVerseId);
-    ref.read(verseControllerProvider.notifier).updateSavedFlag(
-          libraryVerseId,
-          isSavedNow,
-        );
+    ref
+        .read(verseControllerProvider.notifier)
+        .updateSavedFlag(libraryVerseId, isSavedNow);
 
     if (!mounted) return;
     final l10n = context.l10n;
-    final message =
-        isSavedNow ? l10n.savedVerseToastAdded : l10n.savedVerseToastRemoved;
+    final message = isSavedNow
+        ? l10n.savedVerseToastAdded
+        : l10n.savedVerseToastRemoved;
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -256,6 +258,21 @@ class _VerseOfTheDayScreenState extends ConsumerState<VerseOfTheDayScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<VerseState>(verseControllerProvider, (previous, next) {
+      final nextMessage = next.errorMessage;
+      if (!mounted ||
+          next.verse == null ||
+          nextMessage == null ||
+          nextMessage == _lastSoftErrorMessage) {
+        return;
+      }
+
+      _lastSoftErrorMessage = nextMessage;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(nextMessage)));
+    });
+
     final verseState = ref.watch(verseControllerProvider);
     final verse = verseState.verse;
     final l10n = context.l10n;
@@ -309,7 +326,7 @@ class _VerseOfTheDayScreenState extends ConsumerState<VerseOfTheDayScreen> {
                         color: verse == null || isGuest
                             ? AppColors.softMist.withValues(alpha: 0.4)
                             : AppColors.pureWhite,
-                    ),
+                      ),
               );
             },
           ),
@@ -342,8 +359,9 @@ class _VerseOfTheDayScreenState extends ConsumerState<VerseOfTheDayScreen> {
                     isFavorite: _isFavorite,
                     isGeneratingImage: _isGeneratingImage,
                     canUseAccountFeatures: !isGuest,
-                    onToggleSave:
-                        verse == null || isGuest ? null : () => _toggleSave(verse),
+                    onToggleSave: verse == null || isGuest
+                        ? null
+                        : () => _toggleSave(verse),
                     onToggleFavorite: isGuest ? null : _toggleFavorite,
                     onShare: verse == null || isGuest
                         ? null
@@ -360,7 +378,7 @@ class _VerseOfTheDayScreenState extends ConsumerState<VerseOfTheDayScreen> {
                       onLogin: _promptLogin,
                     ),
                   ],
-                  if (verseState.hasError)
+                  if (verseState.hasError && verse == null)
                     Padding(
                       padding: const EdgeInsets.only(top: AppSpacing.md),
                       child: _ErrorPill(
@@ -474,12 +492,13 @@ class _VerseCard extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   _CircleIconButton(
-                    icon:
-                        isSaved ? Icons.bookmark : Icons.bookmark_border_outlined,
+                    icon: isSaved
+                        ? Icons.bookmark
+                        : Icons.bookmark_border_outlined,
                     color: canUseAccountFeatures
                         ? (isSaved
-                            ? AppColors.holyGold
-                            : AppColors.pureWhite.withValues(alpha: 0.85))
+                              ? AppColors.holyGold
+                              : AppColors.pureWhite.withValues(alpha: 0.85))
                         : AppColors.softMist.withValues(alpha: 0.35),
                     isLoading: isSaving,
                     onPressed: canUseAccountFeatures ? onToggleSave : null,
@@ -489,8 +508,8 @@ class _VerseCard extends StatelessWidget {
                     icon: isFavorite ? Icons.favorite : Icons.favorite_border,
                     color: canUseAccountFeatures
                         ? (isFavorite
-                            ? AppColors.holyGold
-                            : AppColors.pureWhite.withValues(alpha: 0.85))
+                              ? AppColors.holyGold
+                              : AppColors.pureWhite.withValues(alpha: 0.85))
                         : AppColors.softMist.withValues(alpha: 0.35),
                     onPressed: canUseAccountFeatures ? onToggleFavorite : null,
                   ),
@@ -503,8 +522,7 @@ class _VerseCard extends StatelessWidget {
                             ? AppColors.pureWhite.withValues(alpha: 0.85)
                             : AppColors.softMist.withValues(alpha: 0.35),
                         isLoading: isGeneratingImage,
-                        onPressed:
-                            !canUseAccountFeatures || onShare == null
+                        onPressed: !canUseAccountFeatures || onShare == null
                             ? null
                             : () {
                                 final box =
@@ -528,10 +546,7 @@ class _VerseCard extends StatelessWidget {
 }
 
 class _GuestCtaCard extends StatelessWidget {
-  const _GuestCtaCard({
-    required this.onRegister,
-    required this.onLogin,
-  });
+  const _GuestCtaCard({required this.onRegister, required this.onLogin});
 
   final VoidCallback onRegister;
   final VoidCallback onLogin;
@@ -571,10 +586,7 @@ class _GuestCtaCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.md),
-          HolyButton(
-            label: l10n.guestCtaAction,
-            onPressed: onRegister,
-          ),
+          HolyButton(label: l10n.guestCtaAction, onPressed: onRegister),
           const SizedBox(height: AppSpacing.xs),
           TextButton(
             onPressed: onLogin,

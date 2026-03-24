@@ -1,8 +1,8 @@
 import 'dart:async';
 
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:holyverso/core/errors/app_error_mapper.dart';
 import 'package:holyverso/core/l10n/app_localizations.dart';
 import 'package:holyverso/data/verse/verse_repository.dart';
 import 'package:holyverso/domain/verse/saved_verse.dart';
@@ -127,14 +127,13 @@ class SavedVersesController extends Notifier<SavedVersesState> {
 
       var items = state.items;
       if (savedVerse != null &&
-          !items.any((item) => item.libraryVerseId == savedVerse!.libraryVerseId)) {
+          !items.any(
+            (item) => item.libraryVerseId == savedVerse!.libraryVerseId,
+          )) {
         items = [savedVerse, ...items];
       }
 
-      state = state.copyWith(
-        savedIds: _repository.savedIds,
-        items: items,
-      );
+      state = state.copyWith(savedIds: _repository.savedIds, items: items);
     } catch (error) {
       state = previousState.copyWith(error: _mapError(error));
     } finally {
@@ -159,19 +158,15 @@ class SavedVersesController extends Notifier<SavedVersesState> {
   }
 
   String _mapError(Object error) {
-    if (error is DioException) {
-      final data = error.response?.data;
-      final responseMessage = data is Map && data['message'] is String
-          ? data['message'] as String
-          : null;
-      return responseMessage ?? error.message ?? _l10n.genericError;
-    }
-
-    return _l10n.genericError;
+    return AppErrorMapper.toMessage(
+      error,
+      l10n: _l10n,
+      fallbackMessage: _l10n.genericError,
+    );
   }
 }
 
 final savedVersesControllerProvider =
     NotifierProvider<SavedVersesController, SavedVersesState>(
-  SavedVersesController.new,
-);
+      SavedVersesController.new,
+    );

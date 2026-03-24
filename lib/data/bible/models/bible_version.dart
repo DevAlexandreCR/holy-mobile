@@ -21,12 +21,7 @@ class BibleVersion {
   }
 
   Map<String, dynamic> toMap() {
-    return {
-      'id': id,
-      'api_code': apiCode,
-      'name': name,
-      'language': language,
-    };
+    return {'id': id, 'api_code': apiCode, 'name': name, 'language': language};
   }
 
   static int _parseId(Object? value) {

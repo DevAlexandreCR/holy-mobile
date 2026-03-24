@@ -434,9 +434,7 @@ class _GuestAccessCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.pureWhite.withValues(alpha: 0.06),
         borderRadius: AppBorderRadius.card,
-        border: Border.all(
-          color: AppColors.pureWhite.withValues(alpha: 0.1),
-        ),
+        border: Border.all(color: AppColors.pureWhite.withValues(alpha: 0.1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -470,10 +468,7 @@ class _GuestAccessCard extends StatelessWidget {
               side: BorderSide(
                 color: AppColors.holyGold.withValues(alpha: 0.7),
               ),
-              minimumSize: const Size(
-                double.infinity,
-                AppSizes.buttonHeight,
-              ),
+              minimumSize: const Size(double.infinity, AppSizes.buttonHeight),
               shape: RoundedRectangleBorder(
                 borderRadius: AppBorderRadius.button,
               ),

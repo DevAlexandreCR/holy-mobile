@@ -21,5 +21,7 @@ enum UserRole {
   bool get isAdmin => this == UserRole.admin;
   bool get canManageUsers => this == UserRole.admin || this == UserRole.lead;
   bool get canEditContent =>
-      this == UserRole.admin || this == UserRole.lead || this == UserRole.editor;
+      this == UserRole.admin ||
+      this == UserRole.lead ||
+      this == UserRole.editor;
 }

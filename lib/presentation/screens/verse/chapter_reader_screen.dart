@@ -28,8 +28,8 @@ class ChapterReaderArgs {
     required this.libraryVerseId,
     this.highlightRange,
     this.versionCode,
-  })  : book = null,
-        chapter = null;
+  }) : book = null,
+       chapter = null;
 
   final String? book;
   final int? chapter;

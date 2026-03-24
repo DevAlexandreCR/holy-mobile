@@ -6,7 +6,9 @@ class SearchVerse {
 
   factory SearchVerse.fromMap(Map<String, dynamic> map) {
     return SearchVerse(
-      verseNumber: _parseInt(map['verseNumber'] ?? map['verse_number'] ?? map['number']),
+      verseNumber: _parseInt(
+        map['verseNumber'] ?? map['verse_number'] ?? map['number'],
+      ),
       text: map['text']?.toString() ?? map['verse']?.toString() ?? '',
     );
   }
@@ -40,7 +42,9 @@ class SearchReference {
       book: map['book']?.toString() ?? '',
       bookId: SearchVerse._parseInt(map['bookId'] ?? map['book_id']),
       chapter: SearchVerse._parseInt(map['chapter']),
-      verseStart: SearchVerse._parseInt(map['verseStart'] ?? map['verse_start']),
+      verseStart: SearchVerse._parseInt(
+        map['verseStart'] ?? map['verse_start'],
+      ),
       verseEnd: map['verseEnd'] != null || map['verse_end'] != null
           ? SearchVerse._parseInt(map['verseEnd'] ?? map['verse_end'])
           : null,
@@ -99,9 +103,11 @@ class SearchResult {
     final versesRaw = map['verses'] ?? const [];
     final parsedVerses = versesRaw is List
         ? versesRaw
-            .whereType<Map>()
-            .map((item) => SearchVerse.fromMap(Map<String, dynamic>.from(item)))
-            .toList()
+              .whereType<Map>()
+              .map(
+                (item) => SearchVerse.fromMap(Map<String, dynamic>.from(item)),
+              )
+              .toList()
         : <SearchVerse>[];
 
     return SearchResult(
@@ -112,7 +118,8 @@ class SearchResult {
       version: SearchVersion.fromMap(
         Map<String, dynamic>.from(map['version'] as Map? ?? const {}),
       ),
-      canShareAsImage: map['canShareAsImage'] as bool? ??
+      canShareAsImage:
+          map['canShareAsImage'] as bool? ??
           map['can_share_as_image'] as bool? ??
           false,
       characterCount: SearchVerse._parseInt(

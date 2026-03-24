@@ -21,8 +21,7 @@ class BottomNavigationShell extends ConsumerStatefulWidget {
       _BottomNavigationShellState();
 }
 
-class _BottomNavigationShellState
-    extends ConsumerState<BottomNavigationShell> {
+class _BottomNavigationShellState extends ConsumerState<BottomNavigationShell> {
   ProviderSubscription<int>? _navigationListener;
   ProviderSubscription<AsyncValue<ReleaseNote?>>? _whatsNewListener;
   bool _whatsNewHandled = false;
@@ -30,14 +29,14 @@ class _BottomNavigationShellState
   @override
   void initState() {
     super.initState();
-    _navigationListener = ref.listenManual<int>(
-      bottomNavigationIndexProvider,
-      (previous, next) {
-        if (next != widget.navigationShell.currentIndex) {
-          widget.navigationShell.goBranch(next);
-        }
-      },
-    );
+    _navigationListener = ref.listenManual<int>(bottomNavigationIndexProvider, (
+      previous,
+      next,
+    ) {
+      if (next != widget.navigationShell.currentIndex) {
+        widget.navigationShell.goBranch(next);
+      }
+    });
     _whatsNewListener = ref.listenManual<AsyncValue<ReleaseNote?>>(
       whatsNewProvider,
       (previous, next) {
@@ -104,7 +103,9 @@ class _BottomNavigationShellState
     if (items.isEmpty) return false;
     final mediaQuery = MediaQuery.of(context);
     final availableWidth =
-        mediaQuery.size.width - mediaQuery.padding.left - mediaQuery.padding.right;
+        mediaQuery.size.width -
+        mediaQuery.padding.left -
+        mediaQuery.padding.right;
     final perItemWidth = availableWidth / items.length;
     const horizontalPadding = 12.0;
     final maxLabelWidth = items
@@ -142,9 +143,9 @@ class _BottomNavigationShellState
           hoverColor: Colors.transparent,
           splashFactory:
               Theme.of(context).platform == TargetPlatform.iOS ||
-                      Theme.of(context).platform == TargetPlatform.macOS
-                  ? InkSparkle.splashFactory
-                  : Theme.of(context).splashFactory,
+                  Theme.of(context).platform == TargetPlatform.macOS
+              ? InkSparkle.splashFactory
+              : Theme.of(context).splashFactory,
         ),
         child: BottomNavigationBar(
           currentIndex: currentIndex < 0 ? 0 : currentIndex,

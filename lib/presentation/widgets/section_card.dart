@@ -35,9 +35,7 @@ class SectionCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.pureWhite.withValues(alpha: 0.05),
         borderRadius: AppBorderRadius.card,
-        border: Border.all(
-          color: AppColors.pureWhite.withValues(alpha: 0.06),
-        ),
+        border: Border.all(color: AppColors.pureWhite.withValues(alpha: 0.06)),
         boxShadow: showShadow ? AppShadows.cardShadow : null,
       ),
       child: Column(

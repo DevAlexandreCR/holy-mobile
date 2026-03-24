@@ -3,12 +3,9 @@ import 'package:holyverso/core/theme/app_colors.dart';
 import 'package:holyverso/core/theme/app_design_tokens.dart';
 import 'package:holyverso/core/theme/app_text_styles.dart';
 import 'package:holyverso/domain/roles/user_with_role.dart';
+
 class UserListItem extends StatelessWidget {
-  const UserListItem({
-    super.key,
-    required this.user,
-    this.onTap,
-  });
+  const UserListItem({super.key, required this.user, this.onTap});
 
   final UserWithRole user;
   final VoidCallback? onTap;
@@ -23,7 +20,10 @@ class UserListItem extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(22),
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: 8),
+        margin: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.lg,
+          vertical: 8,
+        ),
         padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.md,
           vertical: AppSpacing.sm,

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:holyverso/core/l10n/app_localizations.dart';
 import 'package:holyverso/presentation/state/auth/auth_controller.dart';
+import 'package:holyverso/presentation/state/auth/auth_state.dart';
 import 'package:holyverso/presentation/state/roles/role_provider.dart';
 import 'package:holyverso/presentation/screens/auth/forgot_password_screen.dart';
 import 'package:holyverso/presentation/screens/auth/login_screen.dart';
@@ -24,8 +25,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(
     authControllerProvider.select(
       (state) => (
-        isLoading: state.isLoading,
-        isAuthenticated: state.isAuthenticated,
+        sessionStatus: state.sessionStatus,
+        isBootstrapping: state.isBootstrapping,
+        canAccessProtectedRoutes: state.canAccessProtectedRoutes,
         errorMessage: state.errorMessage,
         infoMessage: state.infoMessage,
       ),
@@ -34,7 +36,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 
   const baseL10n = AppLocalizations(Locale('es'));
 
-  final splashMessage = authState.isLoading
+  final splashMessage = authState.isBootstrapping
       ? baseL10n.splashPreparing
       : baseL10n.splashReady;
   final splashError = authState.errorMessage;
@@ -174,7 +176,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
     ],
     redirect: (context, state) {
-      final bootstrapping = authState.isLoading;
+      final bootstrapping = authState.isBootstrapping;
       final atSplash = state.matchedLocation == '/splash';
       final atResetPassword = state.matchedLocation == '/reset-password';
       final atAuthRoute =
@@ -184,37 +186,46 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final location = state.matchedLocation;
       final canManageUsers = ref.watch(canManageUsersProvider);
       final isProtectedRoute =
-          location == '/home' ||
-          location == '/search' ||
           location == '/saved' ||
           location == '/settings' ||
           location == '/users' ||
           location == '/devotionals' ||
           location.startsWith('/devotionals') ||
-          location == '/verse' ||
-          location.startsWith('/verse/');
+          location == '/verse/saved';
 
       if (bootstrapping && !atResetPassword && !atAuthRoute) {
         return atSplash ? null : '/splash';
       }
 
-      if (authState.isAuthenticated && (atSplash || atAuthRoute)) {
+      if (atSplash) {
+        if (authState.sessionStatus == AuthSessionStatus.expired) {
+          final encodedMessage = Uri.encodeComponent(
+            baseL10n.sessionExpiredMessage,
+          );
+          return '/login?message=$encodedMessage';
+        }
         return '/home';
       }
 
-      if (!authState.isAuthenticated && (atSplash || isProtectedRoute)) {
+      if (authState.canAccessProtectedRoutes && atAuthRoute) {
+        return '/home';
+      }
+
+      if (!authState.canAccessProtectedRoutes && isProtectedRoute) {
         if (atSplash) {
           return '/login';
         }
 
-        final message = baseL10n.loginRequiredMessage;
+        final message = authState.sessionStatus == AuthSessionStatus.expired
+            ? baseL10n.sessionExpiredMessage
+            : baseL10n.loginRequiredMessage;
         final encodedMessage = Uri.encodeComponent(message);
         return authState.infoMessage == null || authState.infoMessage!.isEmpty
             ? '/login?message=$encodedMessage'
             : '/login';
       }
 
-      if (authState.isAuthenticated &&
+      if (authState.canAccessProtectedRoutes &&
           location == '/users' &&
           !canManageUsers) {
         return '/settings';

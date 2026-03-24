@@ -10,18 +10,13 @@ void main() {
     final testRouter = GoRouter(
       initialLocation: '/',
       routes: [
-        GoRoute(
-          path: '/',
-          builder: (context, state) => const _FakeHome(),
-        ),
+        GoRoute(path: '/', builder: (context, state) => const _FakeHome()),
       ],
     );
 
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [
-          appRouterProvider.overrideWithValue(testRouter),
-        ],
+        overrides: [appRouterProvider.overrideWithValue(testRouter)],
         child: const HolyVersoApp(),
       ),
     );
@@ -37,8 +32,6 @@ class _FakeHome extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Material(
-      child: Center(child: Text('Test Home')),
-    );
+    return const Material(child: Center(child: Text('Test Home')));
   }
 }

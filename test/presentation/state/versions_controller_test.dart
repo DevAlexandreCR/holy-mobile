@@ -29,22 +29,20 @@ void main() {
           authControllerProvider.overrideWith(() => fakeAuth),
           verseControllerProvider.overrideWith(() => fakeVerse),
           bibleRepositoryProvider.overrideWith(
-            (ref) => _StubBibleRepository(
-              const [
-                BibleVersion(
-                  id: 1,
-                  apiCode: 'rv1960',
-                  name: 'Reina-Valera 1960',
-                  language: 'es',
-                ),
-                BibleVersion(
-                  id: 2,
-                  apiCode: 'dhh',
-                  name: 'Dios Habla Hoy',
-                  language: 'es',
-                ),
-              ],
-            ),
+            (ref) => _StubBibleRepository(const [
+              BibleVersion(
+                id: 1,
+                apiCode: 'rv1960',
+                name: 'Reina-Valera 1960',
+                language: 'es',
+              ),
+              BibleVersion(
+                id: 2,
+                apiCode: 'dhh',
+                name: 'Dios Habla Hoy',
+                language: 'es',
+              ),
+            ]),
           ),
         ],
       );
@@ -63,8 +61,9 @@ void main() {
     test('selectVersion updates auth settings and refreshes verse', () async {
       await container.read(versionsControllerProvider.notifier).loadVersions();
 
-      final success =
-          await container.read(versionsControllerProvider.notifier).selectVersion(2);
+      final success = await container
+          .read(versionsControllerProvider.notifier)
+          .selectVersion(2);
 
       expect(success, isTrue);
       expect(fakeAuth.updatedVersionIds, contains(2));
@@ -75,8 +74,9 @@ void main() {
     test('selectVersion surfaces auth errors', () async {
       fakeAuth.shouldFailUpdate = true;
 
-      final success =
-          await container.read(versionsControllerProvider.notifier).selectVersion(3);
+      final success = await container
+          .read(versionsControllerProvider.notifier)
+          .selectVersion(3);
       final state = container.read(versionsControllerProvider);
 
       expect(success, isFalse);
@@ -120,6 +120,7 @@ class FakeAuthController extends AuthController {
         role: UserRole.user,
       ),
       settings: UserSettings(preferredVersionId: 1, timezone: 'UTC'),
+      sessionStatus: AuthSessionStatus.authenticated,
     );
   }
 

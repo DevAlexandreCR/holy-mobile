@@ -45,9 +45,7 @@ class VerseOfTheDay {
       text: map['text'] as String? ?? '',
       libraryVerseId:
           map['library_verse_id'] as int? ?? map['libraryVerseId'] as int?,
-      isSaved: map['is_saved'] as bool? ??
-          map['isSaved'] as bool? ??
-          false,
+      isSaved: map['is_saved'] as bool? ?? map['isSaved'] as bool? ?? false,
       theme: map['theme'] as String?,
     );
   }

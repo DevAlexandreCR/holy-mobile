@@ -18,9 +18,8 @@ class BookSuggestion {
         : <String>[];
 
     return BookSuggestion(
-      bookName: map['bookName']?.toString() ??
-          map['book_name']?.toString() ??
-          '',
+      bookName:
+          map['bookName']?.toString() ?? map['book_name']?.toString() ?? '',
       bookId: _parseInt(map['bookId'] ?? map['book_id']),
       abbreviations: abbreviations,
       type: map['type']?.toString() ?? '',

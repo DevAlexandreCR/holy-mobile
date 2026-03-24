@@ -6,7 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class VersionDetectorService {
   VersionDetectorService({SharedPreferences? preferences})
-      : _preferences = preferences;
+    : _preferences = preferences;
 
   static const _versionKey = 'last_seen_app_version';
   SharedPreferences? _preferences;

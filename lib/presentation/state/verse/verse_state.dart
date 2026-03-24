@@ -1,11 +1,7 @@
 import 'package:holyverso/domain/verse/verse_of_the_day.dart';
 
 class VerseState {
-  const VerseState({
-    this.verse,
-    this.isLoading = false,
-    this.errorMessage,
-  });
+  const VerseState({this.verse, this.isLoading = false, this.errorMessage});
 
   final VerseOfTheDay? verse;
   final bool isLoading;

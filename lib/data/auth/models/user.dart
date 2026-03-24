@@ -21,4 +21,8 @@ class User {
       role: UserRole.fromString(map['role']?.toString() ?? ''),
     );
   }
+
+  Map<String, dynamic> toMap() {
+    return {'id': id, 'name': name, 'email': email, 'role': role.name};
+  }
 }

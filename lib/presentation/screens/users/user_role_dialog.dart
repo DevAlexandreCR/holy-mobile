@@ -7,10 +7,7 @@ import 'package:holyverso/domain/roles/user_with_role.dart';
 import 'package:holyverso/presentation/widgets/common/holy_bottom_sheet.dart';
 
 class UserRoleDialog extends StatefulWidget {
-  const UserRoleDialog({
-    super.key,
-    required this.user,
-  });
+  const UserRoleDialog({super.key, required this.user});
 
   final UserWithRole user;
 
@@ -74,9 +71,7 @@ class _UserRoleDialogState extends State<UserRoleDialog> {
                   children: UserRole.values
                       .map(
                         (role) => Padding(
-                          padding: const EdgeInsets.only(
-                            bottom: AppSpacing.sm,
-                          ),
+                          padding: const EdgeInsets.only(bottom: AppSpacing.sm),
                           child: _RoleOption(
                             role: role,
                             isSelected: role == _selectedRole,
@@ -105,9 +100,7 @@ class _UserRoleDialogState extends State<UserRoleDialog> {
             ),
             TextButton(
               onPressed: () => Navigator.pop(context),
-              style: TextButton.styleFrom(
-                foregroundColor: AppColors.holyGold,
-              ),
+              style: TextButton.styleFrom(foregroundColor: AppColors.holyGold),
               child: const Text('Cancelar'),
             ),
           ],
@@ -175,9 +168,7 @@ class _RoleOption extends StatelessWidget {
               decoration: BoxDecoration(
                 color: AppColors.pureWhite.withValues(alpha: 0.06),
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                  color: iconColor.withValues(alpha: 0.6),
-                ),
+                border: Border.all(color: iconColor.withValues(alpha: 0.6)),
               ),
               child: Icon(_iconForRole(), color: iconColor, size: 22),
             ),
@@ -203,11 +194,7 @@ class _RoleOption extends StatelessWidget {
                 ],
               ),
             ),
-            if (isSelected)
-              Icon(
-                Icons.check_circle,
-                color: AppColors.holyGold,
-              ),
+            if (isSelected) Icon(Icons.check_circle, color: AppColors.holyGold),
           ],
         ),
       ),

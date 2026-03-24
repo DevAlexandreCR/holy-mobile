@@ -6,8 +6,9 @@ class ReferenceParser {
     if (parts.length < 2) return null;
 
     final versePart = parts.last.split('-');
-    final start =
-        int.tryParse(versePart.first.replaceAll(RegExp(r'[^0-9]'), ''));
+    final start = int.tryParse(
+      versePart.first.replaceAll(RegExp(r'[^0-9]'), ''),
+    );
     if (start == null) return null;
 
     final end = versePart.length > 1

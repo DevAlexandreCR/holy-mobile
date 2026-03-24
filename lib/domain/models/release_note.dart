@@ -18,7 +18,8 @@ class ReleaseNote {
       changes: changes is List
           ? changes.whereType<String>().toList()
           : const <String>[],
-      releaseDate: DateTime.tryParse(map['releaseDate']?.toString() ?? '') ??
+      releaseDate:
+          DateTime.tryParse(map['releaseDate']?.toString() ?? '') ??
           DateTime.fromMillisecondsSinceEpoch(0),
       isImportant: map['isImportant'] == true,
     );

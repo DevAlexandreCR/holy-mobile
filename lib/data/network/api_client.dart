@@ -29,10 +29,17 @@ final dioProvider = Provider<Dio>((ref) {
         handler.next(options);
       },
       onError: (error, handler) async {
-        // If we get a 401, log out automatically
-        if (error.response?.statusCode == 401) {
+        final hasAuthHeader =
+            error.requestOptions.headers['Authorization'] != null;
+        final deferAuthStateHandling =
+            error.requestOptions.extra['deferAuthStateHandling'] == true;
+        final statusCode = error.response?.statusCode;
+
+        if (hasAuthHeader &&
+            !deferAuthStateHandling &&
+            (statusCode == 401 || statusCode == 403)) {
           final authNotifier = ref.read(authControllerProvider.notifier);
-          await authNotifier.logout();
+          await authNotifier.markSessionExpired();
         }
         handler.next(error);
       },

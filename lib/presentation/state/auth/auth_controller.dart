@@ -1,10 +1,11 @@
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
+import 'package:holyverso/core/errors/app_error_mapper.dart';
 import 'package:holyverso/core/l10n/app_localizations.dart';
 import 'package:holyverso/data/auth/auth_repository.dart';
 import 'package:holyverso/data/auth/models/auth_payload.dart';
+import 'package:holyverso/data/auth/models/auth_restore_result.dart';
 import 'package:holyverso/data/auth/models/user_settings.dart';
 import 'package:holyverso/presentation/state/auth/auth_state.dart';
 import 'package:holyverso/presentation/state/verse/verse_controller.dart';
@@ -16,25 +17,22 @@ class AuthController extends Notifier<AuthState> {
   @override
   AuthState build() {
     _repository = ref.read(authRepositoryProvider);
-    // Automatically restore session on initialization
     _autoRestoreSession();
-    return const AuthState(isLoading: true);
+    return const AuthState(
+      sessionStatus: AuthSessionStatus.bootstrapping,
+      isLoading: true,
+    );
   }
 
   void _autoRestoreSession() {
     Future.microtask(() async {
       try {
-        final session = await _repository.restoreSession();
-        if (session == null) {
-          state = const AuthState();
-          return;
-        }
-        _setAuthenticated(session);
+        final result = await _repository.restoreSession();
+        _applyRestoreResult(result);
       } catch (error) {
-        state = state.copyWith(
+        state = const AuthState(
+          sessionStatus: AuthSessionStatus.guest,
           isLoading: false,
-          errorMessage: _mapError(error),
-          clearInfo: true,
         );
       }
     });
@@ -48,17 +46,12 @@ class AuthController extends Notifier<AuthState> {
       clearInfo: true,
     );
     try {
-      final session = await _repository.restoreSession();
-      if (session == null) {
-        state = const AuthState();
-        return;
-      }
-      _setAuthenticated(session);
+      final result = await _repository.restoreSession();
+      _applyRestoreResult(result);
     } catch (error) {
-      state = state.copyWith(
+      state = const AuthState(
+        sessionStatus: AuthSessionStatus.guest,
         isLoading: false,
-        errorMessage: _mapError(error),
-        clearInfo: true,
       );
     }
   }
@@ -72,7 +65,10 @@ class AuthController extends Notifier<AuthState> {
     );
     try {
       final payload = await _repository.login(email: email, password: password);
-      _setAuthenticated(payload);
+      _setAuthenticated(
+        payload,
+        sessionStatus: AuthSessionStatus.authenticated,
+      );
       return true;
     } catch (error) {
       state = state.copyWith(
@@ -101,7 +97,10 @@ class AuthController extends Notifier<AuthState> {
         email: email,
         password: password,
       );
-      _setAuthenticated(payload);
+      _setAuthenticated(
+        payload,
+        sessionStatus: AuthSessionStatus.authenticated,
+      );
       return true;
     } catch (error) {
       state = state.copyWith(
@@ -164,7 +163,7 @@ class AuthController extends Notifier<AuthState> {
 
   Future<void> logout() async {
     await _repository.logout();
-    state = const AuthState();
+    state = const AuthState(sessionStatus: AuthSessionStatus.guest);
   }
 
   Future<bool> deleteAccount() async {
@@ -198,6 +197,10 @@ class AuthController extends Notifier<AuthState> {
       final updatedSettings = await _repository.updatePreferredVersion(
         versionId,
       );
+      await _repository.persistSessionSnapshot(
+        user: state.user!,
+        settings: updatedSettings,
+      );
       state = state.copyWith(
         settings: updatedSettings,
         isUpdatingSettings: false,
@@ -223,6 +226,10 @@ class AuthController extends Notifier<AuthState> {
       final updatedSettings = await _repository.updateWidgetFontSize(
         fontSize.toApiString(),
       );
+      await _repository.persistSessionSnapshot(
+        user: state.user!,
+        settings: updatedSettings,
+      );
       state = state.copyWith(
         settings: updatedSettings,
         isUpdatingSettings: false,
@@ -242,17 +249,24 @@ class AuthController extends Notifier<AuthState> {
     }
   }
 
-  void _setAuthenticated(AuthPayload payload) {
+  void _setAuthenticated(
+    AuthPayload payload, {
+    required AuthSessionStatus sessionStatus,
+    String? infoMessage,
+    bool isServerValidated = true,
+  }) {
     state = AuthState(
       user: payload.user,
       settings: payload.settings,
+      sessionStatus: sessionStatus,
       isLoading: false,
       isUpdatingSettings: false,
       errorMessage: null,
-      infoMessage: null,
+      infoMessage: infoMessage,
+      hasStoredToken: true,
+      isServerValidated: isServerValidated,
     );
 
-    // Detect and send timezone automatically when it's missing
     _autoUpdateTimezoneIfNeeded();
   }
 
@@ -273,8 +287,11 @@ class AuthController extends Notifier<AuthState> {
 
       // Send it to the backend without blocking the UI
       final updatedSettings = await _repository.updateTimezone(deviceTimezone);
+      await _repository.persistSessionSnapshot(
+        user: state.user!,
+        settings: updatedSettings,
+      );
 
-      // Update state with the new timezone
       state = state.copyWith(settings: updatedSettings);
 
       debugPrint('[Auth] Timezone updated successfully');
@@ -285,38 +302,59 @@ class AuthController extends Notifier<AuthState> {
   }
 
   String _mapError(Object error) {
-    if (error is DioException) {
-      final statusCode = error.response?.statusCode;
-      final data = error.response?.data;
-
-      // Backend errors come in data['error']['message']
-      String? responseMessage;
-      if (data is Map) {
-        if (data['error'] is Map && data['error']['message'] is String) {
-          responseMessage = data['error']['message'] as String;
-        } else if (data['message'] is String) {
-          responseMessage = data['message'] as String;
-        }
-      }
-
-      // Use a specific message for credential errors on 401 responses
-      if (statusCode == 401 && responseMessage != null) {
-        if (responseMessage.toLowerCase().contains('invalid') &&
-            (responseMessage.toLowerCase().contains('email') ||
-                responseMessage.toLowerCase().contains('password'))) {
-          return _l10n.authInvalidCredentials;
-        }
-      }
-
-      return responseMessage ?? error.message ?? _l10n.authRequestFailed;
-    }
-
-    return _l10n.authUnexpectedError;
+    return AppErrorMapper.toMessage(
+      error,
+      l10n: _l10n,
+      fallbackMessage: _l10n.authRequestFailed,
+      allowInvalidCredentials: true,
+    );
   }
 
   void clearInfoMessage() {
     if (state.infoMessage == null) return;
     state = state.copyWith(clearInfo: true);
+  }
+
+  Future<void> markSessionExpired({String? message}) async {
+    await _repository.clearSession();
+    state = AuthState(
+      sessionStatus: AuthSessionStatus.expired,
+      isLoading: false,
+      infoMessage: message ?? _l10n.sessionExpiredMessage,
+    );
+  }
+
+  void _applyRestoreResult(AuthRestoreResult result) {
+    switch (result.status) {
+      case AuthRestoreStatus.missing:
+        state = const AuthState(
+          sessionStatus: AuthSessionStatus.guest,
+          isLoading: false,
+        );
+        return;
+      case AuthRestoreStatus.authenticated:
+        _setAuthenticated(
+          result.payload!,
+          sessionStatus: AuthSessionStatus.authenticated,
+          isServerValidated: true,
+        );
+        return;
+      case AuthRestoreStatus.authenticatedStale:
+        _setAuthenticated(
+          result.payload!,
+          sessionStatus: AuthSessionStatus.authenticatedStale,
+          infoMessage: _l10n.showingLastAvailableSessionMessage,
+          isServerValidated: false,
+        );
+        return;
+      case AuthRestoreStatus.expired:
+        state = AuthState(
+          sessionStatus: AuthSessionStatus.expired,
+          isLoading: false,
+          infoMessage: _l10n.sessionExpiredMessage,
+        );
+        return;
+    }
   }
 }
 

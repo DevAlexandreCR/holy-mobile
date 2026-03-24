@@ -58,25 +58,17 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen> {
       ),
       actions: [
         PopupMenuButton<UserRole?>(
-          icon: Icon(
-            Icons.tune_rounded,
-            color: AppColors.pureWhite,
-          ),
+          icon: Icon(Icons.tune_rounded, color: AppColors.pureWhite),
           tooltip: 'Filtrar por rol',
           initialValue: state.roleFilter,
           onSelected: (role) {
             ref.read(usersListControllerProvider.notifier).filterByRole(role);
           },
           itemBuilder: (context) => [
-            const PopupMenuItem(
-              value: null,
-              child: Text('Todos los usuarios'),
-            ),
+            const PopupMenuItem(value: null, child: Text('Todos los usuarios')),
             ...UserRole.values.map(
-              (role) => PopupMenuItem(
-                value: role,
-                child: Text(role.displayName),
-              ),
+              (role) =>
+                  PopupMenuItem(value: role, child: Text(role.displayName)),
             ),
           ],
         ),
@@ -94,7 +86,9 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen> {
       appBar: _buildAppBar(state),
       body: Stack(
         children: [
-          Container(decoration: BoxDecoration(gradient: AppColors.midnightGradient)),
+          Container(
+            decoration: BoxDecoration(gradient: AppColors.midnightGradient),
+          ),
           SafeArea(
             child: Column(
               children: [
@@ -115,7 +109,9 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen> {
                 ),
                 if (state.roleFilter != null)
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.lg,
+                    ),
                     child: Align(
                       alignment: Alignment.centerLeft,
                       child: Chip(
@@ -144,11 +140,8 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen> {
                     ),
                     child: _ErrorBanner(message: state.errorMessage!),
                   ),
-                Expanded(
-                  child: _buildUsersList(state, isAdmin),
-                ),
-                if (state.users.isNotEmpty)
-                  _buildPaginationInfo(state),
+                Expanded(child: _buildUsersList(state, isAdmin)),
+                if (state.users.isNotEmpty) _buildPaginationInfo(state),
               ],
             ),
           ),
@@ -201,7 +194,8 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen> {
     return RefreshIndicator(
       color: AppColors.holyGold,
       backgroundColor: AppColors.midnightFaith,
-      onRefresh: () => ref.read(usersListControllerProvider.notifier).loadUsers(),
+      onRefresh: () =>
+          ref.read(usersListControllerProvider.notifier).loadUsers(),
       child: ListView.builder(
         controller: _scrollController,
         physics: const AlwaysScrollableScrollPhysics(
@@ -237,9 +231,7 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen> {
       decoration: BoxDecoration(
         color: AppColors.midnightFaith.withValues(alpha: 0.9),
         border: Border(
-          top: BorderSide(
-            color: AppColors.pureWhite.withValues(alpha: 0.08),
-          ),
+          top: BorderSide(color: AppColors.pureWhite.withValues(alpha: 0.08)),
         ),
       ),
       child: Row(

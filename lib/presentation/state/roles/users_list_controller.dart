@@ -1,6 +1,6 @@
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:holyverso/core/errors/app_error_mapper.dart';
 import 'package:holyverso/core/l10n/app_localizations.dart';
 import 'package:holyverso/data/roles/role_repository.dart';
 import 'package:holyverso/domain/roles/user_role.dart';
@@ -143,8 +143,7 @@ class UsersListController extends Notifier<UsersListState> {
       await _repository.updateUserRole(userId: userId, role: newRole);
       final updatedUsers = state.users
           .map(
-            (user) =>
-                user.id == userId ? user.copyWith(role: newRole) : user,
+            (user) => user.id == userId ? user.copyWith(role: newRole) : user,
           )
           .toList();
       state = state.copyWith(users: updatedUsers);
@@ -160,33 +159,19 @@ class UsersListController extends Notifier<UsersListState> {
   }
 
   String _mapError(Object error) {
-    if (error is DioException) {
-      final data = error.response?.data;
-      if (data is Map && data['error'] is Map) {
-        final errorMap = data['error'] as Map;
-        final code = errorMap['code']?.toString();
-        switch (code) {
-          case 'FORBIDDEN':
-            return 'No tienes permisos para esta acción';
-          case 'LAST_ADMIN':
-            return 'No puedes quitar el último administrador';
-          case 'CANNOT_CHANGE_OWN_ROLE':
-            return 'No puedes cambiar tu propio role';
-          case 'USER_NOT_FOUND':
-            return 'No se encontró el usuario';
-          case 'INVALID_ROLE':
-            return 'El role seleccionado no es válido';
-          case 'AUTH_REQUIRED':
-            return 'Debes iniciar sesión para continuar';
-        }
-      }
-      if (data is Map && data['message'] is String) {
-        return data['message'] as String;
-      }
-      return error.message ?? _l10n.genericError;
-    }
-
-    return _l10n.genericError;
+    return AppErrorMapper.toMessage(
+      error,
+      l10n: _l10n,
+      fallbackMessage: _l10n.genericError,
+      businessCodeMessages: const {
+        'FORBIDDEN': 'No tienes permisos para esta acción',
+        'LAST_ADMIN': 'No puedes quitar el último administrador',
+        'CANNOT_CHANGE_OWN_ROLE': 'No puedes cambiar tu propio rol',
+        'USER_NOT_FOUND': 'No se encontró el usuario',
+        'INVALID_ROLE': 'El rol seleccionado no es válido',
+        'AUTH_REQUIRED': 'Debes iniciar sesión para continuar',
+      },
+    );
   }
 }
 

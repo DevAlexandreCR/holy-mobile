@@ -91,9 +91,7 @@ class WhatsNewDialog extends StatelessWidget {
                 style: FilledButton.styleFrom(
                   backgroundColor: AppColors.holyGold,
                   foregroundColor: AppColors.midnightFaith,
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 14,
-                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
                 child: const Text('Entendido'),
               ),

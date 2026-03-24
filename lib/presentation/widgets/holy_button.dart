@@ -36,9 +36,7 @@ class HolyButton extends StatelessWidget {
           horizontal: AppSpacing.lg,
           vertical: AppSpacing.sm,
         ),
-        shape: RoundedRectangleBorder(
-          borderRadius: AppBorderRadius.button,
-        ),
+        shape: RoundedRectangleBorder(borderRadius: AppBorderRadius.button),
         textStyle: AppTextStyles.button.copyWith(
           color: AppColors.midnightFaith,
           fontWeight: FontWeight.w700,
@@ -50,7 +48,9 @@ class HolyButton extends StatelessWidget {
               width: 20,
               child: CircularProgressIndicator(
                 strokeWidth: 2,
-                valueColor: AlwaysStoppedAnimation<Color>(AppColors.midnightFaith),
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  AppColors.midnightFaith,
+                ),
               ),
             )
           : Row(
@@ -71,10 +71,7 @@ class HolyButton extends StatelessWidget {
         borderRadius: AppBorderRadius.button,
         boxShadow: AppShadows.goldGlow,
       ),
-      child: ClipRRect(
-        borderRadius: AppBorderRadius.button,
-        child: button,
-      ),
+      child: ClipRRect(borderRadius: AppBorderRadius.button, child: button),
     );
   }
 }

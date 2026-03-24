@@ -26,10 +26,7 @@ class RolesApiClient {
     String? search,
     UserRole? roleFilter,
   }) async {
-    final queryParams = <String, dynamic>{
-      'page': page,
-      'limit': limit,
-    };
+    final queryParams = <String, dynamic>{'page': page, 'limit': limit};
 
     if (search != null && search.trim().isNotEmpty) {
       queryParams['search'] = search.trim();
@@ -53,9 +50,12 @@ class RolesApiClient {
 
       final users = usersRaw is List
           ? usersRaw
-              .whereType<Map>()
-              .map((user) => UserWithRole.fromMap(Map<String, dynamic>.from(user)))
-              .toList()
+                .whereType<Map>()
+                .map(
+                  (user) =>
+                      UserWithRole.fromMap(Map<String, dynamic>.from(user)),
+                )
+                .toList()
           : <UserWithRole>[];
 
       final paginationMap = paginationRaw is Map
@@ -74,7 +74,12 @@ class RolesApiClient {
 
     return UsersListResult(
       users: const [],
-      pagination: UsersPagination(page: page, limit: limit, total: 0, totalPages: 1),
+      pagination: UsersPagination(
+        page: page,
+        limit: limit,
+        total: 0,
+        totalPages: 1,
+      ),
     );
   }
 

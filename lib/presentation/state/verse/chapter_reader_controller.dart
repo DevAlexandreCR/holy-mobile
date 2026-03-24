@@ -1,8 +1,8 @@
 import 'dart:async';
 
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:holyverso/core/errors/app_error_mapper.dart';
 import 'package:holyverso/core/l10n/app_localizations.dart';
 import 'package:holyverso/data/verse/chapter_repository.dart';
 import 'package:holyverso/presentation/state/verse/chapter_reader_state.dart';
@@ -100,15 +100,11 @@ class ChapterReaderController extends Notifier<ChapterReaderState> {
   }
 
   String _mapError(Object error) {
-    if (error is DioException) {
-      final data = error.response?.data;
-      final responseMessage = data is Map && data['message'] is String
-          ? data['message'] as String
-          : null;
-      return responseMessage ?? error.message ?? _l10n.chapterRequestError;
-    }
-
-    return _l10n.chapterRequestError;
+    return AppErrorMapper.toMessage(
+      error,
+      l10n: _l10n,
+      fallbackMessage: _l10n.chapterRequestError,
+    );
   }
 }
 

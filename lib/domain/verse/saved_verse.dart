@@ -22,7 +22,8 @@ class SavedVerse {
   String get displayVersionCode => versionCode.toUpperCase();
 
   factory SavedVerse.fromMap(Map<String, dynamic> map) {
-    final savedAtRaw = map['saved_at'] ??
+    final savedAtRaw =
+        map['saved_at'] ??
         map['savedAt'] ??
         map['savedAtUtc'] ??
         map['saved'] ??

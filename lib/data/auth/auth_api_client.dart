@@ -49,7 +49,10 @@ class AuthApiClient {
   }
 
   Future<AuthPayload> me() async {
-    final response = await _dio.get('/auth/me');
+    final response = await _dio.get(
+      '/auth/me',
+      options: Options(extra: {'deferAuthStateHandling': true}),
+    );
     return AuthPayload.fromMap(response.data as Map<String, dynamic>);
   }
 

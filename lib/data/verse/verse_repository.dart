@@ -21,38 +21,38 @@ class VerseRepository {
     _savedIds.clear();
   }
 
-  Future<({VerseOfTheDay verse, bool wasFromNetwork})> fetchTodayVerse({
-    bool forceRefresh = false,
-  }) async {
-    // If not forcing a refresh, check if today's verse is already cached
+  Future<({VerseOfTheDay verse, bool wasFromNetwork, bool usedFallback})>
+  fetchTodayVerse({bool forceRefresh = false}) async {
+    return _fetchTodayVerseInternal(forceRefresh: forceRefresh);
+  }
+
+  Future<({VerseOfTheDay verse, bool wasFromNetwork, bool usedFallback})>
+  _fetchTodayVerseInternal({bool forceRefresh = false}) async {
     if (!forceRefresh) {
-      // Check the in-memory cache first
       if (_cache != null && _cache!.libraryVerseId != null) {
         _syncCacheSavedStatus();
-        return (verse: _cache!, wasFromNetwork: false);
+        return (verse: _cache!, wasFromNetwork: false, usedFallback: false);
       }
 
-      // Then check if today's verse is persisted in storage
-      final todayVerse = await _storage.getTodayVerse();
-      if (todayVerse != null && todayVerse.libraryVerseId != null) {
-        final verse = _widgetVerseToVerseOfTheDay(todayVerse);
-        _cache = verse.copyWith(
-          isSaved: verse.libraryVerseId != null &&
-              _savedIds.contains(verse.libraryVerseId!),
-        );
-        return (verse: verse, wasFromNetwork: false);
+      final storedVerse = await _loadStoredTodayVerse();
+      if (storedVerse != null) {
+        return (verse: storedVerse, wasFromNetwork: false, usedFallback: false);
       }
     }
 
-    // If nothing is cached or forceRefresh is true, fetch from the backend
     try {
       final verse = await _client.getTodayVerse();
       _cache = verse;
       _applySavedStatusFromVerse(verse);
-      return (verse: verse, wasFromNetwork: true);
+      return (verse: verse, wasFromNetwork: true, usedFallback: false);
     } catch (error) {
       if (_cache != null) {
-        return (verse: _cache!, wasFromNetwork: false);
+        return (verse: _cache!, wasFromNetwork: false, usedFallback: true);
+      }
+
+      final storedVerse = await _loadStoredTodayVerse();
+      if (storedVerse != null) {
+        return (verse: storedVerse, wasFromNetwork: false, usedFallback: true);
       }
       rethrow;
     }
@@ -98,10 +98,7 @@ class VerseRepository {
     String? cursor,
     int limit = 20,
   }) async {
-    final result = await _client.fetchSavedVerses(
-      cursor: cursor,
-      limit: limit,
-    );
+    final result = await _client.fetchSavedVerses(cursor: cursor, limit: limit);
     _savedIds.addAll(result.items.map((item) => item.libraryVerseId));
     _syncCacheSavedStatus();
     return result;
@@ -123,6 +120,21 @@ class VerseRepository {
     if (_cache == null || _cache?.libraryVerseId == null) return;
     final id = _cache!.libraryVerseId!;
     _cache = _cache!.copyWith(isSaved: _savedIds.contains(id));
+  }
+
+  Future<VerseOfTheDay?> _loadStoredTodayVerse() async {
+    final todayVerse = await _storage.getTodayVerse();
+    if (todayVerse == null || todayVerse.libraryVerseId == null) {
+      return null;
+    }
+
+    final verse = _widgetVerseToVerseOfTheDay(todayVerse);
+    _cache = verse.copyWith(
+      isSaved:
+          verse.libraryVerseId != null &&
+          _savedIds.contains(verse.libraryVerseId!),
+    );
+    return _cache;
   }
 }
 

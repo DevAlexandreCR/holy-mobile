@@ -20,13 +20,16 @@ class DevotionalComment {
   factory DevotionalComment.fromMap(Map<String, dynamic> map) {
     return DevotionalComment(
       id: map['id']?.toString() ?? '',
-      devotionalId: map['devotional_id']?.toString() ??
+      devotionalId:
+          map['devotional_id']?.toString() ??
           map['devotionalId']?.toString() ??
           '',
       content: map['content']?.toString() ?? '',
-      createdAt: DateTime.tryParse(map['created_at']?.toString() ?? '') ??
+      createdAt:
+          DateTime.tryParse(map['created_at']?.toString() ?? '') ??
           DateTime.fromMillisecondsSinceEpoch(0),
-      updatedAt: DateTime.tryParse(map['updated_at']?.toString() ?? '') ??
+      updatedAt:
+          DateTime.tryParse(map['updated_at']?.toString() ?? '') ??
           DateTime.fromMillisecondsSinceEpoch(0),
       author: DevotionalAuthor.fromMap(
         Map<String, dynamic>.from(map['author'] as Map? ?? const {}),

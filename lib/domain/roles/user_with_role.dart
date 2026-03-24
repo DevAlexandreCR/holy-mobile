@@ -30,7 +30,8 @@ class UserWithRole {
       email: map['email']?.toString() ?? '',
       name: map['name']?.toString(),
       role: UserRole.fromString(map['role']?.toString() ?? ''),
-      createdAt: DateTime.tryParse(map['createdAt']?.toString() ?? '') ??
+      createdAt:
+          DateTime.tryParse(map['createdAt']?.toString() ?? '') ??
           DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
     );
   }

@@ -9,6 +9,7 @@ class AuthTokenService {
       _channel = channel ?? const MethodChannel('bible_widget/auth');
 
   static const _tokenKey = 'auth_token';
+  static const _sessionSnapshotKey = 'auth_session_snapshot';
   final FlutterSecureStorage _storage;
   final MethodChannel _channel;
 
@@ -36,6 +37,14 @@ class AuthTokenService {
     return _storage.read(key: _tokenKey);
   }
 
+  Future<void> saveSessionSnapshot(String snapshot) {
+    return _storage.write(key: _sessionSnapshotKey, value: snapshot);
+  }
+
+  Future<String?> readSessionSnapshot() {
+    return _storage.read(key: _sessionSnapshotKey);
+  }
+
   Future<void> clearToken() async {
     await _storage.delete(key: _tokenKey);
     // Also clear from native storage
@@ -44,6 +53,10 @@ class AuthTokenService {
     } catch (e) {
       debugPrint('Warning: Failed to clear JWT token from native storage: $e');
     }
+  }
+
+  Future<void> clearSessionSnapshot() {
+    return _storage.delete(key: _sessionSnapshotKey);
   }
 }
 

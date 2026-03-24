@@ -262,8 +262,9 @@ class _SavedVersesScreenState extends ConsumerState<SavedVersesScreen> {
               _ErrorBanner(message: state.error ?? l10n.genericError),
               const SizedBox(height: AppSpacing.md),
               FilledButton(
-                onPressed: () =>
-                    ref.read(savedVersesControllerProvider.notifier).loadInitialSaved(),
+                onPressed: () => ref
+                    .read(savedVersesControllerProvider.notifier)
+                    .loadInitialSaved(),
                 style: FilledButton.styleFrom(
                   backgroundColor: AppColors.holyGold,
                   foregroundColor: AppColors.midnightFaithDark,
@@ -277,9 +278,7 @@ class _SavedVersesScreenState extends ConsumerState<SavedVersesScreen> {
     }
 
     if (state.items.isEmpty) {
-      return _EmptySavedState(
-        onDiscover: () => context.go('/home'),
-      );
+      return _EmptySavedState(onDiscover: () => context.go('/home'));
     }
 
     return Column(
@@ -307,16 +306,18 @@ class _SavedVersesScreenState extends ConsumerState<SavedVersesScreen> {
                   padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
                   child: Center(
                     child: CircularProgressIndicator(
-                      valueColor:
-                          AlwaysStoppedAnimation<Color>(AppColors.holyGold),
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        AppColors.holyGold,
+                      ),
                     ),
                   ),
                 );
               }
 
               final verse = state.items[index];
-              final isProcessing =
-                  state.pendingIds.contains(verse.libraryVerseId);
+              final isProcessing = state.pendingIds.contains(
+                verse.libraryVerseId,
+              );
               final formattedDate = _formatDate(verse.savedAt);
               final isSharingImage =
                   _isGeneratingImage && _sharingVerseId == verse.libraryVerseId;
@@ -325,10 +326,9 @@ class _SavedVersesScreenState extends ConsumerState<SavedVersesScreen> {
                 formattedDate: formattedDate,
                 onShare: (rect) =>
                     _showShareOptions(verse, formattedDate, rect),
-                onUnsave: () =>
-                    ref.read(savedVersesControllerProvider.notifier).toggleSave(
-                          verse.libraryVerseId,
-                        ),
+                onUnsave: () => ref
+                    .read(savedVersesControllerProvider.notifier)
+                    .toggleSave(verse.libraryVerseId),
                 onReadChapter: () {
                   final highlight = _highlightFromReference(verse.reference);
                   context.push(
@@ -352,7 +352,6 @@ class _SavedVersesScreenState extends ConsumerState<SavedVersesScreen> {
       ],
     );
   }
-
 }
 
 class _SavedVerseCard extends StatelessWidget {
@@ -424,7 +423,10 @@ class _SavedVerseCard extends StatelessWidget {
                 ),
               ),
               const Spacer(),
-              Icon(Icons.bookmark, color: AppColors.holyGold.withValues(alpha: 0.9)),
+              Icon(
+                Icons.bookmark,
+                color: AppColors.holyGold.withValues(alpha: 0.9),
+              ),
               const SizedBox(width: AppSpacing.xs),
               Text(
                 formattedDate,
@@ -526,11 +528,7 @@ class _SavedVerseCard extends StatelessWidget {
 }
 
 class _CircleAction extends StatelessWidget {
-  const _CircleAction({
-    required this.icon,
-    this.onTap,
-    this.isLoading = false,
-  });
+  const _CircleAction({required this.icon, this.onTap, this.isLoading = false});
 
   final IconData icon;
   final void Function(BuildContext context)? onTap;
@@ -553,8 +551,9 @@ class _CircleAction extends StatelessWidget {
                     height: 16,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      valueColor:
-                          AlwaysStoppedAnimation<Color>(AppColors.pureWhite),
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        AppColors.pureWhite,
+                      ),
                     ),
                   )
                 : Icon(icon, color: AppColors.pureWhite),
@@ -594,7 +593,9 @@ class _EmptySavedState extends StatelessWidget {
               decoration: BoxDecoration(
                 color: AppColors.pureWhite.withValues(alpha: 0.06),
                 shape: BoxShape.circle,
-                border: Border.all(color: AppColors.pureWhite.withValues(alpha: 0.1)),
+                border: Border.all(
+                  color: AppColors.pureWhite.withValues(alpha: 0.1),
+                ),
               ),
               child: const Icon(
                 Icons.bookmark_border,

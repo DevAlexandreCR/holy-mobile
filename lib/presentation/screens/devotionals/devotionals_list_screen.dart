@@ -1,7 +1,7 @@
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:holyverso/core/errors/app_error_mapper.dart';
 import 'package:holyverso/core/l10n/app_localizations.dart';
 import 'package:holyverso/core/theme/app_colors.dart';
 import 'package:holyverso/core/theme/app_design_tokens.dart';
@@ -100,14 +100,11 @@ class _DevotionalsListScreenState extends ConsumerState<DevotionalsListScreen> {
   }
 
   String _mapContentError(Object error, AppLocalizations l10n) {
-    if (error is DioException) {
-      final data = error.response?.data;
-      final responseMessage = data is Map && data['error']?['message'] is String
-          ? data['error']['message'] as String
-          : null;
-      return responseMessage ?? error.message ?? l10n.genericError;
-    }
-    return l10n.genericError;
+    return AppErrorMapper.toMessage(
+      error,
+      l10n: l10n,
+      fallbackMessage: l10n.devotionalsLoadError,
+    );
   }
 
   Future<void> _shareDevotional(Devotional devotional) async {

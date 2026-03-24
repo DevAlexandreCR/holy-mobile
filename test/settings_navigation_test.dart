@@ -13,6 +13,8 @@ import 'package:holyverso/domain/verse/verse_of_the_day.dart';
 import 'package:holyverso/presentation/state/auth/auth_controller.dart';
 import 'package:holyverso/presentation/state/auth/auth_state.dart';
 import 'package:holyverso/presentation/screens/settings/settings_screen.dart';
+import 'package:holyverso/presentation/state/verse/saved_verses_controller.dart';
+import 'package:holyverso/presentation/state/verse/saved_verses_state.dart';
 import 'package:holyverso/presentation/state/verse/verse_controller.dart';
 import 'package:holyverso/presentation/state/verse/verse_state.dart';
 import 'package:holyverso/main.dart';
@@ -28,6 +30,7 @@ class _FakeAuthController extends AuthController {
         role: UserRole.user,
       ),
       settings: UserSettings(preferredVersionId: 4),
+      sessionStatus: AuthSessionStatus.authenticated,
     );
   }
 
@@ -44,7 +47,7 @@ class _FakeAuthController extends AuthController {
 
   @override
   Future<void> logout() async {
-    state = const AuthState();
+    state = const AuthState(sessionStatus: AuthSessionStatus.guest);
   }
 }
 
@@ -72,7 +75,12 @@ class _FakeBibleRepository extends BibleRepository {
   @override
   Future<List<BibleVersion>> fetchVersions({bool forceRefresh = false}) async {
     return const [
-      BibleVersion(id: 4, apiCode: 'dhh', name: 'Dios Habla Hoy', language: 'es'),
+      BibleVersion(
+        id: 4,
+        apiCode: 'dhh',
+        name: 'Dios Habla Hoy',
+        language: 'es',
+      ),
       BibleVersion(id: 6, apiCode: 'kjv', name: 'King James', language: 'en'),
     ];
   }
@@ -93,6 +101,14 @@ class _FakeBibleApiClient implements BibleApiClient {
   }
 }
 
+class _FakeSavedVersesController extends SavedVersesController {
+  @override
+  SavedVersesState build() => const SavedVersesState();
+
+  @override
+  Future<void> loadInitialSaved() async {}
+}
+
 void main() {
   testWidgets('navigating to settings builds without errors', (tester) async {
     await tester.pumpWidget(
@@ -100,6 +116,9 @@ void main() {
         overrides: [
           authControllerProvider.overrideWith(_FakeAuthController.new),
           verseControllerProvider.overrideWith(_FakeVerseController.new),
+          savedVersesControllerProvider.overrideWith(
+            _FakeSavedVersesController.new,
+          ),
           bibleRepositoryProvider.overrideWith((ref) => _FakeBibleRepository()),
         ],
         child: const HolyVersoApp(),
@@ -108,12 +127,11 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    expect(find.byIcon(Icons.settings_outlined), findsOneWidget);
+    expect(find.byIcon(Icons.settings_rounded), findsOneWidget);
 
-    await tester.tap(find.byIcon(Icons.settings_outlined));
+    await tester.tap(find.byIcon(Icons.settings_rounded));
     await tester.pumpAndSettle();
 
     expect(find.byType(SettingsScreen), findsOneWidget);
-
   });
 }

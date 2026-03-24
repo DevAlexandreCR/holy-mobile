@@ -14,10 +14,7 @@ class VerseApiClient {
   final Dio _dio;
   static const _l10n = AppLocalizations(Locale('es'));
 
-  Map<String, dynamic> _unwrapData(
-    dynamic rawData, {
-    String? errorMessage,
-  }) {
+  Map<String, dynamic> _unwrapData(dynamic rawData, {String? errorMessage}) {
     final data = rawData is Map ? rawData['data'] ?? rawData : rawData;
 
     if (data is Map<String, dynamic>) {
@@ -81,10 +78,7 @@ class VerseApiClient {
   }) async {
     final response = await _dio.get(
       '/verse/saved',
-      queryParameters: {
-        if (cursor != null) 'cursor': cursor,
-        'limit': limit,
-      },
+      queryParameters: {if (cursor != null) 'cursor': cursor, 'limit': limit},
     );
 
     final data = _unwrapData(response.data);
@@ -92,11 +86,7 @@ class VerseApiClient {
 
     final items = rawItems
         .whereType<Map>()
-        .map(
-          (item) => SavedVerse.fromMap(
-            Map<String, dynamic>.from(item),
-          ),
-        )
+        .map((item) => SavedVerse.fromMap(Map<String, dynamic>.from(item)))
         .toList();
 
     final nextCursor = data['next_cursor']?.toString();

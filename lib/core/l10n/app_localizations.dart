@@ -32,6 +32,15 @@ class AppLocalizations {
 
   String get genericError => _string('genericError');
   String get networkError => _string('networkError');
+  String get connectionUnavailableMessage =>
+      _string('connectionUnavailableMessage');
+  String get sessionExpiredMessage => _string('sessionExpiredMessage');
+  String get unableToRefreshRightNowMessage =>
+      _string('unableToRefreshRightNowMessage');
+  String get showingLastAvailableContentMessage =>
+      _string('showingLastAvailableContentMessage');
+  String get showingLastAvailableSessionMessage =>
+      _string('showingLastAvailableSessionMessage');
   String get unexpectedVerseFormat => _string('unexpectedVerseFormat');
   String get unexpectedChapterFormat => _string('unexpectedChapterFormat');
 
@@ -237,6 +246,16 @@ class AppLocalizations {
       'splashLoading': 'Cargando configuración...',
       'genericError': 'Ocurrió un error inesperado. Inténtalo nuevamente.',
       'networkError': 'Verifica tu conexión a internet.',
+      'connectionUnavailableMessage':
+          'No hay conexión disponible en este momento.',
+      'sessionExpiredMessage':
+          'Tu sesión venció. Inicia sesión nuevamente para continuar.',
+      'unableToRefreshRightNowMessage':
+          'No pudimos actualizar la información en este momento.',
+      'showingLastAvailableContentMessage':
+          'Te mostramos el último contenido disponible.',
+      'showingLastAvailableSessionMessage':
+          'Te mostramos tu última sesión disponible mientras se restablece la conexión.',
       'unexpectedVerseFormat': 'Formato de versículo inesperado.',
       'unexpectedChapterFormat': 'Formato de capítulo inesperado.',
       'loginTitle': 'Iniciar sesión',
@@ -436,6 +455,15 @@ class AppLocalizations {
       'splashLoading': 'Loading configuration...',
       'genericError': 'Something went wrong. Please try again.',
       'networkError': 'Check your internet connection.',
+      'connectionUnavailableMessage': 'No connection is available right now.',
+      'sessionExpiredMessage':
+          'Your session expired. Please sign in again to continue.',
+      'unableToRefreshRightNowMessage':
+          'We could not refresh the information right now.',
+      'showingLastAvailableContentMessage':
+          'Showing the last available content.',
+      'showingLastAvailableSessionMessage':
+          'Showing your last available session while the connection comes back.',
       'unexpectedVerseFormat': 'Unexpected verse format.',
       'unexpectedChapterFormat': 'Unexpected chapter format.',
       'loginTitle': 'Sign in',

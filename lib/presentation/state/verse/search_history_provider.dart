@@ -23,5 +23,5 @@ class SearchHistoryNotifier extends Notifier<List<String>> {
 
 final searchHistoryProvider =
     NotifierProvider<SearchHistoryNotifier, List<String>>(
-  SearchHistoryNotifier.new,
-);
+      SearchHistoryNotifier.new,
+    );
