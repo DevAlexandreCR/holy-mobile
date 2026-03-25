@@ -1958,7 +1958,18 @@ class _ReferencePickerSheetState extends ConsumerState<_ReferencePickerSheet> {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final viewInsets = MediaQuery.of(context).viewInsets.bottom;
-    final maxHeight = MediaQuery.sizeOf(context).height * 0.82;
+    final screenHeight = MediaQuery.sizeOf(context).height;
+    final safeBottom = MediaQuery.viewPaddingOf(context).bottom;
+    final sheetChromeHeight =
+        AppSpacing.md +
+        AppSpacing.lg +
+        AppSpacing.md +
+        4;
+    final maxHeight = (screenHeight * 0.82 - safeBottom - sheetChromeHeight)
+        .clamp(
+      320.0,
+      screenHeight * 0.82,
+    ).toDouble();
 
     return AnimatedPadding(
       duration: const Duration(milliseconds: 180),
