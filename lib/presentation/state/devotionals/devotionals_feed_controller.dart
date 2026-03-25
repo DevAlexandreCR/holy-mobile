@@ -26,36 +26,52 @@ class DevotionalsFeedController extends Notifier<DevotionalsFeedState> {
       return;
     }
 
-    if (forceRefresh) {
-      _trackedImpressions.clear();
-      _trackedOpens.clear();
+    if (!forceRefresh && state.items.isNotEmpty) {
+      return;
     }
 
-    state = state.copyWith(
-      status: DevotionalsFeedStatus.loading,
-      items: const [],
-      hasMore: true,
-      clearError: true,
-      clearNextCursor: true,
-    );
+    final hasCachedItems = state.items.isNotEmpty;
+    state = hasCachedItems
+        ? state.copyWith(
+            status: DevotionalsFeedStatus.loading,
+            clearError: true,
+          )
+        : state.copyWith(
+            status: DevotionalsFeedStatus.loading,
+            items: const [],
+            hasMore: true,
+            clearError: true,
+            clearNextCursor: true,
+          );
 
-    await _fetchPage();
+    await _fetchPage(clearTracking: forceRefresh);
   }
 
   Future<void> refresh() => loadInitial(forceRefresh: true);
 
   Future<void> loadMore() async {
-    if (state.isFetchingMore || !state.hasMore) return;
+    if (state.isFetchingMore ||
+        !state.hasMore ||
+        state.status == DevotionalsFeedStatus.loading) {
+      return;
+    }
     state = state.copyWith(isFetchingMore: true, clearError: true);
     await _fetchPage(append: true);
   }
 
-  Future<void> _fetchPage({bool append = false}) async {
+  Future<void> _fetchPage({
+    bool append = false,
+    bool clearTracking = false,
+  }) async {
     try {
       final result = await _repository.fetchFeed(
         cursor: append ? state.nextCursor : null,
       );
       final items = append ? [...state.items, ...result.items] : result.items;
+      if (!append && clearTracking) {
+        _trackedImpressions.clear();
+        _trackedOpens.clear();
+      }
       state = state.copyWith(
         status: DevotionalsFeedStatus.success,
         items: items,

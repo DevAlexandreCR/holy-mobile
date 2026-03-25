@@ -110,7 +110,11 @@ class _PublicFeedTabState extends ConsumerState<_PublicFeedTab> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(devotionalsFeedControllerProvider.notifier).loadInitial();
+      final feedState = ref.read(devotionalsFeedControllerProvider);
+      if (feedState.items.isEmpty &&
+          feedState.status == DevotionalsFeedStatus.idle) {
+        ref.read(devotionalsFeedControllerProvider.notifier).loadInitial();
+      }
     });
     _scrollController.addListener(_onScroll);
   }
@@ -194,6 +198,9 @@ class _PublicFeedTabState extends ConsumerState<_PublicFeedTab> {
       );
     }
 
+    final showErrorBanner =
+        state.errorMessage != null && state.items.isNotEmpty;
+
     return RefreshIndicator(
       onRefresh: () =>
           ref.read(devotionalsFeedControllerProvider.notifier).refresh(),
@@ -205,9 +212,21 @@ class _PublicFeedTabState extends ConsumerState<_PublicFeedTab> {
           AppSpacing.lg,
           AppSpacing.xl,
         ),
-        itemCount: state.items.length + (state.isFetchingMore ? 1 : 0),
+        itemCount:
+            state.items.length +
+            (state.isFetchingMore ? 1 : 0) +
+            (showErrorBanner ? 1 : 0),
         itemBuilder: (context, index) {
-          if (index >= state.items.length) {
+          if (showErrorBanner && index == 0) {
+            return Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.md),
+              child: _ErrorBanner(message: state.errorMessage!),
+            );
+          }
+
+          final listIndex = showErrorBanner ? index - 1 : index;
+
+          if (listIndex >= state.items.length) {
             return const Padding(
               padding: EdgeInsets.symmetric(vertical: AppSpacing.md),
               child: Center(
@@ -216,7 +235,7 @@ class _PublicFeedTabState extends ConsumerState<_PublicFeedTab> {
             );
           }
 
-          final devotional = state.items[index];
+          final devotional = state.items[listIndex];
           return _FeedImpressionTracker(
             devotional: devotional,
             onQualified: () => ref
@@ -381,6 +400,41 @@ class _MyDevotionalsTabState extends ConsumerState<_MyDevotionalsTab> {
           },
         ),
       ],
+    );
+  }
+}
+
+class _ErrorBanner extends StatelessWidget {
+  const _ErrorBanner({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.error.withValues(alpha: 0.14),
+        borderRadius: AppBorderRadius.card,
+        border: Border.all(color: AppColors.error.withValues(alpha: 0.35)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.error_outline, color: AppColors.error),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Text(
+              message,
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.pureWhite,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
