@@ -245,6 +245,8 @@ class _CreatorProfileEditScreenState
                       ),
                       decoration: InputDecoration(
                         hintText: l10n.creatorHandleHint,
+                        filled: false,
+                        fillColor: Colors.transparent,
                         hintStyle: AppTextStyles.bodyLarge.copyWith(
                           color: AppColors.softMist.withValues(alpha: 0.48),
                         ),
@@ -267,6 +269,8 @@ class _CreatorProfileEditScreenState
                       ),
                       decoration: InputDecoration(
                         hintText: l10n.creatorBioHint,
+                        filled: false,
+                        fillColor: Colors.transparent,
                         hintStyle: AppTextStyles.bodyLarge.copyWith(
                           color: AppColors.softMist.withValues(alpha: 0.48),
                         ),

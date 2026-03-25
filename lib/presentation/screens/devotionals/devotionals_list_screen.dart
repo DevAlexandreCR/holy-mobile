@@ -9,9 +9,9 @@ import 'package:holyverso/core/l10n/app_localizations.dart';
 import 'package:holyverso/core/theme/app_colors.dart';
 import 'package:holyverso/core/theme/app_design_tokens.dart';
 import 'package:holyverso/core/theme/app_text_styles.dart';
-import 'package:holyverso/domain/devotionals/devotional_feed_mode.dart';
 import 'package:holyverso/data/devotionals/devotionals_repository.dart';
 import 'package:holyverso/domain/devotionals/devotional.dart';
+import 'package:holyverso/domain/devotionals/devotional_feed_mode.dart';
 import 'package:holyverso/domain/devotionals/devotional_status.dart';
 import 'package:holyverso/domain/devotionals/devotional_verse_reference.dart';
 import 'package:holyverso/presentation/screens/devotionals/devotional_editor_screen.dart';
@@ -37,7 +37,7 @@ class _DevotionalsListScreenState extends ConsumerState<DevotionalsListScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
   }
 
   @override
@@ -64,113 +64,119 @@ class _DevotionalsListScreenState extends ConsumerState<DevotionalsListScreen>
     final l10n = context.l10n;
 
     return Scaffold(
-      backgroundColor: AppColors.midnightFaith,
-      appBar: AppBar(
-        title: Text(
-          l10n.devotionalsTitle,
-          style: AppTextStyles.headline3.copyWith(
-            color: AppColors.pureWhite,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        bottom: TabBar(
-          controller: _tabController,
-          indicatorColor: AppColors.holyGold,
-          labelColor: AppColors.holyGold,
-          unselectedLabelColor: AppColors.softMist,
-          tabs: [
-            Tab(text: l10n.devotionalsPublic),
-            Tab(text: l10n.devotionalsMine),
-          ],
-        ),
-      ),
+      backgroundColor: AppColors.midnightFaithDark,
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       floatingActionButton: FloatingActionButton(
+        key: const Key('devotionals-create-fab'),
         onPressed: _openEditor,
         backgroundColor: AppColors.holyGold,
-        foregroundColor: AppColors.midnightFaith,
-        child: const Icon(Icons.edit),
+        foregroundColor: AppColors.midnightFaithDark,
+        elevation: 0,
+        shape: const CircleBorder(),
+        child: const Icon(Icons.add_rounded, size: 28),
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          const _PublicFeedTab(),
-          _MyDevotionalsTab(onOpenEditor: _openEditor),
-        ],
+      body: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [AppColors.midnightFaith, AppColors.midnightFaithDark],
+          ),
+        ),
+        child: SafeArea(
+          bottom: false,
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.lg,
+                  AppSpacing.md,
+                  AppSpacing.lg,
+                  0,
+                ),
+                child: _TopLevelDevotionalsTabs(
+                  controller: _tabController,
+                  tabs: [
+                    _TopLevelTabData(
+                      key: const Key('devotionals-tab-for-you'),
+                      label: l10n.devotionalsForYou,
+                    ),
+                    _TopLevelTabData(
+                      key: const Key('devotionals-tab-following'),
+                      label: l10n.devotionalsFollowing,
+                    ),
+                    _TopLevelTabData(
+                      key: const Key('devotionals-tab-mine'),
+                      label: l10n.devotionalsMine,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Expanded(
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _PublicFeedModeView(
+                      mode: DevotionalFeedMode.forYou,
+                      provider: forYouFeedControllerProvider,
+                    ),
+                    _PublicFeedModeView(
+                      mode: DevotionalFeedMode.following,
+                      provider: followingFeedControllerProvider,
+                    ),
+                    _MyDevotionalsTab(onOpenEditor: _openEditor),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
 }
 
-class _PublicFeedTab extends ConsumerStatefulWidget {
-  const _PublicFeedTab();
+class _TopLevelTabData {
+  const _TopLevelTabData({required this.key, required this.label});
 
-  @override
-  ConsumerState<_PublicFeedTab> createState() => _PublicFeedTabState();
+  final Key key;
+  final String label;
 }
 
-class _PublicFeedTabState extends ConsumerState<_PublicFeedTab>
-    with SingleTickerProviderStateMixin {
-  late final TabController _tabController;
+class _TopLevelDevotionalsTabs extends StatelessWidget {
+  const _TopLevelDevotionalsTabs({
+    required this.controller,
+    required this.tabs,
+  });
 
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
+  final TabController controller;
+  final List<_TopLevelTabData> tabs;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.lg,
-            AppSpacing.md,
-            AppSpacing.lg,
-            AppSpacing.sm,
-          ),
-          child: Container(
-            decoration: BoxDecoration(
-              color: AppColors.midnightFaithDark,
-              borderRadius: AppBorderRadius.card,
-            ),
-            child: TabBar(
-              controller: _tabController,
-              indicator: BoxDecoration(
-                color: AppColors.holyGold,
-                borderRadius: AppBorderRadius.card,
-              ),
-              labelColor: AppColors.midnightFaith,
-              unselectedLabelColor: AppColors.softMist,
-              tabs: [
-                Tab(text: context.l10n.devotionalsForYou),
-                Tab(text: context.l10n.devotionalsFollowing),
-              ],
-            ),
-          ),
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: TabBar(
+        controller: controller,
+        isScrollable: true,
+        dividerColor: Colors.transparent,
+        indicatorColor: AppColors.holyGold,
+        indicatorWeight: 2,
+        indicatorSize: TabBarIndicatorSize.label,
+        labelPadding: const EdgeInsets.only(right: AppSpacing.lg),
+        labelStyle: AppTextStyles.labelMedium.copyWith(
+          color: AppColors.holyGold,
+          fontWeight: FontWeight.w700,
         ),
-        Expanded(
-          child: TabBarView(
-            controller: _tabController,
-            children: [
-              _PublicFeedModeView(
-                mode: DevotionalFeedMode.forYou,
-                provider: forYouFeedControllerProvider,
-              ),
-              _PublicFeedModeView(
-                mode: DevotionalFeedMode.following,
-                provider: followingFeedControllerProvider,
-              ),
-            ],
-          ),
+        unselectedLabelStyle: AppTextStyles.labelMedium.copyWith(
+          color: AppColors.softMist.withValues(alpha: 0.72),
+          fontWeight: FontWeight.w500,
         ),
-      ],
+        tabs: tabs
+            .map((tab) => Tab(key: tab.key, text: tab.label))
+            .toList(growable: false),
+      ),
     );
   }
 }
@@ -229,12 +235,13 @@ class _PublicFeedModeViewState extends ConsumerState<_PublicFeedModeView> {
         ? (box.localToGlobal(Offset.zero) & box.size)
         : const Rect.fromLTWH(0, 0, 1, 1);
 
-    Share.share(
+    await Share.share(
       shareText,
       subject: context.l10n.shareDevotional,
       sharePositionOrigin: origin,
     );
 
+    if (!mounted) return;
     await ref.read(widget.provider.notifier).registerShare(devotional);
   }
 
@@ -291,11 +298,12 @@ class _PublicFeedModeViewState extends ConsumerState<_PublicFeedModeView> {
       onRefresh: () => ref.read(widget.provider.notifier).refresh(),
       child: ListView.builder(
         controller: _scrollController,
+        physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(
           AppSpacing.lg,
           AppSpacing.sm,
           AppSpacing.lg,
-          AppSpacing.xl,
+          AppSpacing.xxl,
         ),
         itemCount:
             state.items.length +
@@ -327,6 +335,8 @@ class _PublicFeedModeViewState extends ConsumerState<_PublicFeedModeView> {
                 .registerImpression(devotional),
             child: _PublicDevotionalCard(
               devotional: devotional,
+              isLiking: state.likingDevotionalId == devotional.id,
+              isSaving: state.savingDevotionalId == devotional.id,
               onOpen: () => _openDetail(devotional),
               onOpenAuthor: () => _openAuthor(devotional),
               onLike: () =>
@@ -359,7 +369,10 @@ class _MyDevotionalsTabState extends ConsumerState<_MyDevotionalsTab> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(devotionalsListControllerProvider.notifier).loadInitial();
+      final state = ref.read(devotionalsListControllerProvider);
+      if (state.items.isEmpty && state.status == DevotionalsListStatus.idle) {
+        ref.read(devotionalsListControllerProvider.notifier).loadInitial();
+      }
     });
     _scrollController.addListener(_onScroll);
   }
@@ -524,25 +537,15 @@ class _MyDevotionalsTabState extends ConsumerState<_MyDevotionalsTab> {
         Padding(
           padding: const EdgeInsets.fromLTRB(
             AppSpacing.lg,
-            AppSpacing.md,
+            AppSpacing.sm,
             AppSpacing.lg,
             AppSpacing.sm,
           ),
-          child: Column(
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: _StatusSelector(
-                      current: state.statusFilter,
-                      onSelected: (status) => ref
-                          .read(devotionalsListControllerProvider.notifier)
-                          .setStatusFilter(status),
-                    ),
-                  ),
-                ],
-              ),
-            ],
+          child: _StatusSelector(
+            current: state.statusFilter,
+            onSelected: (status) => ref
+                .read(devotionalsListControllerProvider.notifier)
+                .setStatusFilter(status),
           ),
         ),
         Expanded(
@@ -569,11 +572,12 @@ class _MyDevotionalsTabState extends ConsumerState<_MyDevotionalsTab> {
                           .refresh(),
                       child: ListView.builder(
                         controller: _scrollController,
+                        physics: const AlwaysScrollableScrollPhysics(),
                         padding: const EdgeInsets.fromLTRB(
                           AppSpacing.lg,
-                          AppSpacing.sm,
+                          0,
                           AppSpacing.lg,
-                          AppSpacing.xl,
+                          AppSpacing.xxl,
                         ),
                         itemCount:
                             state.items.length + (state.isFetchingMore ? 1 : 0),
@@ -712,6 +716,8 @@ class _FeedImpressionTrackerState extends State<_FeedImpressionTracker> {
 class _PublicDevotionalCard extends StatelessWidget {
   const _PublicDevotionalCard({
     required this.devotional,
+    required this.isLiking,
+    required this.isSaving,
     required this.onOpen,
     required this.onOpenAuthor,
     required this.onLike,
@@ -720,6 +726,8 @@ class _PublicDevotionalCard extends StatelessWidget {
   });
 
   final Devotional devotional;
+  final bool isLiking;
+  final bool isSaving;
   final VoidCallback onOpen;
   final VoidCallback onOpenAuthor;
   final VoidCallback onLike;
@@ -728,137 +736,67 @@ class _PublicDevotionalCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: AppSpacing.md),
-      decoration: BoxDecoration(
-        color: AppColors.midnightFaith.withValues(alpha: 0.9),
-        borderRadius: AppBorderRadius.card,
-        border: Border.all(color: AppColors.pureWhite.withValues(alpha: 0.08)),
-      ),
+    final referenceLabel = _referenceLabel(devotional);
+
+    return _DevotionalSurfaceCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (devotional.previewImageUrl != null &&
-              devotional.previewImageUrl!.isNotEmpty)
-            ClipRRect(
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(AppBorderRadius.lg),
-              ),
-              child: CachedNetworkImage(
-                imageUrl: devotional.previewImageUrl!,
-                height: 180,
-                width: double.infinity,
-                fit: BoxFit.cover,
-                alignment: Alignment(0, devotional.coverImageFocusY),
-                errorWidget: (context, url, error) => Container(
-                  height: 180,
-                  color: AppColors.midnightFaithDark,
-                  alignment: Alignment.center,
-                  child: const Icon(
-                    Icons.image_not_supported_outlined,
-                    color: AppColors.softMist,
-                  ),
-                ),
-              ),
-            ),
+          _DevotionalCoverImage(
+            imageUrl: devotional.previewImageUrl ?? devotional.coverImageUrl,
+            focusY: devotional.coverImageFocusY,
+            onTap: onOpen,
+          ),
           Padding(
-            padding: const EdgeInsets.all(AppSpacing.lg),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.md,
+              AppSpacing.md,
+              AppSpacing.md,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                InkWell(
+                _AuthorHeader(
+                  authorName: devotional.author.name,
+                  handle: devotional.author.handle,
+                  avatarUrl: devotional.author.avatarUrl,
+                  following: devotional.author.following,
                   onTap: onOpenAuthor,
-                  borderRadius: BorderRadius.circular(AppBorderRadius.md),
-                  child: Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 18,
-                        backgroundColor: AppColors.holyGold.withValues(
-                          alpha: 0.18,
-                        ),
-                        backgroundImage:
-                            devotional.author.avatarUrl != null &&
-                                devotional.author.avatarUrl!.isNotEmpty
-                            ? CachedNetworkImageProvider(
-                                devotional.author.avatarUrl!,
-                              )
-                            : null,
-                        child:
-                            devotional.author.avatarUrl == null ||
-                                devotional.author.avatarUrl!.isEmpty
-                            ? Text(
-                                devotional.author.name.isNotEmpty
-                                    ? devotional.author.name.characters.first
-                                          .toUpperCase()
-                                    : '?',
-                                style: AppTextStyles.bodyMedium.copyWith(
-                                  color: AppColors.holyGold,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              )
-                            : null,
-                      ),
-                      const SizedBox(width: AppSpacing.sm),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              devotional.author.name,
-                              style: AppTextStyles.bodyMedium.copyWith(
-                                color: AppColors.pureWhite,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            if (devotional.author.handle != null &&
-                                devotional.author.handle!.isNotEmpty)
-                              Text(
-                                '@${devotional.author.handle}',
-                                style: AppTextStyles.bodySmall.copyWith(
-                                  color: AppColors.holyGold,
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                      if (devotional.author.following)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: AppSpacing.sm,
-                            vertical: AppSpacing.xs,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.holyGold.withValues(alpha: 0.14),
-                            borderRadius: BorderRadius.circular(
-                              AppBorderRadius.full,
-                            ),
-                          ),
-                          child: Text(
-                            context.l10n.devotionalsFollowingBadge,
-                            style: AppTextStyles.bodySmall.copyWith(
-                              color: AppColors.holyGold,
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
                 ),
+                if (referenceLabel != null) ...[
+                  const SizedBox(height: AppSpacing.md),
+                  Text(
+                    referenceLabel,
+                    style: AppTextStyles.referenceSmall.copyWith(
+                      color: AppColors.holyGold,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
                 const SizedBox(height: AppSpacing.sm),
                 Text(
                   devotional.title,
-                  style: AppTextStyles.headline3.copyWith(
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.headline2.copyWith(
                     color: AppColors.pureWhite,
                     fontWeight: FontWeight.w700,
+                    height: 1.2,
                   ),
                 ),
-                const SizedBox(height: AppSpacing.sm),
-                Text(
-                  devotional.previewText,
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    color: AppColors.softMist,
-                    height: 1.5,
+                if (devotional.previewText.isNotEmpty) ...[
+                  const SizedBox(height: AppSpacing.sm),
+                  Text(
+                    devotional.previewText,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: AppColors.softMist.withValues(alpha: 0.84),
+                      height: 1.55,
+                    ),
                   ),
-                ),
+                ],
                 const SizedBox(height: AppSpacing.md),
                 Wrap(
                   spacing: AppSpacing.sm,
@@ -870,11 +808,11 @@ class _PublicDevotionalCard extends StatelessWidget {
                           '${devotional.estimatedReadTime} ${context.l10n.devotionalMinutesShort}',
                     ),
                     _MetaChip(
-                      icon: Icons.favorite_border,
+                      icon: Icons.favorite_rounded,
                       label: devotional.likesCount.toString(),
                     ),
                     _MetaChip(
-                      icon: Icons.chat_bubble_outline,
+                      icon: Icons.chat_bubble_outline_rounded,
                       label: devotional.commentsCount.toString(),
                     ),
                     _MetaChip(
@@ -886,37 +824,36 @@ class _PublicDevotionalCard extends StatelessWidget {
                 const SizedBox(height: AppSpacing.md),
                 Row(
                   children: [
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: onOpen,
-                        child: Text(context.l10n.devotionalOpenDetail),
-                      ),
+                    Expanded(child: _ReadMoreAction(onTap: onOpen)),
+                    const SizedBox(width: AppSpacing.sm),
+                    _CardIconButton(
+                      key: Key('public-devotional-like-${devotional.id}'),
+                      onPressed: isLiking ? null : onLike,
+                      icon: devotional.liked
+                          ? Icons.favorite_rounded
+                          : Icons.favorite_border_rounded,
+                      active: devotional.liked,
+                      activeColor: Colors.redAccent,
+                      tooltip: context.l10n.likesLabel,
+                      isLoading: isLiking,
                     ),
                     const SizedBox(width: AppSpacing.sm),
-                    IconButton(
-                      onPressed: onLike,
-                      icon: Icon(
-                        devotional.liked
-                            ? Icons.favorite
-                            : Icons.favorite_border,
-                      ),
-                      color: devotional.liked
-                          ? Colors.redAccent
-                          : AppColors.holyGold,
+                    _CardIconButton(
+                      key: Key('public-devotional-save-${devotional.id}'),
+                      onPressed: isSaving ? null : onSave,
+                      icon: devotional.saved
+                          ? Icons.bookmark_rounded
+                          : Icons.bookmark_border_rounded,
+                      active: devotional.saved,
+                      tooltip: context.l10n.saveAction,
+                      isLoading: isSaving,
                     ),
-                    IconButton(
-                      onPressed: onSave,
-                      icon: Icon(
-                        devotional.saved
-                            ? Icons.bookmark
-                            : Icons.bookmark_border,
-                      ),
-                      color: AppColors.holyGold,
-                    ),
-                    IconButton(
+                    const SizedBox(width: AppSpacing.sm),
+                    _CardIconButton(
+                      key: Key('public-devotional-share-${devotional.id}'),
                       onPressed: onShare,
-                      icon: const Icon(Icons.share_outlined),
-                      color: AppColors.holyGold,
+                      icon: Icons.share_outlined,
+                      tooltip: context.l10n.shareAction,
                     ),
                   ],
                 ),
@@ -950,70 +887,83 @@ class _OwnerDevotionalCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final isBusy = pendingAction != null;
+    final referenceLabel = _referenceLabel(devotional);
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: AppSpacing.md),
-      decoration: BoxDecoration(
-        color: AppColors.midnightFaith.withValues(alpha: 0.9),
-        borderRadius: AppBorderRadius.card,
-        border: Border.all(color: AppColors.pureWhite.withValues(alpha: 0.08)),
-      ),
+    return _DevotionalSurfaceCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (devotional.previewImageUrl != null &&
-              devotional.previewImageUrl!.isNotEmpty)
-            ClipRRect(
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(AppBorderRadius.lg),
-              ),
-              child: CachedNetworkImage(
-                imageUrl: devotional.previewImageUrl!,
-                height: 180,
-                width: double.infinity,
-                fit: BoxFit.cover,
-                alignment: Alignment(0, devotional.coverImageFocusY),
-                errorWidget: (context, url, error) => Container(
-                  height: 180,
-                  color: AppColors.midnightFaithDark,
-                  alignment: Alignment.center,
-                  child: const Icon(
-                    Icons.image_not_supported_outlined,
-                    color: AppColors.softMist,
-                  ),
-                ),
-              ),
-            ),
+          _DevotionalCoverImage(
+            imageUrl: devotional.previewImageUrl ?? devotional.coverImageUrl,
+            focusY: devotional.coverImageFocusY,
+            onTap: onOpen,
+          ),
           Padding(
-            padding: const EdgeInsets.all(AppSpacing.lg),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.md,
+              AppSpacing.md,
+              AppSpacing.md,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Text(
+                  l10n.devotionalsMine,
+                  style: AppTextStyles.labelSmall.copyWith(
+                    color: AppColors.holyGold,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                if (referenceLabel != null) ...[
+                  const SizedBox(height: AppSpacing.sm),
+                  Text(
+                    referenceLabel,
+                    style: AppTextStyles.referenceSmall.copyWith(
+                      color: AppColors.holyGold,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  devotional.title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.headline2.copyWith(
+                    color: AppColors.pureWhite,
+                    fontWeight: FontWeight.w700,
+                    height: 1.2,
+                  ),
+                ),
+                if (devotional.previewText.isNotEmpty) ...[
+                  const SizedBox(height: AppSpacing.sm),
+                  Text(
+                    devotional.previewText,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: AppColors.softMist.withValues(alpha: 0.84),
+                      height: 1.55,
+                    ),
+                  ),
+                ],
+                const SizedBox(height: AppSpacing.md),
                 Wrap(
                   spacing: AppSpacing.sm,
                   runSpacing: AppSpacing.sm,
                   children: [
+                    _MetaChip(
+                      icon: Icons.schedule_rounded,
+                      label:
+                          '${devotional.estimatedReadTime} ${context.l10n.devotionalMinutesShort}',
+                    ),
                     _StatusPill(label: _statusLabel(l10n, devotional.status)),
                     _StatusPill(
                       label: _moderationLabel(l10n, devotional),
                       isWarning: devotional.moderationReason != null,
                     ),
                   ],
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                Text(
-                  devotional.title,
-                  style: AppTextStyles.headline3.copyWith(
-                    color: AppColors.pureWhite,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  devotional.previewText,
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    color: AppColors.softMist,
-                  ),
                 ),
                 if (devotional.moderationReason != null &&
                     devotional.moderationReason!.isNotEmpty) ...[
@@ -1029,49 +979,40 @@ class _OwnerDevotionalCard extends StatelessWidget {
                 Wrap(
                   spacing: AppSpacing.sm,
                   runSpacing: AppSpacing.sm,
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
-                    OutlinedButton(
-                      onPressed: isBusy ? null : onOpen,
-                      child: Text(l10n.devotionalOpenDetail),
+                    _ReadMoreAction(
+                      key: Key('owner-devotional-open-${devotional.id}'),
+                      onTap: onOpen,
                     ),
-                    if (devotional.status != DevotionalStatus.archived)
-                      OutlinedButton(
-                        onPressed: isBusy ? null : onEdit,
-                        child: Text(l10n.editDevotional),
-                      ),
+                    _OwnerActionButton(
+                      label: l10n.editDevotional,
+                      onPressed: isBusy ? null : onEdit,
+                    ),
                     if (onPublish != null)
-                      ElevatedButton(
+                      _OwnerActionButton(
+                        label:
+                            pendingAction == _OwnerDevotionalAction.publishing
+                            ? l10n.devotionalPublishingAction
+                            : l10n.publish,
                         onPressed: onPublish,
-                        child: _ActionButtonContent(
-                          isLoading:
-                              pendingAction ==
-                              _OwnerDevotionalAction.publishing,
-                          label:
-                              pendingAction == _OwnerDevotionalAction.publishing
-                              ? l10n.devotionalPublishingAction
-                              : l10n.publish,
-                          spinnerColor: AppColors.midnightFaith,
-                          textColor: AppColors.midnightFaith,
-                        ),
+                        filled: true,
+                        isLoading:
+                            pendingAction == _OwnerDevotionalAction.publishing,
                       ),
                     if (onArchive != null)
-                      TextButton(
+                      _OwnerActionButton(
+                        label: pendingAction == _OwnerDevotionalAction.archiving
+                            ? l10n.devotionalArchivingAction
+                            : l10n.devotionalArchiveAction,
                         onPressed: onArchive,
-                        child: _ActionButtonContent(
-                          isLoading:
-                              pendingAction == _OwnerDevotionalAction.archiving,
-                          label:
-                              pendingAction == _OwnerDevotionalAction.archiving
-                              ? l10n.devotionalArchivingAction
-                              : l10n.devotionalArchiveAction,
-                          spinnerColor: AppColors.holyGold,
-                          textColor: AppColors.holyGold,
-                        ),
+                        isLoading:
+                            pendingAction == _OwnerDevotionalAction.archiving,
                       ),
                   ],
                 ),
                 if (pendingAction != null) ...[
-                  const SizedBox(height: AppSpacing.sm),
+                  const SizedBox(height: AppSpacing.md),
                   _ActionFeedbackBanner(action: pendingAction!),
                 ],
               ],
@@ -1105,47 +1046,6 @@ class _OwnerDevotionalCard extends StatelessWidget {
 }
 
 enum _OwnerDevotionalAction { publishing, archiving }
-
-class _ActionButtonContent extends StatelessWidget {
-  const _ActionButtonContent({
-    required this.isLoading,
-    required this.label,
-    required this.spinnerColor,
-    required this.textColor,
-  });
-
-  final bool isLoading;
-  final String label;
-  final Color spinnerColor;
-  final Color textColor;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        if (isLoading) ...[
-          SizedBox(
-            width: 16,
-            height: 16,
-            child: CircularProgressIndicator(
-              strokeWidth: 2,
-              valueColor: AlwaysStoppedAnimation<Color>(spinnerColor),
-            ),
-          ),
-          const SizedBox(width: AppSpacing.sm),
-        ],
-        Text(
-          label,
-          style: AppTextStyles.labelMedium.copyWith(
-            color: textColor,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ],
-    );
-  }
-}
 
 class _ActionFeedbackBanner extends StatelessWidget {
   const _ActionFeedbackBanner({required this.action});
@@ -1215,7 +1115,9 @@ class _StatusSelector extends StatelessWidget {
       children: [
         Text(
           l10n.devotionalsStatusLabel,
-          style: AppTextStyles.bodySmall.copyWith(color: AppColors.softMist),
+          style: AppTextStyles.bodySmall.copyWith(
+            color: AppColors.softMist.withValues(alpha: 0.82),
+          ),
         ),
         const SizedBox(height: AppSpacing.sm),
         Wrap(
@@ -1263,8 +1165,333 @@ class _FilterChip extends StatelessWidget {
       onSelected: (_) => onTap(),
       selectedColor: AppColors.holyGold,
       backgroundColor: AppColors.inputBackground,
+      side: BorderSide(
+        color: selected
+            ? Colors.transparent
+            : AppColors.pureWhite.withValues(alpha: 0.08),
+      ),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppBorderRadius.full),
+      ),
       labelStyle: AppTextStyles.labelSmall.copyWith(
         color: selected ? AppColors.midnightFaith : AppColors.softMist,
+        fontWeight: FontWeight.w700,
+      ),
+    );
+  }
+}
+
+class _DevotionalSurfaceCard extends StatelessWidget {
+  const _DevotionalSurfaceCard({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: AppSpacing.lg),
+      decoration: BoxDecoration(
+        color: AppColors.midnightFaith.withValues(alpha: 0.92),
+        borderRadius: AppBorderRadius.card,
+        boxShadow: AppShadows.cardShadow,
+        border: Border.all(color: AppColors.pureWhite.withValues(alpha: 0.08)),
+      ),
+      child: child,
+    );
+  }
+}
+
+class _DevotionalCoverImage extends StatelessWidget {
+  const _DevotionalCoverImage({
+    required this.imageUrl,
+    required this.focusY,
+    this.onTap,
+  });
+
+  final String? imageUrl;
+  final double focusY;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final effectiveImageUrl = imageUrl;
+    final image = effectiveImageUrl != null && effectiveImageUrl.isNotEmpty
+        ? CachedNetworkImage(
+            imageUrl: effectiveImageUrl,
+            fit: BoxFit.cover,
+            alignment: Alignment(0, focusY),
+            errorWidget: (context, url, error) => _fallback(),
+          )
+        : _fallback();
+
+    final child = ClipRRect(
+      borderRadius: const BorderRadius.vertical(
+        top: Radius.circular(AppBorderRadius.lg),
+      ),
+      child: AspectRatio(aspectRatio: 1.28, child: image),
+    );
+
+    if (onTap == null) return child;
+
+    return InkWell(onTap: onTap, child: child);
+  }
+
+  Widget _fallback() {
+    return Container(
+      color: AppColors.midnightFaithDark,
+      alignment: Alignment.center,
+      child: const Icon(
+        Icons.image_not_supported_outlined,
+        color: AppColors.softMist,
+      ),
+    );
+  }
+}
+
+class _AuthorHeader extends StatelessWidget {
+  const _AuthorHeader({
+    required this.authorName,
+    required this.handle,
+    required this.avatarUrl,
+    required this.following,
+    this.onTap,
+  });
+
+  final String authorName;
+  final String? handle;
+  final String? avatarUrl;
+  final bool following;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final avatar = CircleAvatar(
+      radius: 18,
+      backgroundColor: AppColors.holyGold.withValues(alpha: 0.18),
+      backgroundImage: avatarUrl != null && avatarUrl!.isNotEmpty
+          ? CachedNetworkImageProvider(avatarUrl!)
+          : null,
+      child: avatarUrl == null || avatarUrl!.isEmpty
+          ? Text(
+              authorName.isNotEmpty ? authorName.characters.first : '?',
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.holyGold,
+                fontWeight: FontWeight.w700,
+              ),
+            )
+          : null,
+    );
+
+    final content = Row(
+      children: [
+        avatar,
+        const SizedBox(width: AppSpacing.sm),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                authorName,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: AppColors.pureWhite,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              if (handle != null && handle!.isNotEmpty)
+                Text(
+                  '@$handle',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: AppColors.softMist.withValues(alpha: 0.72),
+                  ),
+                ),
+            ],
+          ),
+        ),
+        if (following)
+          Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.sm,
+              vertical: AppSpacing.xs,
+            ),
+            decoration: BoxDecoration(
+              color: AppColors.holyGold.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(AppBorderRadius.full),
+              border: Border.all(
+                color: AppColors.holyGold.withValues(alpha: 0.18),
+              ),
+            ),
+            child: Text(
+              context.l10n.devotionalsFollowingBadge.toUpperCase(),
+              style: AppTextStyles.labelSmall.copyWith(
+                color: AppColors.holyGold,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+      ],
+    );
+
+    if (onTap == null) return content;
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(AppBorderRadius.md),
+      onTap: onTap,
+      child: content,
+    );
+  }
+}
+
+class _ReadMoreAction extends StatelessWidget {
+  const _ReadMoreAction({super.key, required this.onTap});
+
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(AppBorderRadius.full),
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.xs,
+          vertical: AppSpacing.sm,
+        ),
+        child: Text(
+          '${context.l10n.devotionalOpenDetail} ->',
+          style: AppTextStyles.labelMedium.copyWith(
+            color: AppColors.holyGold,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CardIconButton extends StatelessWidget {
+  const _CardIconButton({
+    super.key,
+    required this.onPressed,
+    required this.icon,
+    required this.tooltip,
+    this.active = false,
+    this.isLoading = false,
+    this.activeColor = AppColors.holyGold,
+  });
+
+  final VoidCallback? onPressed;
+  final IconData icon;
+  final String tooltip;
+  final bool active;
+  final bool isLoading;
+  final Color activeColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final foregroundColor = active ? activeColor : AppColors.pureWhite;
+
+    return Tooltip(
+      message: tooltip,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppBorderRadius.md),
+        onTap: onPressed,
+        child: Ink(
+          width: 48,
+          height: 48,
+          decoration: BoxDecoration(
+            color: active
+                ? activeColor.withValues(alpha: 0.14)
+                : AppColors.pureWhite.withValues(alpha: 0.04),
+            borderRadius: BorderRadius.circular(AppBorderRadius.md),
+            border: Border.all(
+              color: active
+                  ? activeColor.withValues(alpha: 0.24)
+                  : AppColors.pureWhite.withValues(alpha: 0.08),
+            ),
+          ),
+          child: Center(
+            child: isLoading
+                ? SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        foregroundColor,
+                      ),
+                    ),
+                  )
+                : Icon(icon, size: 20, color: foregroundColor),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _OwnerActionButton extends StatelessWidget {
+  const _OwnerActionButton({
+    required this.label,
+    required this.onPressed,
+    this.filled = false,
+    this.isLoading = false,
+  });
+
+  final String label;
+  final VoidCallback? onPressed;
+  final bool filled;
+  final bool isLoading;
+
+  @override
+  Widget build(BuildContext context) {
+    final backgroundColor = filled
+        ? AppColors.holyGold
+        : AppColors.pureWhite.withValues(alpha: 0.04);
+    final textColor = filled ? AppColors.midnightFaithDark : AppColors.holyGold;
+    final borderColor = filled
+        ? Colors.transparent
+        : AppColors.holyGold.withValues(alpha: 0.24);
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(AppBorderRadius.full),
+      onTap: onPressed,
+      child: Ink(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.sm,
+        ),
+        decoration: BoxDecoration(
+          color: backgroundColor,
+          borderRadius: BorderRadius.circular(AppBorderRadius.full),
+          border: Border.all(color: borderColor),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (isLoading) ...[
+              SizedBox(
+                width: 14,
+                height: 14,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(textColor),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+            ],
+            Text(
+              label,
+              style: AppTextStyles.labelMedium.copyWith(
+                color: textColor,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1281,8 +1508,8 @@ class _MetaChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: AppColors.pureWhite.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(AppBorderRadius.md),
+        color: AppColors.pureWhite.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(AppBorderRadius.full),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -1291,7 +1518,10 @@ class _MetaChip extends StatelessWidget {
           const SizedBox(width: 6),
           Text(
             label,
-            style: AppTextStyles.bodySmall.copyWith(color: AppColors.softMist),
+            style: AppTextStyles.bodySmall.copyWith(
+              color: AppColors.softMist,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ],
       ),
@@ -1311,8 +1541,9 @@ class _StatusPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.16),
-        borderRadius: BorderRadius.circular(999),
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(AppBorderRadius.full),
+        border: Border.all(color: color.withValues(alpha: 0.18)),
       ),
       child: Text(
         label,
@@ -1393,4 +1624,15 @@ class _ErrorState extends StatelessWidget {
       ),
     );
   }
+}
+
+String? _referenceLabel(Devotional devotional) {
+  final primaryReferences = devotional.primaryReferences;
+  if (primaryReferences.isNotEmpty) {
+    return primaryReferences.first.referenceLabel;
+  }
+  if (devotional.verseReferences.isNotEmpty) {
+    return devotional.verseReferences.first.referenceLabel;
+  }
+  return null;
 }
