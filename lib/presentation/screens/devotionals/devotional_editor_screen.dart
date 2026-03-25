@@ -629,7 +629,6 @@ class _DevotionalEditorScreenState
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      useSafeArea: true,
       builder: (context) => _ReferencePickerSheet(
         existing: existing,
         references: List<DevotionalVerseReference>.from(_references),
@@ -1972,10 +1971,9 @@ class _ReferencePickerSheetState extends ConsumerState<_ReferencePickerSheet> {
           AppSpacing.lg,
           AppSpacing.lg,
         ),
-        child: ConstrainedBox(
-          constraints: BoxConstraints(maxHeight: maxHeight),
+        child: SizedBox(
+          height: maxHeight,
           child: Column(
-            mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
@@ -1993,9 +1991,8 @@ class _ReferencePickerSheetState extends ConsumerState<_ReferencePickerSheet> {
                 ),
               ),
               const SizedBox(height: AppSpacing.lg),
-              Flexible(
+              Expanded(
                 child: ListView(
-                  shrinkWrap: true,
                   padding: const EdgeInsets.only(bottom: AppSpacing.sm),
                   keyboardDismissBehavior:
                       ScrollViewKeyboardDismissBehavior.onDrag,
