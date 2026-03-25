@@ -155,11 +155,16 @@ class DevotionalsApiClient {
     List<DevotionalVerseReference>? verseReferences,
     String? imageAssetId,
     double? coverImageFocusY,
+    bool clearImageAsset = false,
   }) async {
     final payload = <String, dynamic>{};
     if (title != null) payload['title'] = title;
     if (content != null) payload['content'] = content;
-    if (imageAssetId != null) payload['image_asset_id'] = imageAssetId;
+    if (clearImageAsset) {
+      payload['image_asset_id'] = null;
+    } else if (imageAssetId != null) {
+      payload['image_asset_id'] = imageAssetId;
+    }
     if (coverImageFocusY != null) {
       payload['cover_image_focus_y'] = coverImageFocusY;
     }

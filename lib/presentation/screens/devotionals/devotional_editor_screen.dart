@@ -42,6 +42,7 @@ class _DevotionalEditorScreenState
   final List<DevotionalVerseReference> _references = [];
   String? _coverImageUrl;
   String? _imageAssetId;
+  bool _clearImageAsset = false;
   double _coverImageFocusY = 0;
   bool _isLoading = false;
   bool _isSaving = false;
@@ -80,6 +81,8 @@ class _DevotionalEditorScreenState
           .getDevotional(widget.devotionalId!);
       _titleController.text = devotional.title;
       _coverImageUrl = devotional.coverImageUrl;
+      _imageAssetId = null;
+      _clearImageAsset = false;
       _coverImageFocusY = devotional.coverImageFocusY;
       _references
         ..clear()
@@ -387,9 +390,31 @@ class _DevotionalEditorScreenState
       final uploaded = await ref
           .read(devotionalsRepositoryProvider)
           .uploadImage(File(image.path));
+      if (!mounted) return;
+
+      if (!uploaded.attachable ||
+          uploaded.imageModerationStatus == 'REJECTED') {
+        setState(() {
+          _imageAssetId = null;
+          _coverImageUrl = null;
+          _clearImageAsset = true;
+          _coverImageFocusY = 0;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              uploaded.moderationReason ?? context.l10n.devotionalImageRejected,
+            ),
+            backgroundColor: Colors.red.shade700,
+          ),
+        );
+        return;
+      }
+
       setState(() {
         _imageAssetId = uploaded.assetId;
         _coverImageUrl = uploaded.previewImageUrl;
+        _clearImageAsset = false;
         _coverImageFocusY = 0;
       });
     } catch (error) {
@@ -401,6 +426,10 @@ class _DevotionalEditorScreenState
                 error,
                 l10n: context.l10n,
                 fallbackMessage: context.l10n.devotionalsImageUploadError,
+                businessCodeMessages: {
+                  'OPENAI_MODERATION_UNAVAILABLE':
+                      context.l10n.devotionalsModerationUnavailable,
+                },
               ),
             ),
             backgroundColor: Colors.red.shade700,
@@ -472,6 +501,7 @@ class _DevotionalEditorScreenState
           verseReferences: _references,
           imageAssetId: _imageAssetId,
           coverImageFocusY: _coverImageUrl == null ? null : _coverImageFocusY,
+          clearImageAsset: _clearImageAsset,
         );
 
         if (publish && saved.status != DevotionalStatus.published) {
@@ -504,6 +534,8 @@ class _DevotionalEditorScreenState
                 businessCodeMessages: {
                   'DEVOTIONAL_PUBLISH_BLOCKED':
                       context.l10n.devotionalPublishBlocked,
+                  'OPENAI_MODERATION_UNAVAILABLE':
+                      context.l10n.devotionalsModerationUnavailable,
                 },
               ),
             ),

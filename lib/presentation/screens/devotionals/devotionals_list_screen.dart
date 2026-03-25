@@ -4,6 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:holyverso/core/errors/app_error_mapper.dart';
 import 'package:holyverso/core/l10n/app_localizations.dart';
 import 'package:holyverso/core/theme/app_colors.dart';
 import 'package:holyverso/core/theme/app_design_tokens.dart';
@@ -295,12 +296,34 @@ class _MyDevotionalsTabState extends ConsumerState<_MyDevotionalsTab> {
   }
 
   Future<void> _publish(Devotional devotional) async {
-    await ref
-        .read(devotionalsRepositoryProvider)
-        .publishDevotional(devotional.id);
-    if (!mounted) return;
-    await ref.read(devotionalsListControllerProvider.notifier).refresh();
-    await ref.read(devotionalsFeedControllerProvider.notifier).refresh();
+    try {
+      await ref
+          .read(devotionalsRepositoryProvider)
+          .publishDevotional(devotional.id);
+      if (!mounted) return;
+      await ref.read(devotionalsListControllerProvider.notifier).refresh();
+      await ref.read(devotionalsFeedControllerProvider.notifier).refresh();
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppErrorMapper.toMessage(
+              error,
+              l10n: context.l10n,
+              fallbackMessage: context.l10n.devotionalsSaveError,
+              businessCodeMessages: {
+                'DEVOTIONAL_PUBLISH_BLOCKED':
+                    context.l10n.devotionalPublishBlocked,
+                'OPENAI_MODERATION_UNAVAILABLE':
+                    context.l10n.devotionalsModerationUnavailable,
+              },
+            ),
+          ),
+          backgroundColor: Colors.red.shade700,
+        ),
+      );
+    }
   }
 
   Future<void> _archive(Devotional devotional) async {

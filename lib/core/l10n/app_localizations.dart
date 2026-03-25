@@ -182,6 +182,8 @@ class AppLocalizations {
   String get devotionalsSaveError => _string('devotionalsSaveError');
   String get devotionalsImageUploadError =>
       _string('devotionalsImageUploadError');
+  String get devotionalsModerationUnavailable =>
+      _string('devotionalsModerationUnavailable');
 
   String get createDevotional => _string('createDevotional');
   String get editDevotional => _string('editDevotional');
@@ -217,6 +219,7 @@ class AppLocalizations {
   String get devotionalPrimaryReferenceRequired =>
       _string('devotionalPrimaryReferenceRequired');
   String get devotionalPublishBlocked => _string('devotionalPublishBlocked');
+  String get devotionalImageRejected => _string('devotionalImageRejected');
   String get devotionalDetailTitle => _string('devotionalDetailTitle');
   String get devotionalSave => _string('devotionalSave');
   String get devotionalOpenDetail => _string('devotionalOpenDetail');
@@ -440,6 +443,8 @@ class AppLocalizations {
       'devotionalsSaveError': 'No pudimos guardar el devocional.',
       'devotionalsImageUploadError':
           'No pudimos subir la imagen. Inténtalo nuevamente.',
+      'devotionalsModerationUnavailable':
+          'La revisión de contenido no está disponible en este momento. Inténtalo de nuevo.',
       'createDevotional': 'Crear devocional',
       'editDevotional': 'Editar devocional',
       'devotionalTitleLabel': 'Título del devocional',
@@ -475,6 +480,8 @@ class AppLocalizations {
           'Agrega al menos una referencia principal.',
       'devotionalPublishBlocked':
           'No pudimos publicar el devocional por una revisión de contenido.',
+      'devotionalImageRejected':
+          'La imagen fue rechazada. Puedes continuar y publicar solo texto.',
       'devotionalDetailTitle': 'Detalle del devocional',
       'devotionalSave': 'Guardar',
       'devotionalOpenDetail': 'Leer completo',
@@ -672,6 +679,8 @@ class AppLocalizations {
       'devotionalsSaveError': 'We could not save the devotional.',
       'devotionalsImageUploadError':
           'We could not upload the image. Please try again.',
+      'devotionalsModerationUnavailable':
+          'Content review is unavailable right now. Please try again.',
       'createDevotional': 'Create devotional',
       'editDevotional': 'Edit devotional',
       'devotionalTitleLabel': 'Devotional title',
@@ -706,6 +715,8 @@ class AppLocalizations {
           'Add at least one primary reference.',
       'devotionalPublishBlocked':
           'We could not publish the devotional due to content review.',
+      'devotionalImageRejected':
+          'The image was rejected. You can continue and publish text only.',
       'devotionalDetailTitle': 'Devotional detail',
       'devotionalSave': 'Save',
       'devotionalOpenDetail': 'Read full',

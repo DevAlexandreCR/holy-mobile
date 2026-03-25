@@ -6,6 +6,7 @@ class UploadedDevotionalImage {
     required this.previewImageUrl,
     required this.width,
     required this.height,
+    required this.moderationReason,
   });
 
   final String assetId;
@@ -14,6 +15,7 @@ class UploadedDevotionalImage {
   final String? previewImageUrl;
   final int? width;
   final int? height;
+  final String? moderationReason;
 
   factory UploadedDevotionalImage.fromMap(Map<String, dynamic> map) {
     return UploadedDevotionalImage(
@@ -24,6 +26,7 @@ class UploadedDevotionalImage {
       previewImageUrl: map['preview_image_url']?.toString(),
       width: (map['width'] as num?)?.toInt(),
       height: (map['height'] as num?)?.toInt(),
+      moderationReason: map['moderation_reason']?.toString(),
     );
   }
 }

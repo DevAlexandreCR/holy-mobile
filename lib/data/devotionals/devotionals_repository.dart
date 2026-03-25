@@ -67,6 +67,7 @@ class DevotionalsRepository {
     List<DevotionalVerseReference>? verseReferences,
     String? imageAssetId,
     double? coverImageFocusY,
+    bool clearImageAsset = false,
   }) {
     return _client.updateDevotional(
       devotionalId: devotionalId,
@@ -75,6 +76,7 @@ class DevotionalsRepository {
       verseReferences: verseReferences,
       imageAssetId: imageAssetId,
       coverImageFocusY: coverImageFocusY,
+      clearImageAsset: clearImageAsset,
     );
   }
 
