@@ -101,6 +101,7 @@ class _DevotionalDetailScreenState
       context: context,
       backgroundColor: AppColors.midnightFaith,
       showDragHandle: true,
+      isScrollControlled: true,
       builder: (context) {
         final options = [
           ('INAPPROPRIATE', l10n.devotionalReportInappropriate),
@@ -112,58 +113,68 @@ class _DevotionalDetailScreenState
           ('MISLEADING', l10n.devotionalReportMisleading),
           ('OTHER', l10n.devotionalReportOther),
         ];
+        final mediaQuery = MediaQuery.of(context);
 
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.lg,
-            AppSpacing.md,
-            AppSpacing.lg,
-            AppSpacing.lg,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                l10n.devotionalReportTitle,
-                style: AppTextStyles.headline3.copyWith(
-                  color: AppColors.pureWhite,
-                  fontWeight: FontWeight.w700,
-                ),
+        return SafeArea(
+          top: false,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: mediaQuery.size.height * 0.82,
+            ),
+            child: SingleChildScrollView(
+              padding: EdgeInsets.fromLTRB(
+                AppSpacing.lg,
+                AppSpacing.md,
+                AppSpacing.lg,
+                mediaQuery.viewInsets.bottom + AppSpacing.lg,
               ),
-              const SizedBox(height: AppSpacing.sm),
-              ...options.map(
-                (option) => ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(
-                    option.$2,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    l10n.devotionalReportTitle,
+                    style: AppTextStyles.headline3.copyWith(
+                      color: AppColors.pureWhite,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  ...options.map(
+                    (option) => ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(
+                        option.$2,
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: AppColors.pureWhite,
+                        ),
+                      ),
+                      onTap: () => Navigator.of(context).pop(option.$1),
+                    ),
+                  ),
+                  TextField(
+                    controller: detailController,
+                    minLines: 2,
+                    maxLines: 4,
+                    decoration: InputDecoration(
+                      hintText: l10n.devotionalReportDetailsHint,
+                    ),
                     style: AppTextStyles.bodyMedium.copyWith(
                       color: AppColors.pureWhite,
                     ),
                   ),
-                  onTap: () => Navigator.of(context).pop(option.$1),
-                ),
+                  const SizedBox(height: AppSpacing.md),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () =>
+                          Navigator.of(context).pop('WITH_DETAILS'),
+                      child: Text(l10n.saveAction),
+                    ),
+                  ),
+                ],
               ),
-              TextField(
-                controller: detailController,
-                minLines: 2,
-                maxLines: 4,
-                decoration: InputDecoration(
-                  hintText: l10n.devotionalReportDetailsHint,
-                ),
-                style: AppTextStyles.bodyMedium.copyWith(
-                  color: AppColors.pureWhite,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.md),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () => Navigator.of(context).pop('WITH_DETAILS'),
-                  child: Text(l10n.saveAction),
-                ),
-              ),
-            ],
+            ),
           ),
         );
       },
