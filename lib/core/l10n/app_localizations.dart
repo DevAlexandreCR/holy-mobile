@@ -220,6 +220,12 @@ class AppLocalizations {
       _string('devotionalPrimaryReferenceRequired');
   String get devotionalPublishBlocked => _string('devotionalPublishBlocked');
   String get devotionalImageRejected => _string('devotionalImageRejected');
+  String get devotionalImageModerationInProgress =>
+      _string('devotionalImageModerationInProgress');
+  String get devotionalPublishModerationInProgress =>
+      _string('devotionalPublishModerationInProgress');
+  String get devotionalPublishModerationHelper =>
+      _string('devotionalPublishModerationHelper');
   String get devotionalDetailTitle => _string('devotionalDetailTitle');
   String get devotionalSave => _string('devotionalSave');
   String get devotionalOpenDetail => _string('devotionalOpenDetail');
@@ -482,6 +488,11 @@ class AppLocalizations {
           'No pudimos publicar el devocional por una revisión de contenido.',
       'devotionalImageRejected':
           'La imagen fue rechazada. Puedes continuar y publicar solo texto.',
+      'devotionalImageModerationInProgress': 'Revisando imagen...',
+      'devotionalPublishModerationInProgress':
+          'Revisando tu devocional antes de publicarlo...',
+      'devotionalPublishModerationHelper':
+          'Esto puede tardar unos segundos. No cierres esta pantalla.',
       'devotionalDetailTitle': 'Detalle del devocional',
       'devotionalSave': 'Guardar',
       'devotionalOpenDetail': 'Leer completo',
@@ -717,6 +728,11 @@ class AppLocalizations {
           'We could not publish the devotional due to content review.',
       'devotionalImageRejected':
           'The image was rejected. You can continue and publish text only.',
+      'devotionalImageModerationInProgress': 'Reviewing image...',
+      'devotionalPublishModerationInProgress':
+          'Reviewing your devotional before publishing...',
+      'devotionalPublishModerationHelper':
+          'This can take a few seconds. Do not close this screen.',
       'devotionalDetailTitle': 'Devotional detail',
       'devotionalSave': 'Save',
       'devotionalOpenDetail': 'Read full',

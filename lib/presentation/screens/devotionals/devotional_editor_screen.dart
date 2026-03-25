@@ -735,66 +735,74 @@ class _DevotionalEditorScreenState
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final isPublishing = _isSaving && _isPublishing;
 
-    return Scaffold(
-      backgroundColor: AppColors.midnightFaith,
-      appBar: _isEditorFullscreen
-          ? null
-          : AppBar(
-              title: Text(
-                widget.devotionalId == null
-                    ? l10n.createDevotional
-                    : l10n.editDevotional,
-                style: AppTextStyles.headline3.copyWith(
-                  color: AppColors.pureWhite,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-      body: PopScope(
-        canPop: !_isEditorFullscreen,
-        onPopInvokedWithResult: (didPop, _) {
-          if (!didPop && _isEditorFullscreen) {
-            _exitFullscreenEditor();
-          }
-        },
-        child: Stack(
-          children: [
-            Container(
-              decoration: BoxDecoration(gradient: AppColors.midnightGradient),
-            ),
-            SafeArea(
-              child: _isLoading
-                  ? const Center(
-                      child: CircularProgressIndicator(
-                        color: AppColors.holyGold,
-                      ),
-                    )
-                  : _isEditorFullscreen
-                  ? _buildFullscreenEditor(l10n)
-                  : ListView(
-                      padding: const EdgeInsets.fromLTRB(
-                        AppSpacing.lg,
-                        AppSpacing.sm,
-                        AppSpacing.lg,
-                        AppSpacing.xl,
-                      ),
-                      children: [
-                        _buildTitleField(l10n),
-                        const SizedBox(height: AppSpacing.lg),
-                        _buildCoverImage(l10n),
-                        const SizedBox(height: AppSpacing.lg),
-                        _buildReferencesSection(l10n),
-                        const SizedBox(height: AppSpacing.lg),
-                        _buildEditor(l10n),
-                        const SizedBox(height: AppSpacing.xl),
-                        _buildActions(l10n),
-                      ],
+    return Stack(
+      children: [
+        Scaffold(
+          backgroundColor: AppColors.midnightFaith,
+          appBar: _isEditorFullscreen
+              ? null
+              : AppBar(
+                  title: Text(
+                    widget.devotionalId == null
+                        ? l10n.createDevotional
+                        : l10n.editDevotional,
+                    style: AppTextStyles.headline3.copyWith(
+                      color: AppColors.pureWhite,
+                      fontWeight: FontWeight.w700,
                     ),
+                  ),
+                ),
+          body: PopScope(
+            canPop: !_isEditorFullscreen && !isPublishing,
+            onPopInvokedWithResult: (didPop, _) {
+              if (!didPop && _isEditorFullscreen) {
+                _exitFullscreenEditor();
+              }
+            },
+            child: Stack(
+              children: [
+                Container(
+                  decoration: BoxDecoration(
+                    gradient: AppColors.midnightGradient,
+                  ),
+                ),
+                SafeArea(
+                  child: _isLoading
+                      ? const Center(
+                          child: CircularProgressIndicator(
+                            color: AppColors.holyGold,
+                          ),
+                        )
+                      : _isEditorFullscreen
+                      ? _buildFullscreenEditor(l10n)
+                      : ListView(
+                          padding: const EdgeInsets.fromLTRB(
+                            AppSpacing.lg,
+                            AppSpacing.sm,
+                            AppSpacing.lg,
+                            AppSpacing.xl,
+                          ),
+                          children: [
+                            _buildTitleField(l10n),
+                            const SizedBox(height: AppSpacing.lg),
+                            _buildCoverImage(l10n),
+                            const SizedBox(height: AppSpacing.lg),
+                            _buildReferencesSection(l10n),
+                            const SizedBox(height: AppSpacing.lg),
+                            _buildEditor(l10n),
+                            const SizedBox(height: AppSpacing.xl),
+                            _buildActions(l10n),
+                          ],
+                        ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
-      ),
+        if (isPublishing) _buildPublishingOverlay(l10n),
+      ],
     );
   }
 
@@ -852,6 +860,8 @@ class _DevotionalEditorScreenState
   }
 
   Widget _buildCoverImage(AppLocalizations l10n) {
+    final hasImage = _coverImageUrl != null;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -860,23 +870,121 @@ class _DevotionalEditorScreenState
           style: AppTextStyles.labelLarge.copyWith(color: AppColors.pureWhite),
         ),
         const SizedBox(height: AppSpacing.sm),
-        if (_coverImageUrl != null) ...[
-          ClipRRect(
-            borderRadius: AppBorderRadius.card,
-            child: GestureDetector(
-              onVerticalDragUpdate: _adjustCoverFocus,
-              child: CachedNetworkImage(
-                imageUrl: _coverImageUrl!,
+        Stack(
+          children: [
+            ClipRRect(
+              borderRadius: AppBorderRadius.card,
+              child: Container(
                 height: 180,
                 width: double.infinity,
-                fit: BoxFit.cover,
-                alignment: Alignment(0, _coverImageFocusY),
-                errorWidget: (context, url, error) =>
-                    Container(height: 180, color: AppColors.midnightFaithDark),
+                decoration: BoxDecoration(
+                  color: AppColors.inputBackground,
+                  border: Border.all(
+                    color: AppColors.inputBorder.withValues(alpha: 0.7),
+                  ),
+                  borderRadius: AppBorderRadius.card,
+                ),
+                child: hasImage
+                    ? IgnorePointer(
+                        ignoring: _isUploadingCover,
+                        child: GestureDetector(
+                          onVerticalDragUpdate: _adjustCoverFocus,
+                          child: CachedNetworkImage(
+                            imageUrl: _coverImageUrl!,
+                            fit: BoxFit.cover,
+                            alignment: Alignment(0, _coverImageFocusY),
+                            errorWidget: (context, url, error) =>
+                                Container(color: AppColors.midnightFaithDark),
+                          ),
+                        ),
+                      )
+                    : Container(
+                        padding: const EdgeInsets.all(AppSpacing.lg),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              AppColors.inputBackground,
+                              AppColors.midnightFaithDark,
+                            ],
+                          ),
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.image_outlined,
+                              size: 36,
+                              color: AppColors.holyGold.withValues(alpha: 0.9),
+                            ),
+                            const SizedBox(height: AppSpacing.sm),
+                            Text(
+                              l10n.devotionalSelectCover,
+                              style: AppTextStyles.labelMedium.copyWith(
+                                color: AppColors.pureWhite,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+                      ),
               ),
             ),
-          ),
-          const SizedBox(height: AppSpacing.xs),
+            if (_isUploadingCover)
+              Positioned.fill(
+                child: ClipRRect(
+                  borderRadius: AppBorderRadius.card,
+                  child: ColoredBox(
+                    color: AppColors.midnightFaithDark.withValues(alpha: 0.82),
+                    child: Center(
+                      child: Container(
+                        margin: const EdgeInsets.all(AppSpacing.lg),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.lg,
+                          vertical: AppSpacing.md,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.midnightFaith.withValues(
+                            alpha: 0.92,
+                          ),
+                          borderRadius: AppBorderRadius.input,
+                          border: Border.all(
+                            color: AppColors.holyGold.withValues(alpha: 0.4),
+                          ),
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const SizedBox(
+                              height: 24,
+                              width: 24,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.4,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  AppColors.holyGold,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: AppSpacing.sm),
+                            Text(
+                              l10n.devotionalImageModerationInProgress,
+                              style: AppTextStyles.labelMedium.copyWith(
+                                color: AppColors.pureWhite,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        if (hasImage)
           Row(
             children: [
               Expanded(
@@ -888,7 +996,7 @@ class _DevotionalEditorScreenState
                 ),
               ),
               TextButton.icon(
-                onPressed: _centerCoverImage,
+                onPressed: _isUploadingCover ? null : _centerCoverImage,
                 style: TextButton.styleFrom(
                   foregroundColor: AppColors.holyGold,
                   minimumSize: const Size(0, 0),
@@ -899,7 +1007,6 @@ class _DevotionalEditorScreenState
               ),
             ],
           ),
-        ],
         const SizedBox(height: AppSpacing.sm),
         ElevatedButton.icon(
           onPressed: _isUploadingCover ? null : _pickCoverImage,
@@ -911,6 +1018,66 @@ class _DevotionalEditorScreenState
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildPublishingOverlay(AppLocalizations l10n) {
+    return Positioned.fill(
+      child: Material(
+        color: AppColors.midnightFaithDark.withValues(alpha: 0.78),
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 320),
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: AppColors.midnightFaith,
+                  borderRadius: AppBorderRadius.card,
+                  border: Border.all(
+                    color: AppColors.holyGold.withValues(alpha: 0.32),
+                  ),
+                  boxShadow: AppShadows.cardShadow,
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(AppSpacing.lg),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const SizedBox(
+                        height: 28,
+                        width: 28,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.6,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            AppColors.holyGold,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      Text(
+                        l10n.devotionalPublishModerationInProgress,
+                        style: AppTextStyles.labelLarge.copyWith(
+                          color: AppColors.pureWhite,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: AppSpacing.xs),
+                      Text(
+                        l10n.devotionalPublishModerationHelper,
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: AppColors.softMist.withValues(alpha: 0.9),
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 
@@ -1442,7 +1609,6 @@ class _DevotionalEditorScreenState
         HolyButton(
           label: l10n.publish,
           onPressed: _isSaving ? null : () => _save(publish: true),
-          isLoading: isPublishing,
         ),
         const SizedBox(height: AppSpacing.xs),
         TextButton(
