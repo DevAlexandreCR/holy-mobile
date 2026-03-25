@@ -6,6 +6,7 @@ import 'package:holyverso/domain/core/cursor_paged_result.dart';
 import 'package:holyverso/domain/core/paged_result.dart';
 import 'package:holyverso/domain/devotionals/devotional.dart';
 import 'package:holyverso/domain/devotionals/devotional_comment.dart';
+import 'package:holyverso/domain/devotionals/devotional_feed_mode.dart';
 import 'package:holyverso/domain/devotionals/devotional_status.dart';
 import 'package:holyverso/domain/devotionals/devotional_verse_reference.dart';
 import 'package:holyverso/domain/devotionals/uploaded_devotional_image.dart';
@@ -30,10 +31,11 @@ class DevotionalsRepository {
   }
 
   Future<CursorPagedResult<Devotional>> fetchFeed({
+    required DevotionalFeedMode mode,
     String? cursor,
     int limit = 20,
   }) {
-    return _client.fetchFeed(cursor: cursor, limit: limit);
+    return _client.fetchFeed(mode: mode, cursor: cursor, limit: limit);
   }
 
   Future<void> recordFeedEvents(List<Map<String, dynamic>> events) {

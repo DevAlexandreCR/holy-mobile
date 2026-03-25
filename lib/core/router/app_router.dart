@@ -13,6 +13,8 @@ import 'package:holyverso/presentation/screens/devotionals/devotional_editor_scr
 import 'package:holyverso/presentation/screens/devotionals/devotional_detail_screen.dart';
 import 'package:holyverso/presentation/screens/devotionals/devotional_preview_screen.dart';
 import 'package:holyverso/presentation/screens/devotionals/devotionals_list_screen.dart';
+import 'package:holyverso/presentation/screens/creator_profiles/creator_profile_edit_screen.dart';
+import 'package:holyverso/presentation/screens/creator_profiles/creator_profile_screen.dart';
 import 'package:holyverso/presentation/screens/search/search_screen.dart';
 import 'package:holyverso/presentation/screens/settings/settings_screen.dart';
 import 'package:holyverso/presentation/screens/splash/splash_screen.dart';
@@ -171,6 +173,17 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                   return DevotionalDetailScreen(devotionalId: id);
                 },
               ),
+              GoRoute(
+                path: '/users/me/edit-profile',
+                builder: (context, state) => const CreatorProfileEditScreen(),
+              ),
+              GoRoute(
+                path: '/users/:id',
+                builder: (context, state) {
+                  final id = state.pathParameters['id']!;
+                  return CreatorProfileScreen(creatorId: id);
+                },
+              ),
             ],
           ),
         ],
@@ -190,6 +203,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           location == '/saved' ||
           location == '/settings' ||
           location == '/users' ||
+          location == '/users/me/edit-profile' ||
+          (location.startsWith('/users/') && location != '/users') ||
           location == '/devotionals' ||
           location.startsWith('/devotionals') ||
           location == '/verse/saved';

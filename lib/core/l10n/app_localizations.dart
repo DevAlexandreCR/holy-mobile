@@ -167,6 +167,8 @@ class AppLocalizations {
   String get devotionalsAll => _string('devotionalsAll');
   String get devotionalsPublic => _string('devotionalsPublic');
   String get devotionalsMine => _string('devotionalsMine');
+  String get devotionalsForYou => _string('devotionalsForYou');
+  String get devotionalsFollowing => _string('devotionalsFollowing');
   String get devotionalsDrafts => _string('devotionalsDrafts');
   String get devotionalsPublished => _string('devotionalsPublished');
   String get devotionalsArchived => _string('devotionalsArchived');
@@ -268,6 +270,11 @@ class AppLocalizations {
   String get devotionalsFeedEmptyTitle => _string('devotionalsFeedEmptyTitle');
   String get devotionalsFeedEmptySubtitle =>
       _string('devotionalsFeedEmptySubtitle');
+  String get devotionalsFollowingEmptyTitle =>
+      _string('devotionalsFollowingEmptyTitle');
+  String get devotionalsFollowingEmptySubtitle =>
+      _string('devotionalsFollowingEmptySubtitle');
+  String get devotionalsFollowingBadge => _string('devotionalsFollowingBadge');
   String get devotionalsMyEmptyTitle => _string('devotionalsMyEmptyTitle');
   String get devotionalsMyEmptySubtitle =>
       _string('devotionalsMyEmptySubtitle');
@@ -278,6 +285,34 @@ class AppLocalizations {
   String get writeComment => _string('writeComment');
   String get cancelAction => _string('cancelAction');
   String get saveAction => _string('saveAction');
+  String get creatorProfileTitle => _string('creatorProfileTitle');
+  String get creatorProfileEdit => _string('creatorProfileEdit');
+  String get creatorProfileFollowers => _string('creatorProfileFollowers');
+  String get creatorProfileFollowing => _string('creatorProfileFollowing');
+  String get creatorProfilePublished => _string('creatorProfilePublished');
+  String get creatorProfileDevotionalsSection =>
+      _string('creatorProfileDevotionalsSection');
+  String get creatorProfileEmpty => _string('creatorProfileEmpty');
+  String get creatorProfileFollow => _string('creatorProfileFollow');
+  String get creatorProfileUnfollow => _string('creatorProfileUnfollow');
+  String get creatorProfileFollowError => _string('creatorProfileFollowError');
+  String get creatorProfileLoadError => _string('creatorProfileLoadError');
+  String get creatorProfileSaveError => _string('creatorProfileSaveError');
+  String get creatorProfileEditTitle => _string('creatorProfileEditTitle');
+  String get creatorProfileChangeAvatar =>
+      _string('creatorProfileChangeAvatar');
+  String get creatorProfileRemoveAvatar =>
+      _string('creatorProfileRemoveAvatar');
+  String get creatorProfileSaving => _string('creatorProfileSaving');
+  String get creatorProfileAvatarFallback =>
+      _string('creatorProfileAvatarFallback');
+  String get creatorHandleLabel => _string('creatorHandleLabel');
+  String get creatorHandleHint => _string('creatorHandleHint');
+  String get creatorHandleTaken => _string('creatorHandleTaken');
+  String get creatorHandleInvalid => _string('creatorHandleInvalid');
+  String get creatorBioLabel => _string('creatorBioLabel');
+  String get creatorBioHint => _string('creatorBioHint');
+  String get creatorAvatarRejected => _string('creatorAvatarRejected');
 
   String _string(String key) {
     final langCode =
@@ -445,6 +480,8 @@ class AppLocalizations {
       'devotionalsAll': 'Todos',
       'devotionalsPublic': 'Público',
       'devotionalsMine': 'Mis devocionales',
+      'devotionalsForYou': 'Para ti',
+      'devotionalsFollowing': 'Siguiendo',
       'devotionalsDrafts': 'Borradores',
       'devotionalsPublished': 'Publicados',
       'devotionalsArchived': 'Archivados',
@@ -542,6 +579,10 @@ class AppLocalizations {
       'devotionalsFeedEmptyTitle': 'Todavía no hay devocionales en el feed',
       'devotionalsFeedEmptySubtitle':
           'Cuando la comunidad publique nuevos devocionales, aparecerán aquí.',
+      'devotionalsFollowingEmptyTitle': 'Aún no sigues a creadores cristianos',
+      'devotionalsFollowingEmptySubtitle':
+          'Sigue a alguien desde un devocional para ver aquí sus publicaciones recientes.',
+      'devotionalsFollowingBadge': 'Siguiendo',
       'devotionalsMyEmptyTitle': 'Aún no tienes devocionales',
       'devotionalsMyEmptySubtitle':
           'Crea tu primer devocional y compártelo con la comunidad.',
@@ -552,6 +593,34 @@ class AppLocalizations {
       'writeComment': 'Escribe un comentario...',
       'cancelAction': 'Cancelar',
       'saveAction': 'Guardar',
+      'creatorProfileTitle': 'Perfil',
+      'creatorProfileEdit': 'Editar perfil',
+      'creatorProfileFollowers': 'Seguidores',
+      'creatorProfileFollowing': 'Siguiendo',
+      'creatorProfilePublished': 'Publicados',
+      'creatorProfileDevotionalsSection': 'Devocionales publicados',
+      'creatorProfileEmpty':
+          'Este perfil todavía no tiene devocionales públicos visibles.',
+      'creatorProfileFollow': 'Seguir',
+      'creatorProfileUnfollow': 'Dejar de seguir',
+      'creatorProfileFollowError':
+          'No pudimos actualizar el seguimiento en este momento.',
+      'creatorProfileLoadError': 'No pudimos cargar este perfil.',
+      'creatorProfileSaveError': 'No pudimos guardar tu perfil.',
+      'creatorProfileEditTitle': 'Editar perfil',
+      'creatorProfileChangeAvatar': 'Cambiar foto',
+      'creatorProfileRemoveAvatar': 'Quitar foto',
+      'creatorProfileSaving': 'Guardando...',
+      'creatorProfileAvatarFallback': 'Perfil',
+      'creatorHandleLabel': 'Usuario público',
+      'creatorHandleHint': 'Ej. luz_para_hoy',
+      'creatorHandleTaken': 'Ese usuario ya está en uso.',
+      'creatorHandleInvalid':
+          'Usa entre 3 y 30 caracteres con letras, números, punto o guion bajo.',
+      'creatorBioLabel': 'Biografía corta',
+      'creatorBioHint': 'Cuéntale a la comunidad quién eres en pocas palabras.',
+      'creatorAvatarRejected':
+          'La imagen no fue aprobada. Guardamos los demás cambios.',
     },
     'en': {
       'appTitle': 'HolyVerso',
@@ -699,6 +768,8 @@ class AppLocalizations {
       'devotionalsAll': 'All',
       'devotionalsPublic': 'Public',
       'devotionalsMine': 'My devotionals',
+      'devotionalsForYou': 'For You',
+      'devotionalsFollowing': 'Following',
       'devotionalsDrafts': 'Drafts',
       'devotionalsPublished': 'Published',
       'devotionalsArchived': 'Archived',
@@ -794,6 +865,11 @@ class AppLocalizations {
       'devotionalsFeedEmptyTitle': 'There are no devotionals in the feed yet',
       'devotionalsFeedEmptySubtitle':
           'When the community publishes new devotionals, they will appear here.',
+      'devotionalsFollowingEmptyTitle':
+          'You are not following any creators yet',
+      'devotionalsFollowingEmptySubtitle':
+          'Follow someone from a devotional to see their recent posts here.',
+      'devotionalsFollowingBadge': 'Following',
       'devotionalsMyEmptyTitle': 'You do not have devotionals yet',
       'devotionalsMyEmptySubtitle':
           'Create your first devotional and share it with the community.',
@@ -804,6 +880,33 @@ class AppLocalizations {
       'writeComment': 'Write a comment...',
       'cancelAction': 'Cancel',
       'saveAction': 'Save',
+      'creatorProfileTitle': 'Profile',
+      'creatorProfileEdit': 'Edit profile',
+      'creatorProfileFollowers': 'Followers',
+      'creatorProfileFollowing': 'Following',
+      'creatorProfilePublished': 'Published',
+      'creatorProfileDevotionalsSection': 'Published devotionals',
+      'creatorProfileEmpty':
+          'This profile does not have visible public devotionals yet.',
+      'creatorProfileFollow': 'Follow',
+      'creatorProfileUnfollow': 'Unfollow',
+      'creatorProfileFollowError': 'We could not update the follow state.',
+      'creatorProfileLoadError': 'We could not load this profile.',
+      'creatorProfileSaveError': 'We could not save your profile.',
+      'creatorProfileEditTitle': 'Edit profile',
+      'creatorProfileChangeAvatar': 'Change photo',
+      'creatorProfileRemoveAvatar': 'Remove photo',
+      'creatorProfileSaving': 'Saving...',
+      'creatorProfileAvatarFallback': 'Profile',
+      'creatorHandleLabel': 'Public handle',
+      'creatorHandleHint': 'e.g. light_for_today',
+      'creatorHandleTaken': 'That handle is already taken.',
+      'creatorHandleInvalid':
+          'Use 3 to 30 characters with letters, numbers, periods, or underscores.',
+      'creatorBioLabel': 'Short bio',
+      'creatorBioHint': 'Tell the community who you are in a few words.',
+      'creatorAvatarRejected':
+          'The image was not approved. We still saved the other changes.',
     },
   };
 }

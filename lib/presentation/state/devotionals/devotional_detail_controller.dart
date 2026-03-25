@@ -128,6 +128,28 @@ class DevotionalDetailController extends Notifier<DevotionalDetailState> {
     }
   }
 
+  void syncCreatorProfile({
+    required String creatorId,
+    required bool following,
+    String? handle,
+    String? avatarUrl,
+  }) {
+    final devotional = state.devotional;
+    if (devotional == null || devotional.author.id != creatorId) {
+      return;
+    }
+
+    state = state.copyWith(
+      devotional: devotional.copyWith(
+        author: devotional.author.copyWith(
+          following: following,
+          handle: handle ?? devotional.author.handle,
+          avatarUrl: avatarUrl ?? devotional.author.avatarUrl,
+        ),
+      ),
+    );
+  }
+
   String _mapError(Object error) {
     return AppErrorMapper.toMessage(
       error,

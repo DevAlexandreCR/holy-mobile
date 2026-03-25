@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:holyverso/core/l10n/app_localizations.dart';
 import 'package:holyverso/core/theme/app_colors.dart';
 import 'package:holyverso/core/theme/app_design_tokens.dart';
@@ -242,6 +243,11 @@ class _DevotionalDetailScreenState
             onShare: _share,
             onReport: _showReportSheet,
             onSubmitComment: _submitComment,
+            onOpenAuthor: () async {
+              final authorId = state.devotional?.author.id;
+              if (authorId == null || authorId.isEmpty) return;
+              await context.push('/users/$authorId');
+            },
           ),
         },
       ),
@@ -261,6 +267,7 @@ class _DetailContent extends StatelessWidget {
     required this.onShare,
     required this.onReport,
     required this.onSubmitComment,
+    required this.onOpenAuthor,
   });
 
   final Devotional? devotional;
@@ -273,6 +280,7 @@ class _DetailContent extends StatelessWidget {
   final Future<void> Function(Devotional devotional) onShare;
   final Future<void> Function() onReport;
   final Future<void> Function() onSubmitComment;
+  final Future<void> Function() onOpenAuthor;
 
   @override
   Widget build(BuildContext context) {
@@ -323,9 +331,56 @@ class _DetailContent extends StatelessWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.sm),
-          Text(
-            devotional.author.name,
-            style: AppTextStyles.bodyMedium.copyWith(color: AppColors.holyGold),
+          InkWell(
+            onTap: onOpenAuthor,
+            borderRadius: BorderRadius.circular(AppBorderRadius.md),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 18,
+                  backgroundColor: AppColors.holyGold.withValues(alpha: 0.18),
+                  backgroundImage:
+                      devotional.author.avatarUrl != null &&
+                          devotional.author.avatarUrl!.isNotEmpty
+                      ? CachedNetworkImageProvider(devotional.author.avatarUrl!)
+                      : null,
+                  child:
+                      devotional.author.avatarUrl == null ||
+                          devotional.author.avatarUrl!.isEmpty
+                      ? Text(
+                          devotional.author.name.isNotEmpty
+                              ? devotional.author.name.characters.first
+                                    .toUpperCase()
+                              : '?',
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            color: AppColors.holyGold,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        )
+                      : null,
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      devotional.author.name,
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: AppColors.holyGold,
+                      ),
+                    ),
+                    if (devotional.author.handle != null &&
+                        devotional.author.handle!.isNotEmpty)
+                      Text(
+                        '@${devotional.author.handle}',
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: AppColors.softMist,
+                        ),
+                      ),
+                  ],
+                ),
+              ],
+            ),
           ),
           if (devotional.moderationReason != null &&
               devotional.moderationReason!.isNotEmpty) ...[

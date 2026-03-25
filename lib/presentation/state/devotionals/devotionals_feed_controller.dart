@@ -7,13 +7,17 @@ import 'package:holyverso/core/errors/app_error_mapper.dart';
 import 'package:holyverso/core/l10n/app_localizations.dart';
 import 'package:holyverso/data/devotionals/devotionals_repository.dart';
 import 'package:holyverso/domain/devotionals/devotional.dart';
+import 'package:holyverso/domain/devotionals/devotional_feed_mode.dart';
 import 'package:holyverso/presentation/state/devotionals/devotionals_feed_state.dart';
 
-class DevotionalsFeedController extends Notifier<DevotionalsFeedState> {
+abstract class BaseDevotionalsFeedController
+    extends Notifier<DevotionalsFeedState> {
   late final DevotionalsRepository _repository;
   final Set<String> _trackedImpressions = <String>{};
   final Set<String> _trackedOpens = <String>{};
   static const _l10n = AppLocalizations(Locale('es'));
+
+  DevotionalFeedMode get feedMode;
 
   @override
   DevotionalsFeedState build() {
@@ -65,6 +69,7 @@ class DevotionalsFeedController extends Notifier<DevotionalsFeedState> {
   }) async {
     try {
       final result = await _repository.fetchFeed(
+        mode: feedMode,
         cursor: append ? state.nextCursor : null,
       );
       final items = append ? [...state.items, ...result.items] : result.items;
@@ -197,6 +202,37 @@ class DevotionalsFeedController extends Notifier<DevotionalsFeedState> {
     state = state.copyWith(items: items);
   }
 
+  void syncCreatorProfile({
+    required String creatorId,
+    required bool following,
+    String? handle,
+    String? avatarUrl,
+  }) {
+    final items = state.items
+        .where(
+          (item) =>
+              feedMode != DevotionalFeedMode.following ||
+              following ||
+              item.author.id != creatorId,
+        )
+        .map((item) {
+          if (item.author.id != creatorId) {
+            return item;
+          }
+
+          return item.copyWith(
+            author: item.author.copyWith(
+              following: following,
+              handle: handle ?? item.author.handle,
+              avatarUrl: avatarUrl ?? item.author.avatarUrl,
+            ),
+          );
+        })
+        .toList();
+
+    state = state.copyWith(items: items);
+  }
+
   String _mapError(Object error) {
     return AppErrorMapper.toMessage(
       error,
@@ -218,7 +254,24 @@ class DevotionalsFeedController extends Notifier<DevotionalsFeedState> {
   }
 }
 
-final devotionalsFeedControllerProvider =
-    NotifierProvider<DevotionalsFeedController, DevotionalsFeedState>(
-      DevotionalsFeedController.new,
+class ForYouFeedController extends BaseDevotionalsFeedController {
+  @override
+  DevotionalFeedMode get feedMode => DevotionalFeedMode.forYou;
+}
+
+class FollowingFeedController extends BaseDevotionalsFeedController {
+  @override
+  DevotionalFeedMode get feedMode => DevotionalFeedMode.following;
+}
+
+final forYouFeedControllerProvider =
+    NotifierProvider<ForYouFeedController, DevotionalsFeedState>(
+      ForYouFeedController.new,
     );
+
+final followingFeedControllerProvider =
+    NotifierProvider<FollowingFeedController, DevotionalsFeedState>(
+      FollowingFeedController.new,
+    );
+
+final devotionalsFeedControllerProvider = forYouFeedControllerProvider;

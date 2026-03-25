@@ -36,6 +36,7 @@ class Devotional {
     required this.saved,
     required this.isOwner,
     required this.deliveryToken,
+    required this.recommendationReason,
     this.content,
   });
 
@@ -69,6 +70,7 @@ class Devotional {
   final bool saved;
   final bool isOwner;
   final String? deliveryToken;
+  final String? recommendationReason;
   final List<dynamic>? content;
 
   List<DevotionalVerseReference> get primaryReferences =>
@@ -95,6 +97,13 @@ class Devotional {
 
     final viewerState = map['viewer_state'] as Map?;
     final counters = map['counters'] as Map?;
+    final authorRelationship = map['author_relationship'] as Map?;
+    final authorMap = Map<String, dynamic>.from(
+      map['author'] as Map? ?? const {},
+    );
+    if (authorRelationship?['following'] != null) {
+      authorMap['following'] = authorRelationship!['following'];
+    }
 
     return Devotional(
       id: map['id']?.toString() ?? '',
@@ -126,9 +135,7 @@ class Devotional {
       updatedAt:
           DateTime.tryParse(map['updated_at']?.toString() ?? '') ??
           DateTime.fromMillisecondsSinceEpoch(0),
-      author: DevotionalAuthor.fromMap(
-        Map<String, dynamic>.from(map['author'] as Map? ?? const {}),
-      ),
+      author: DevotionalAuthor.fromMap(authorMap),
       verseReferences: rawReferences
           .whereType<Map>()
           .map(
@@ -161,6 +168,7 @@ class Devotional {
       saved: viewerState?['saved'] == true || map['saved'] == true,
       isOwner: map['is_owner'] == true,
       deliveryToken: map['delivery_token']?.toString(),
+      recommendationReason: map['recommendation_reason']?.toString(),
       content: content,
     );
   }
@@ -174,6 +182,7 @@ class Devotional {
     bool? liked,
     bool? saved,
     List<dynamic>? content,
+    DevotionalAuthor? author,
   }) {
     return Devotional(
       id: id,
@@ -193,7 +202,7 @@ class Devotional {
       firstPublishedAt: firstPublishedAt,
       createdAt: createdAt,
       updatedAt: updatedAt,
-      author: author,
+      author: author ?? this.author,
       verseReferences: verseReferences,
       likesCount: likesCount ?? this.likesCount,
       commentsCount: commentsCount ?? this.commentsCount,
@@ -206,6 +215,7 @@ class Devotional {
       saved: saved ?? this.saved,
       isOwner: isOwner,
       deliveryToken: deliveryToken,
+      recommendationReason: recommendationReason,
       content: content ?? this.content,
     );
   }

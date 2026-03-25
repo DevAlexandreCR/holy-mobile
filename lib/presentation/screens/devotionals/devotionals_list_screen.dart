@@ -9,6 +9,7 @@ import 'package:holyverso/core/l10n/app_localizations.dart';
 import 'package:holyverso/core/theme/app_colors.dart';
 import 'package:holyverso/core/theme/app_design_tokens.dart';
 import 'package:holyverso/core/theme/app_text_styles.dart';
+import 'package:holyverso/domain/devotionals/devotional_feed_mode.dart';
 import 'package:holyverso/data/devotionals/devotionals_repository.dart';
 import 'package:holyverso/domain/devotionals/devotional.dart';
 import 'package:holyverso/domain/devotionals/devotional_status.dart';
@@ -53,8 +54,16 @@ class _DevotionalsListScreenState extends ConsumerState<DevotionalsListScreen>
     }
 
     if (!mounted) return;
-    unawaited(ref.read(devotionalsFeedControllerProvider.notifier).refresh());
+    unawaited(ref.read(forYouFeedControllerProvider.notifier).refresh());
+    unawaited(ref.read(followingFeedControllerProvider.notifier).refresh());
     unawaited(ref.read(devotionalsListControllerProvider.notifier).refresh());
+  }
+
+  Future<void> _openProfileEditor() async {
+    await context.push('/users/me/edit-profile');
+    if (!mounted) return;
+    unawaited(ref.read(forYouFeedControllerProvider.notifier).refresh());
+    unawaited(ref.read(followingFeedControllerProvider.notifier).refresh());
   }
 
   @override
@@ -92,7 +101,10 @@ class _DevotionalsListScreenState extends ConsumerState<DevotionalsListScreen>
         controller: _tabController,
         children: [
           const _PublicFeedTab(),
-          _MyDevotionalsTab(onOpenEditor: _openEditor),
+          _MyDevotionalsTab(
+            onOpenEditor: _openEditor,
+            onOpenProfileEditor: _openProfileEditor,
+          ),
         ],
       ),
     );
@@ -106,17 +118,96 @@ class _PublicFeedTab extends ConsumerStatefulWidget {
   ConsumerState<_PublicFeedTab> createState() => _PublicFeedTabState();
 }
 
-class _PublicFeedTabState extends ConsumerState<_PublicFeedTab> {
+class _PublicFeedTabState extends ConsumerState<_PublicFeedTab>
+    with SingleTickerProviderStateMixin {
+  late final TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            AppSpacing.md,
+            AppSpacing.lg,
+            AppSpacing.sm,
+          ),
+          child: Container(
+            decoration: BoxDecoration(
+              color: AppColors.midnightFaithDark,
+              borderRadius: AppBorderRadius.card,
+            ),
+            child: TabBar(
+              controller: _tabController,
+              indicator: BoxDecoration(
+                color: AppColors.holyGold,
+                borderRadius: AppBorderRadius.card,
+              ),
+              labelColor: AppColors.midnightFaith,
+              unselectedLabelColor: AppColors.softMist,
+              tabs: [
+                Tab(text: context.l10n.devotionalsForYou),
+                Tab(text: context.l10n.devotionalsFollowing),
+              ],
+            ),
+          ),
+        ),
+        Expanded(
+          child: TabBarView(
+            controller: _tabController,
+            children: [
+              _PublicFeedModeView(
+                mode: DevotionalFeedMode.forYou,
+                provider: forYouFeedControllerProvider,
+              ),
+              _PublicFeedModeView(
+                mode: DevotionalFeedMode.following,
+                provider: followingFeedControllerProvider,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _PublicFeedModeView extends ConsumerStatefulWidget {
+  const _PublicFeedModeView({required this.mode, required this.provider});
+
+  final DevotionalFeedMode mode;
+  final NotifierProvider<BaseDevotionalsFeedController, DevotionalsFeedState>
+  provider;
+
+  @override
+  ConsumerState<_PublicFeedModeView> createState() =>
+      _PublicFeedModeViewState();
+}
+
+class _PublicFeedModeViewState extends ConsumerState<_PublicFeedModeView> {
   final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final feedState = ref.read(devotionalsFeedControllerProvider);
+      final feedState = ref.read(widget.provider);
       if (feedState.items.isEmpty &&
           feedState.status == DevotionalsFeedStatus.idle) {
-        ref.read(devotionalsFeedControllerProvider.notifier).loadInitial();
+        ref.read(widget.provider.notifier).loadInitial();
       }
     });
     _scrollController.addListener(_onScroll);
@@ -132,7 +223,7 @@ class _PublicFeedTabState extends ConsumerState<_PublicFeedTab> {
     if (!_scrollController.hasClients) return;
     if (_scrollController.position.pixels >=
         _scrollController.position.maxScrollExtent * 0.8) {
-      ref.read(devotionalsFeedControllerProvider.notifier).loadMore();
+      ref.read(widget.provider.notifier).loadMore();
     }
   }
 
@@ -154,29 +245,28 @@ class _PublicFeedTabState extends ConsumerState<_PublicFeedTab> {
       sharePositionOrigin: origin,
     );
 
-    await ref
-        .read(devotionalsFeedControllerProvider.notifier)
-        .registerShare(devotional);
+    await ref.read(widget.provider.notifier).registerShare(devotional);
   }
 
   Future<void> _openDetail(Devotional devotional) async {
-    await ref
-        .read(devotionalsFeedControllerProvider.notifier)
-        .registerOpen(devotional);
+    await ref.read(widget.provider.notifier).registerOpen(devotional);
     if (!mounted) return;
     final updated = await context.push<Devotional>(
       '/devotionals/${devotional.id}',
     );
     if (updated != null && mounted) {
-      ref
-          .read(devotionalsFeedControllerProvider.notifier)
-          .syncUpdatedDevotional(updated);
+      ref.read(widget.provider.notifier).syncUpdatedDevotional(updated);
     }
+  }
+
+  Future<void> _openAuthor(Devotional devotional) async {
+    if (!mounted) return;
+    await context.push('/users/${devotional.author.id}');
   }
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(devotionalsFeedControllerProvider);
+    final state = ref.watch(widget.provider);
     final l10n = context.l10n;
 
     if (state.status == DevotionalsFeedStatus.loading && state.items.isEmpty) {
@@ -188,16 +278,19 @@ class _PublicFeedTabState extends ConsumerState<_PublicFeedTab> {
     if (state.status == DevotionalsFeedStatus.error && state.items.isEmpty) {
       return _ErrorState(
         message: state.errorMessage ?? l10n.genericError,
-        onRetry: () => ref
-            .read(devotionalsFeedControllerProvider.notifier)
-            .loadInitial(forceRefresh: true),
+        onRetry: () =>
+            ref.read(widget.provider.notifier).loadInitial(forceRefresh: true),
       );
     }
 
     if (state.items.isEmpty) {
       return _EmptyState(
-        title: l10n.devotionalsFeedEmptyTitle,
-        subtitle: l10n.devotionalsFeedEmptySubtitle,
+        title: widget.mode == DevotionalFeedMode.following
+            ? l10n.devotionalsFollowingEmptyTitle
+            : l10n.devotionalsFeedEmptyTitle,
+        subtitle: widget.mode == DevotionalFeedMode.following
+            ? l10n.devotionalsFollowingEmptySubtitle
+            : l10n.devotionalsFeedEmptySubtitle,
       );
     }
 
@@ -205,13 +298,12 @@ class _PublicFeedTabState extends ConsumerState<_PublicFeedTab> {
         state.errorMessage != null && state.items.isNotEmpty;
 
     return RefreshIndicator(
-      onRefresh: () =>
-          ref.read(devotionalsFeedControllerProvider.notifier).refresh(),
+      onRefresh: () => ref.read(widget.provider.notifier).refresh(),
       child: ListView.builder(
         controller: _scrollController,
         padding: const EdgeInsets.fromLTRB(
           AppSpacing.lg,
-          AppSpacing.md,
+          AppSpacing.sm,
           AppSpacing.lg,
           AppSpacing.xl,
         ),
@@ -228,7 +320,6 @@ class _PublicFeedTabState extends ConsumerState<_PublicFeedTab> {
           }
 
           final listIndex = showErrorBanner ? index - 1 : index;
-
           if (listIndex >= state.items.length) {
             return const Padding(
               padding: EdgeInsets.symmetric(vertical: AppSpacing.md),
@@ -242,17 +333,16 @@ class _PublicFeedTabState extends ConsumerState<_PublicFeedTab> {
           return _FeedImpressionTracker(
             devotional: devotional,
             onQualified: () => ref
-                .read(devotionalsFeedControllerProvider.notifier)
+                .read(widget.provider.notifier)
                 .registerImpression(devotional),
             child: _PublicDevotionalCard(
               devotional: devotional,
               onOpen: () => _openDetail(devotional),
-              onLike: () => ref
-                  .read(devotionalsFeedControllerProvider.notifier)
-                  .toggleLike(devotional.id),
-              onSave: () => ref
-                  .read(devotionalsFeedControllerProvider.notifier)
-                  .toggleSave(devotional.id),
+              onOpenAuthor: () => _openAuthor(devotional),
+              onLike: () =>
+                  ref.read(widget.provider.notifier).toggleLike(devotional.id),
+              onSave: () =>
+                  ref.read(widget.provider.notifier).toggleSave(devotional.id),
               onShare: () => _share(devotional),
             ),
           );
@@ -263,9 +353,13 @@ class _PublicFeedTabState extends ConsumerState<_PublicFeedTab> {
 }
 
 class _MyDevotionalsTab extends ConsumerStatefulWidget {
-  const _MyDevotionalsTab({required this.onOpenEditor});
+  const _MyDevotionalsTab({
+    required this.onOpenEditor,
+    required this.onOpenProfileEditor,
+  });
 
   final Future<void> Function([String? devotionalId]) onOpenEditor;
+  final Future<void> Function() onOpenProfileEditor;
 
   @override
   ConsumerState<_MyDevotionalsTab> createState() => _MyDevotionalsTabState();
@@ -316,7 +410,8 @@ class _MyDevotionalsTabState extends ConsumerState<_MyDevotionalsTab> {
       await request();
       await Future.wait([
         ref.read(devotionalsListControllerProvider.notifier).refresh(),
-        ref.read(devotionalsFeedControllerProvider.notifier).refresh(),
+        ref.read(forYouFeedControllerProvider.notifier).refresh(),
+        ref.read(followingFeedControllerProvider.notifier).refresh(),
       ]);
 
       if (!mounted) return;
@@ -447,11 +542,30 @@ class _MyDevotionalsTabState extends ConsumerState<_MyDevotionalsTab> {
             AppSpacing.lg,
             AppSpacing.sm,
           ),
-          child: _StatusSelector(
-            current: state.statusFilter,
-            onSelected: (status) => ref
-                .read(devotionalsListControllerProvider.notifier)
-                .setStatusFilter(status),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: _StatusSelector(
+                      current: state.statusFilter,
+                      onSelected: (status) => ref
+                          .read(devotionalsListControllerProvider.notifier)
+                          .setStatusFilter(status),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: OutlinedButton.icon(
+                  onPressed: widget.onOpenProfileEditor,
+                  icon: const Icon(Icons.person_outline),
+                  label: Text(l10n.creatorProfileEdit),
+                ),
+              ),
+            ],
           ),
         ),
         Expanded(
@@ -622,6 +736,7 @@ class _PublicDevotionalCard extends StatelessWidget {
   const _PublicDevotionalCard({
     required this.devotional,
     required this.onOpen,
+    required this.onOpenAuthor,
     required this.onLike,
     required this.onSave,
     required this.onShare,
@@ -629,6 +744,7 @@ class _PublicDevotionalCard extends StatelessWidget {
 
   final Devotional devotional;
   final VoidCallback onOpen;
+  final VoidCallback onOpenAuthor;
   final VoidCallback onLike;
   final VoidCallback onSave;
   final VoidCallback onShare;
@@ -673,13 +789,84 @@ class _PublicDevotionalCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  devotional.author.name,
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: AppColors.holyGold,
+                InkWell(
+                  onTap: onOpenAuthor,
+                  borderRadius: BorderRadius.circular(AppBorderRadius.md),
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 18,
+                        backgroundColor: AppColors.holyGold.withValues(
+                          alpha: 0.18,
+                        ),
+                        backgroundImage:
+                            devotional.author.avatarUrl != null &&
+                                devotional.author.avatarUrl!.isNotEmpty
+                            ? CachedNetworkImageProvider(
+                                devotional.author.avatarUrl!,
+                              )
+                            : null,
+                        child:
+                            devotional.author.avatarUrl == null ||
+                                devotional.author.avatarUrl!.isEmpty
+                            ? Text(
+                                devotional.author.name.isNotEmpty
+                                    ? devotional.author.name.characters.first
+                                          .toUpperCase()
+                                    : '?',
+                                style: AppTextStyles.bodyMedium.copyWith(
+                                  color: AppColors.holyGold,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              )
+                            : null,
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              devotional.author.name,
+                              style: AppTextStyles.bodyMedium.copyWith(
+                                color: AppColors.pureWhite,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            if (devotional.author.handle != null &&
+                                devotional.author.handle!.isNotEmpty)
+                              Text(
+                                '@${devotional.author.handle}',
+                                style: AppTextStyles.bodySmall.copyWith(
+                                  color: AppColors.holyGold,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                      if (devotional.author.following)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.sm,
+                            vertical: AppSpacing.xs,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.holyGold.withValues(alpha: 0.14),
+                            borderRadius: BorderRadius.circular(
+                              AppBorderRadius.full,
+                            ),
+                          ),
+                          child: Text(
+                            context.l10n.devotionalsFollowingBadge,
+                            style: AppTextStyles.bodySmall.copyWith(
+                              color: AppColors.holyGold,
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: AppSpacing.xs),
+                const SizedBox(height: AppSpacing.sm),
                 Text(
                   devotional.title,
                   style: AppTextStyles.headline3.copyWith(

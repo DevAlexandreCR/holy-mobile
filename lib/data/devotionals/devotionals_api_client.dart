@@ -9,6 +9,7 @@ import 'package:holyverso/domain/core/cursor_paged_result.dart';
 import 'package:holyverso/domain/core/paged_result.dart';
 import 'package:holyverso/domain/devotionals/devotional.dart';
 import 'package:holyverso/domain/devotionals/devotional_comment.dart';
+import 'package:holyverso/domain/devotionals/devotional_feed_mode.dart';
 import 'package:holyverso/domain/devotionals/devotional_status.dart';
 import 'package:holyverso/domain/devotionals/devotional_verse_reference.dart';
 import 'package:holyverso/domain/devotionals/uploaded_devotional_image.dart';
@@ -34,10 +35,15 @@ class DevotionalsApiClient {
   Map<String, dynamic> _normalizeDevotional(Map<String, dynamic> map) {
     final cover = _resolveUrl(map['cover_image_url']?.toString());
     final preview = _resolveUrl(map['preview_image_url']?.toString());
+    final author = Map<String, dynamic>.from(map['author'] as Map? ?? const {});
     return {
       ...map,
       if (cover != null) 'cover_image_url': cover,
       if (preview != null) 'preview_image_url': preview,
+      'author': {
+        ...author,
+        'avatar_url': _resolveUrl(author['avatar_url']?.toString()),
+      },
     };
   }
 
@@ -86,12 +92,14 @@ class DevotionalsApiClient {
   }
 
   Future<CursorPagedResult<Devotional>> fetchFeed({
+    required DevotionalFeedMode mode,
     String? cursor,
     int limit = 20,
   }) async {
     final response = await _dio.get(
       '/devotionals/feed',
       queryParameters: {
+        'mode': mode.apiValue,
         if (cursor != null && cursor.isNotEmpty) 'cursor': cursor,
         'limit': limit,
       },
