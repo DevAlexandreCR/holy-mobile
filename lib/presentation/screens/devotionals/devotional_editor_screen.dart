@@ -14,11 +14,15 @@ import 'package:holyverso/core/l10n/app_localizations.dart';
 import 'package:holyverso/core/theme/app_colors.dart';
 import 'package:holyverso/core/theme/app_design_tokens.dart';
 import 'package:holyverso/core/theme/app_text_styles.dart';
+import 'package:holyverso/data/bible/bible_repository.dart';
 import 'package:holyverso/data/devotionals/devotionals_repository.dart';
 import 'package:holyverso/domain/devotionals/devotional.dart';
 import 'package:holyverso/domain/devotionals/devotional_status.dart';
 import 'package:holyverso/domain/devotionals/devotional_verse_reference.dart';
+import 'package:holyverso/domain/verse/bible_book.dart';
+import 'package:holyverso/domain/verse/chapter.dart';
 import 'package:holyverso/presentation/state/auth/auth_controller.dart';
+import 'package:holyverso/presentation/widgets/common/holy_bottom_sheet.dart';
 import 'package:holyverso/presentation/widgets/common/holy_child_app_bar.dart';
 import 'package:holyverso/presentation/widgets/holy_button.dart';
 import 'package:image_picker/image_picker.dart';
@@ -621,124 +625,87 @@ class _DevotionalEditorScreenState
   Future<void> _showReferenceDialog({
     DevotionalVerseReference? existing,
   }) async {
-    final l10n = context.l10n;
-    final bookController = TextEditingController(text: existing?.book ?? '');
-    final chapterController = TextEditingController(
-      text: existing?.chapter.toString() ?? '',
-    );
-    final verseStartController = TextEditingController(
-      text: existing?.verseStart.toString() ?? '',
-    );
-    final verseEndController = TextEditingController(
-      text: existing?.verseEnd?.toString() ?? '',
-    );
-    bool isPrimary = existing?.isPrimary ?? _references.isEmpty;
-
-    final result = await showDialog<DevotionalVerseReference>(
+    final result = await showModalBottomSheet<DevotionalVerseReference>(
       context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          title: Text(l10n.addVerseReference),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: bookController,
-                  decoration: InputDecoration(
-                    labelText: l10n.devotionalBookLabel,
-                  ),
-                ),
-                TextField(
-                  controller: chapterController,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(
-                    labelText: l10n.devotionalChapterLabel,
-                  ),
-                ),
-                TextField(
-                  controller: verseStartController,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(
-                    labelText: l10n.devotionalVerseStartLabel,
-                  ),
-                ),
-                TextField(
-                  controller: verseEndController,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(
-                    labelText: l10n.devotionalVerseEndLabel,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                SwitchListTile.adaptive(
-                  value: isPrimary,
-                  onChanged: (value) {
-                    setDialogState(() {
-                      isPrimary = value;
-                    });
-                  },
-                  title: Text(l10n.primaryVerseReference),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(l10n.cancelAction),
-            ),
-            TextButton(
-              onPressed: () {
-                final book = bookController.text.trim();
-                final chapter = int.tryParse(chapterController.text.trim());
-                final verseStart = int.tryParse(
-                  verseStartController.text.trim(),
-                );
-                final verseEnd = int.tryParse(verseEndController.text.trim());
-
-                if (book.isEmpty || chapter == null || verseStart == null) {
-                  return;
-                }
-
-                Navigator.pop(
-                  context,
-                  DevotionalVerseReference(
-                    id:
-                        existing?.id ??
-                        DateTime.now().millisecondsSinceEpoch.toString(),
-                    book: book,
-                    chapter: chapter,
-                    verseStart: verseStart,
-                    verseEnd: verseEnd,
-                    isPrimary: isPrimary,
-                  ),
-                );
-              },
-              child: Text(l10n.saveAction),
-            ),
-          ],
-        ),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      useSafeArea: true,
+      builder: (context) => _ReferencePickerSheet(
+        existing: existing,
+        references: List<DevotionalVerseReference>.from(_references),
       ),
     );
 
     if (result != null) {
       setState(() {
-        if (existing != null) {
-          final index = _references.indexWhere((ref) => ref.id == existing.id);
-          if (index != -1) {
-            _references[index] = result;
-          }
-        } else {
-          _references.add(result);
-        }
+        _references
+          ..clear()
+          ..addAll(_upsertReference(result, existing: existing));
       });
     }
   }
 
+  List<DevotionalVerseReference> _upsertReference(
+    DevotionalVerseReference reference, {
+    DevotionalVerseReference? existing,
+  }) {
+    final updated = List<DevotionalVerseReference>.from(_references);
+    if (existing != null) {
+      final index = updated.indexWhere((item) => item.id == existing.id);
+      if (index != -1) {
+        updated[index] = reference;
+      } else {
+        updated.add(reference);
+      }
+    } else {
+      updated.add(reference);
+    }
+
+    return _normalizeReferences(
+      updated,
+      preferredPrimaryId: reference.isPrimary ? reference.id : null,
+    );
+  }
+
+  List<DevotionalVerseReference> _normalizeReferences(
+    List<DevotionalVerseReference> references, {
+    String? preferredPrimaryId,
+  }) {
+    if (references.isEmpty) {
+      return const [];
+    }
+
+    var primaryId = preferredPrimaryId;
+    if (primaryId == null || !references.any((ref) => ref.id == primaryId)) {
+      primaryId = references
+          .cast<DevotionalVerseReference?>()
+          .firstWhere((ref) => ref?.isPrimary == true, orElse: () => null)
+          ?.id;
+    }
+    primaryId ??= references.first.id;
+
+    return references
+        .map(
+          (reference) => DevotionalVerseReference(
+            id: reference.id,
+            book: reference.book,
+            chapter: reference.chapter,
+            verseStart: reference.verseStart,
+            verseEnd: reference.verseEnd,
+            isPrimary: reference.id == primaryId,
+          ),
+        )
+        .toList();
+  }
+
   void _removeReference(DevotionalVerseReference reference) {
     setState(() {
-      _references.removeWhere((ref) => ref.id == reference.id);
+      final updated = _references
+          .where((ref) => ref.id != reference.id)
+          .toList(growable: false);
+      _references
+        ..clear()
+        ..addAll(_normalizeReferences(updated));
     });
   }
 
@@ -1666,6 +1633,832 @@ class _DevotionalEditorScreenState
           child: Text(l10n.preview),
         ),
       ],
+    );
+  }
+}
+
+class _ReferencePickerSheet extends ConsumerStatefulWidget {
+  const _ReferencePickerSheet({required this.references, this.existing});
+
+  final List<DevotionalVerseReference> references;
+  final DevotionalVerseReference? existing;
+
+  @override
+  ConsumerState<_ReferencePickerSheet> createState() =>
+      _ReferencePickerSheetState();
+}
+
+class _ReferencePickerSheetState extends ConsumerState<_ReferencePickerSheet> {
+  final TextEditingController _bookController = TextEditingController();
+  final FocusNode _bookFocusNode = FocusNode();
+
+  List<BibleBook> _books = const [];
+  List<BibleBook> _filteredBooks = const [];
+  BibleBook? _selectedBook;
+  Chapter? _chapterData;
+  int? _selectedChapter;
+  int? _selectedVerseStart;
+  int? _selectedVerseEnd;
+  bool _isPrimary = false;
+  bool _isLoadingBooks = true;
+  bool _isLoadingChapter = false;
+  bool _showSuggestions = false;
+  String? _booksError;
+  String? _chapterError;
+
+  bool get _hasAlternatePrimary => widget.references.any(
+    (reference) => reference.id != widget.existing?.id && reference.isPrimary,
+  );
+
+  bool get _canSave =>
+      _selectedBook != null &&
+      _selectedChapter != null &&
+      _selectedVerseStart != null &&
+      !_isLoadingBooks &&
+      !_isLoadingChapter &&
+      _chapterError == null;
+
+  List<int> get _chapterOptions {
+    final selectedBook = _selectedBook;
+    if (selectedBook == null || selectedBook.chapters <= 0) {
+      return const [];
+    }
+    return List<int>.generate(selectedBook.chapters, (index) => index + 1);
+  }
+
+  List<int> get _verseOptions {
+    final chapterData = _chapterData;
+    if (chapterData == null) {
+      return const [];
+    }
+    return chapterData.verses.map((verse) => verse.number).toList();
+  }
+
+  List<int?> get _verseEndOptions {
+    final verseStart = _selectedVerseStart;
+    final options = _verseOptions
+        .where((number) => verseStart == null || number >= verseStart)
+        .map<int?>((number) => number)
+        .toList();
+    return <int?>[null, ...options];
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    final existing = widget.existing;
+    _bookController.text = existing?.book ?? '';
+    _selectedChapter = existing?.chapter;
+    _selectedVerseStart = existing?.verseStart;
+    _selectedVerseEnd = existing?.verseEnd;
+    _isPrimary = existing?.isPrimary ?? widget.references.isEmpty;
+    _bookFocusNode.addListener(_handleBookFocusChange);
+    _loadBooks();
+  }
+
+  @override
+  void dispose() {
+    _bookController.dispose();
+    _bookFocusNode
+      ..removeListener(_handleBookFocusChange)
+      ..dispose();
+    super.dispose();
+  }
+
+  void _handleBookFocusChange() {
+    if (!mounted) {
+      return;
+    }
+
+    final hasQuery = _normalizeBookText(_bookController.text).isNotEmpty;
+    setState(() {
+      _showSuggestions =
+          _bookFocusNode.hasFocus &&
+          hasQuery &&
+          _selectedBook == null &&
+          _filteredBooks.isNotEmpty;
+    });
+  }
+
+  Future<void> _loadBooks() async {
+    setState(() {
+      _isLoadingBooks = true;
+      _booksError = null;
+    });
+
+    try {
+      final books = await ref.read(bibleRepositoryProvider).fetchBooks();
+      if (!mounted) {
+        return;
+      }
+
+      final matchedBook = _findMatchingBook(
+        books,
+        widget.existing?.book ?? _bookController.text,
+      );
+
+      setState(() {
+        _books = books;
+        _filteredBooks = _filterBooks(
+          books,
+          matchedBook?.name ?? _bookController.text,
+        );
+        _selectedBook = matchedBook;
+        _isLoadingBooks = false;
+        if (matchedBook != null) {
+          _bookController.text = matchedBook.name;
+        }
+      });
+
+      final chapter = _selectedChapter;
+      if (matchedBook != null && chapter != null) {
+        await _loadChapter(chapter);
+      }
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _isLoadingBooks = false;
+        _booksError = AppErrorMapper.toMessage(
+          error,
+          l10n: context.l10n,
+          fallbackMessage: context.l10n.genericError,
+        );
+      });
+    }
+  }
+
+  Future<void> _loadChapter(int chapterNumber) async {
+    final selectedBook = _selectedBook;
+    if (selectedBook == null) {
+      return;
+    }
+
+    setState(() {
+      _isLoadingChapter = true;
+      _chapterError = null;
+      _chapterData = null;
+    });
+
+    try {
+      final chapter = await ref
+          .read(bibleRepositoryProvider)
+          .fetchChapter(
+            book: selectedBook.abbrev.isNotEmpty
+                ? selectedBook.abbrev
+                : selectedBook.name,
+            chapter: chapterNumber,
+          );
+
+      if (!mounted) {
+        return;
+      }
+
+      final availableVerses = chapter.verses
+          .map((verse) => verse.number)
+          .toSet();
+
+      setState(() {
+        _chapterData = chapter;
+        _isLoadingChapter = false;
+
+        if (_selectedVerseStart != null &&
+            !availableVerses.contains(_selectedVerseStart)) {
+          _selectedVerseStart = null;
+        }
+
+        if (_selectedVerseEnd != null &&
+            (!availableVerses.contains(_selectedVerseEnd) ||
+                (_selectedVerseStart != null &&
+                    _selectedVerseEnd! < _selectedVerseStart!))) {
+          _selectedVerseEnd = null;
+        }
+      });
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _isLoadingChapter = false;
+        _chapterError = AppErrorMapper.toMessage(
+          error,
+          l10n: context.l10n,
+          fallbackMessage: context.l10n.chapterLoadError,
+        );
+        _selectedVerseStart = null;
+        _selectedVerseEnd = null;
+      });
+    }
+  }
+
+  void _onBookChanged(String value) {
+    final normalizedQuery = _normalizeBookText(value);
+    final filteredBooks = _filterBooks(_books, value);
+    final matchesCurrentSelection =
+        _selectedBook != null &&
+        _matchesSelectedBook(_selectedBook!, value.trim());
+
+    setState(() {
+      _filteredBooks = filteredBooks;
+      _showSuggestions =
+          _bookFocusNode.hasFocus &&
+          normalizedQuery.isNotEmpty &&
+          filteredBooks.isNotEmpty;
+      _booksError = null;
+
+      if (!matchesCurrentSelection) {
+        _selectedBook = null;
+        _selectedChapter = null;
+        _chapterData = null;
+        _chapterError = null;
+        _selectedVerseStart = null;
+        _selectedVerseEnd = null;
+      }
+    });
+  }
+
+  void _selectBook(BibleBook book) {
+    _bookController.value = TextEditingValue(
+      text: book.name,
+      selection: TextSelection.collapsed(offset: book.name.length),
+    );
+
+    setState(() {
+      _selectedBook = book;
+      _filteredBooks = _filterBooks(_books, book.name);
+      _selectedChapter = null;
+      _chapterData = null;
+      _chapterError = null;
+      _selectedVerseStart = null;
+      _selectedVerseEnd = null;
+      _showSuggestions = false;
+    });
+
+    _bookFocusNode.unfocus();
+  }
+
+  void _handleChapterChanged(int? chapterNumber) {
+    if (chapterNumber == null || chapterNumber == _selectedChapter) {
+      return;
+    }
+
+    setState(() {
+      _selectedChapter = chapterNumber;
+      _selectedVerseStart = null;
+      _selectedVerseEnd = null;
+      _chapterData = null;
+      _chapterError = null;
+    });
+
+    _loadChapter(chapterNumber);
+  }
+
+  void _handleVerseStartChanged(int? verseNumber) {
+    if (verseNumber == null) {
+      return;
+    }
+
+    setState(() {
+      _selectedVerseStart = verseNumber;
+      if (_selectedVerseEnd != null && _selectedVerseEnd! < verseNumber) {
+        _selectedVerseEnd = null;
+      }
+    });
+  }
+
+  void _save() {
+    final selectedBook = _selectedBook;
+    final selectedChapter = _selectedChapter;
+    final selectedVerseStart = _selectedVerseStart;
+    final selectedVerseEnd = _selectedVerseEnd;
+
+    if (selectedBook == null ||
+        selectedChapter == null ||
+        selectedVerseStart == null) {
+      return;
+    }
+
+    Navigator.of(context).pop(
+      DevotionalVerseReference(
+        id:
+            widget.existing?.id ??
+            DateTime.now().millisecondsSinceEpoch.toString(),
+        book: selectedBook.name,
+        chapter: selectedChapter,
+        verseStart: selectedVerseStart,
+        verseEnd: selectedVerseEnd,
+        isPrimary: _isPrimary,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final viewInsets = MediaQuery.of(context).viewInsets.bottom;
+    final maxHeight = MediaQuery.sizeOf(context).height * 0.82;
+
+    return AnimatedPadding(
+      duration: const Duration(milliseconds: 180),
+      curve: Curves.easeOut,
+      padding: EdgeInsets.only(bottom: viewInsets),
+      child: HolyBottomSheet(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.lg,
+          AppSpacing.md,
+          AppSpacing.lg,
+          AppSpacing.lg,
+        ),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxHeight: maxHeight),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                l10n.addVerseReference,
+                style: AppTextStyles.headline3.copyWith(
+                  color: AppColors.pureWhite,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                l10n.devotionalReferenceHint,
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: AppColors.softMist.withValues(alpha: 0.86),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              Flexible(
+                child: ListView(
+                  shrinkWrap: true,
+                  padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
+                  children: [
+                    _buildFieldLabel(l10n.devotionalBookLabel),
+                    const SizedBox(height: AppSpacing.sm),
+                    TextField(
+                      controller: _bookController,
+                      focusNode: _bookFocusNode,
+                      onChanged: _onBookChanged,
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: AppColors.pureWhite,
+                      ),
+                      decoration: _inputDecoration(
+                        label: l10n.devotionalBookLabel,
+                        hintText: l10n.devotionalBookLabel,
+                        suffixIcon: _isLoadingBooks
+                            ? const Padding(
+                                padding: EdgeInsets.all(AppSpacing.md),
+                                child: SizedBox(
+                                  height: 18,
+                                  width: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      AppColors.holyGold,
+                                    ),
+                                  ),
+                                ),
+                              )
+                            : const Icon(
+                                Icons.search_rounded,
+                                color: AppColors.holyGold,
+                              ),
+                      ),
+                    ),
+                    if (_showSuggestions && _filteredBooks.isNotEmpty) ...[
+                      const SizedBox(height: AppSpacing.sm),
+                      _SuggestionsPanel(
+                        books: _filteredBooks.take(8).toList(growable: false),
+                        onSelected: _selectBook,
+                      ),
+                    ],
+                    if (_booksError != null) ...[
+                      const SizedBox(height: AppSpacing.sm),
+                      _ModalMessageRow(
+                        message: _booksError!,
+                        actionLabel: l10n.updateAction,
+                        onPressed: () => _loadBooks(),
+                      ),
+                    ],
+                    const SizedBox(height: AppSpacing.lg),
+                    _buildFieldLabel(l10n.devotionalChapterLabel),
+                    const SizedBox(height: AppSpacing.sm),
+                    DropdownButtonFormField<int>(
+                      initialValue: _selectedBook == null
+                          ? null
+                          : _selectedChapter,
+                      items: _chapterOptions
+                          .map(
+                            (chapter) => DropdownMenuItem<int>(
+                              value: chapter,
+                              child: Text(
+                                chapter.toString(),
+                                style: AppTextStyles.bodyMedium.copyWith(
+                                  color: AppColors.pureWhite,
+                                ),
+                              ),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: _selectedBook == null
+                          ? null
+                          : _handleChapterChanged,
+                      iconEnabledColor: AppColors.holyGold,
+                      dropdownColor: AppColors.inputBackground,
+                      decoration: _inputDecoration(
+                        label: l10n.devotionalChapterLabel,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
+                    _buildFieldLabel(l10n.devotionalVerseStartLabel),
+                    const SizedBox(height: AppSpacing.sm),
+                    DropdownButtonFormField<int>(
+                      initialValue: _selectedVerseStart,
+                      items: _verseOptions
+                          .map(
+                            (verse) => DropdownMenuItem<int>(
+                              value: verse,
+                              child: Text(
+                                verse.toString(),
+                                style: AppTextStyles.bodyMedium.copyWith(
+                                  color: AppColors.pureWhite,
+                                ),
+                              ),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: _chapterData == null || _isLoadingChapter
+                          ? null
+                          : _handleVerseStartChanged,
+                      iconEnabledColor: AppColors.holyGold,
+                      dropdownColor: AppColors.inputBackground,
+                      decoration: _inputDecoration(
+                        label: l10n.devotionalVerseStartLabel,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
+                    _buildFieldLabel(l10n.devotionalVerseEndLabel),
+                    const SizedBox(height: AppSpacing.sm),
+                    DropdownButtonFormField<int?>(
+                      initialValue: _selectedVerseEnd,
+                      items: _verseEndOptions
+                          .map(
+                            (verse) => DropdownMenuItem<int?>(
+                              value: verse,
+                              child: Text(
+                                verse?.toString() ?? 'Ninguno',
+                                style: AppTextStyles.bodyMedium.copyWith(
+                                  color: AppColors.pureWhite,
+                                ),
+                              ),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: _chapterData == null || _isLoadingChapter
+                          ? null
+                          : (value) {
+                              setState(() {
+                                _selectedVerseEnd = value;
+                              });
+                            },
+                      iconEnabledColor: AppColors.holyGold,
+                      dropdownColor: AppColors.inputBackground,
+                      decoration: _inputDecoration(
+                        label: l10n.devotionalVerseEndLabel,
+                      ),
+                    ),
+                    if (_isLoadingChapter) ...[
+                      const SizedBox(height: AppSpacing.sm),
+                      Row(
+                        children: [
+                          const SizedBox(
+                            height: 16,
+                            width: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                AppColors.holyGold,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: AppSpacing.sm),
+                          Text(
+                            l10n.chapterLoading,
+                            style: AppTextStyles.bodySmall.copyWith(
+                              color: AppColors.softMist,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                    if (_chapterError != null) ...[
+                      const SizedBox(height: AppSpacing.sm),
+                      _ModalMessageRow(
+                        message: _chapterError!,
+                        actionLabel: l10n.updateAction,
+                        onPressed: () {
+                          final chapter = _selectedChapter;
+                          if (chapter != null) {
+                            _loadChapter(chapter);
+                          }
+                        },
+                      ),
+                    ],
+                    const SizedBox(height: AppSpacing.lg),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.md,
+                        vertical: AppSpacing.sm,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.inputBackground,
+                        borderRadius: AppBorderRadius.input,
+                        border: Border.all(
+                          color: AppColors.inputBorder.withValues(alpha: 0.85),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              l10n.primaryVerseReference,
+                              style: AppTextStyles.labelMedium.copyWith(
+                                color: AppColors.pureWhite,
+                              ),
+                            ),
+                          ),
+                          Switch.adaptive(
+                            value: _isPrimary,
+                            activeTrackColor: AppColors.holyGold,
+                            activeThumbColor: AppColors.midnightFaith,
+                            inactiveTrackColor: AppColors.inputBorder
+                                .withValues(alpha: 0.9),
+                            inactiveThumbColor: AppColors.softMist,
+                            onChanged: !_isPrimary || _hasAlternatePrimary
+                                ? (value) {
+                                    setState(() {
+                                      _isPrimary = value;
+                                    });
+                                  }
+                                : null,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.holyGold,
+                        side: BorderSide(
+                          color: AppColors.holyGold.withValues(alpha: 0.7),
+                        ),
+                        minimumSize: const Size(
+                          double.infinity,
+                          AppSizes.buttonHeight,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: AppBorderRadius.button,
+                        ),
+                        textStyle: AppTextStyles.button.copyWith(
+                          color: AppColors.holyGold,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      child: Text(l10n.cancelAction),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: HolyButton(
+                      label: l10n.saveAction,
+                      onPressed: _canSave ? _save : null,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFieldLabel(String label) {
+    return Text(
+      label.toUpperCase(),
+      style: AppTextStyles.labelSmall.copyWith(
+        color: AppColors.holyGold,
+        letterSpacing: 1.2,
+      ),
+    );
+  }
+
+  InputDecoration _inputDecoration({
+    required String label,
+    String? hintText,
+    Widget? suffixIcon,
+  }) {
+    return InputDecoration(
+      labelText: label,
+      hintText: hintText,
+      suffixIcon: suffixIcon,
+      filled: true,
+      fillColor: AppColors.inputBackground,
+      labelStyle: AppTextStyles.bodySmall.copyWith(
+        color: AppColors.holyGold.withValues(alpha: 0.92),
+      ),
+      hintStyle: AppTextStyles.bodyMedium.copyWith(
+        color: AppColors.inputPlaceholder,
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: AppBorderRadius.input,
+        borderSide: BorderSide(
+          color: AppColors.inputBorder.withValues(alpha: 0.85),
+        ),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: AppBorderRadius.input,
+        borderSide: const BorderSide(color: AppColors.holyGold, width: 1.15),
+      ),
+      disabledBorder: OutlineInputBorder(
+        borderRadius: AppBorderRadius.input,
+        borderSide: BorderSide(
+          color: AppColors.inputBorder.withValues(alpha: 0.45),
+        ),
+      ),
+    );
+  }
+
+  List<BibleBook> _filterBooks(List<BibleBook> books, String query) {
+    final trimmed = _normalizeBookText(query);
+    if (trimmed.isEmpty) {
+      return const [];
+    }
+
+    return books
+        .where((book) => _matchesBookQuery(book, trimmed))
+        .toList(growable: false);
+  }
+
+  BibleBook? _findMatchingBook(List<BibleBook> books, String query) {
+    final normalized = _normalizeBookText(query);
+    if (normalized.isEmpty) {
+      return null;
+    }
+
+    for (final book in books) {
+      if (_matchesSelectedBook(book, normalized)) {
+        return book;
+      }
+    }
+
+    return null;
+  }
+
+  bool _matchesSelectedBook(BibleBook book, String query) {
+    final normalized = _normalizeBookText(query);
+    if (normalized.isEmpty) {
+      return false;
+    }
+
+    return _normalizeBookText(book.name) == normalized ||
+        _normalizeBookText(book.abbrev) == normalized;
+  }
+
+  bool _matchesBookQuery(BibleBook book, String query) {
+    final normalized = _normalizeBookText(query);
+    if (normalized.isEmpty) {
+      return false;
+    }
+
+    return _matchesSelectedBook(book, normalized) ||
+        _normalizeBookText(book.name).contains(normalized) ||
+        _normalizeBookText(book.abbrev).contains(normalized);
+  }
+
+  String _normalizeBookText(String value) {
+    final normalized = value.trim().toLowerCase();
+    if (normalized.isEmpty) {
+      return '';
+    }
+
+    return normalized
+        .replaceAll('á', 'a')
+        .replaceAll('é', 'e')
+        .replaceAll('í', 'i')
+        .replaceAll('ó', 'o')
+        .replaceAll('ú', 'u')
+        .replaceAll('ü', 'u')
+        .replaceAll('ñ', 'n');
+  }
+}
+
+class _SuggestionsPanel extends StatelessWidget {
+  const _SuggestionsPanel({required this.books, required this.onSelected});
+
+  final List<BibleBook> books;
+  final ValueChanged<BibleBook> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      constraints: const BoxConstraints(maxHeight: 220),
+      decoration: BoxDecoration(
+        color: AppColors.inputBackground,
+        borderRadius: BorderRadius.circular(AppBorderRadius.md),
+        border: Border.all(color: AppColors.inputBorder.withValues(alpha: 0.8)),
+      ),
+      child: ListView(
+        shrinkWrap: true,
+        padding: EdgeInsets.zero,
+        children: books
+            .map(
+              (book) => InkWell(
+                onTap: () => onSelected(book),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md,
+                    vertical: AppSpacing.md,
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          book.name,
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            color: AppColors.pureWhite,
+                          ),
+                        ),
+                      ),
+                      Text(
+                        book.abbrev.toUpperCase(),
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: AppColors.holyGold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            )
+            .toList(),
+      ),
+    );
+  }
+}
+
+class _ModalMessageRow extends StatelessWidget {
+  const _ModalMessageRow({
+    required this.message,
+    required this.actionLabel,
+    required this.onPressed,
+  });
+
+  final String message;
+  final String actionLabel;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: AppColors.inputBackground,
+        borderRadius: BorderRadius.circular(AppBorderRadius.md),
+        border: Border.all(color: AppColors.inputBorder.withValues(alpha: 0.8)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              message,
+              style: AppTextStyles.bodySmall.copyWith(
+                color: AppColors.softMist,
+              ),
+            ),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          TextButton(
+            onPressed: onPressed,
+            style: TextButton.styleFrom(foregroundColor: AppColors.holyGold),
+            child: Text(actionLabel),
+          ),
+        ],
+      ),
     );
   }
 }
