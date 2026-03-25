@@ -34,6 +34,8 @@ class DevotionalsFeedState {
     String? savingDevotionalId,
     bool clearError = false,
     bool clearNextCursor = false,
+    bool clearLikingDevotionalId = false,
+    bool clearSavingDevotionalId = false,
   }) {
     return DevotionalsFeedState(
       items: items ?? this.items,
@@ -42,8 +44,12 @@ class DevotionalsFeedState {
       nextCursor: clearNextCursor ? null : nextCursor ?? this.nextCursor,
       hasMore: hasMore ?? this.hasMore,
       isFetchingMore: isFetchingMore ?? this.isFetchingMore,
-      likingDevotionalId: likingDevotionalId ?? this.likingDevotionalId,
-      savingDevotionalId: savingDevotionalId ?? this.savingDevotionalId,
+      likingDevotionalId: clearLikingDevotionalId
+          ? null
+          : likingDevotionalId ?? this.likingDevotionalId,
+      savingDevotionalId: clearSavingDevotionalId
+          ? null
+          : savingDevotionalId ?? this.savingDevotionalId,
     );
   }
 }

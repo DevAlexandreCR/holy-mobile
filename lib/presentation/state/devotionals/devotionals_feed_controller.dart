@@ -113,7 +113,7 @@ abstract class BaseDevotionalsFeedController
       state = state.copyWith(errorMessage: _mapError(error));
     } finally {
       if (state.likingDevotionalId == devotionalId) {
-        state = state.copyWith(likingDevotionalId: null);
+        state = state.copyWith(clearLikingDevotionalId: true);
       }
     }
   }
@@ -139,7 +139,7 @@ abstract class BaseDevotionalsFeedController
       state = state.copyWith(errorMessage: _mapError(error));
     } finally {
       if (state.savingDevotionalId == devotionalId) {
-        state = state.copyWith(savingDevotionalId: null);
+        state = state.copyWith(clearSavingDevotionalId: true);
       }
     }
   }
