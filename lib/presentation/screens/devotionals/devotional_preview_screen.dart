@@ -6,6 +6,7 @@ import 'package:holyverso/core/theme/app_design_tokens.dart';
 import 'package:holyverso/core/theme/app_text_styles.dart';
 import 'package:holyverso/domain/devotionals/devotional_verse_reference.dart';
 import 'package:holyverso/presentation/screens/devotionals/devotional_editor_screen.dart';
+import 'package:holyverso/presentation/widgets/common/holy_child_app_bar.dart';
 import 'package:holyverso/presentation/widgets/devotionals/devotional_content_view.dart';
 
 class DevotionalPreviewScreen extends StatelessWidget {
@@ -22,21 +23,14 @@ class DevotionalPreviewScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: AppColors.midnightFaith,
-      appBar: AppBar(
-        title: Text(
-          l10n.preview,
-          style: AppTextStyles.headline3.copyWith(
-            color: AppColors.pureWhite,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-      ),
+      appBar: HolyChildAppBar(title: l10n.preview),
       body: Stack(
         children: [
           Container(
             decoration: BoxDecoration(gradient: AppColors.midnightGradient),
           ),
           SafeArea(
+            top: false,
             child: ListView(
               padding: const EdgeInsets.fromLTRB(
                 AppSpacing.lg,

@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -17,6 +15,7 @@ import 'package:holyverso/presentation/state/settings/versions_state.dart';
 import 'package:holyverso/presentation/widgets/section_card.dart';
 import 'package:holyverso/presentation/widgets/setting_tile.dart';
 import 'package:holyverso/presentation/widgets/common/holy_bottom_sheet.dart';
+import 'package:holyverso/presentation/widgets/common/holy_child_app_bar.dart';
 import 'package:holyverso/presentation/widgets/users/role_badge.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
@@ -86,25 +85,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     return null;
   }
 
-  AppBar _buildAppBar() {
-    return AppBar(
-      backgroundColor: AppColors.midnightFaith.withValues(alpha: 0.82),
-      elevation: 0,
-      centerTitle: true,
-      automaticallyImplyLeading: widget.showBackButton,
-      title: Text(
-        context.l10n.settingsTitle,
-        style: AppTextStyles.headline3.copyWith(
-          color: AppColors.pureWhite,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
-      flexibleSpace: ClipRect(
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-          child: Container(color: Colors.transparent),
-        ),
-      ),
+  PreferredSizeWidget _buildAppBar() {
+    return HolyChildAppBar(
+      title: context.l10n.settingsTitle,
+      showBackButton: widget.showBackButton,
     );
   }
 
@@ -471,6 +455,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         children: [
           const _SettingsBackground(),
           SafeArea(
+            top: false,
             child: RefreshIndicator(
               color: AppColors.holyGold,
               backgroundColor: AppColors.midnightFaith,

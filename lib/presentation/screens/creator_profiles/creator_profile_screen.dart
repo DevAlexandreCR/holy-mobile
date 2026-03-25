@@ -15,6 +15,7 @@ import 'package:holyverso/domain/devotionals/devotional.dart';
 import 'package:holyverso/presentation/state/auth/auth_controller.dart';
 import 'package:holyverso/presentation/state/devotionals/devotional_detail_controller.dart';
 import 'package:holyverso/presentation/state/devotionals/devotionals_feed_controller.dart';
+import 'package:holyverso/presentation/widgets/common/holy_child_app_bar.dart';
 
 class CreatorProfileScreen extends ConsumerStatefulWidget {
   const CreatorProfileScreen({super.key, required this.creatorId});
@@ -232,13 +233,11 @@ class _CreatorProfileScreenState extends ConsumerState<CreatorProfileScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.midnightFaith,
-      extendBodyBehindAppBar: true,
+      extendBodyBehindAppBar: _isOwnProfile,
       appBar: _isOwnProfile
           ? null
-          : AppBar(
-              backgroundColor: Colors.transparent,
-              elevation: 0,
-              foregroundColor: AppColors.pureWhite,
+          : HolyChildAppBar(
+              title: _profile?.name ?? context.l10n.creatorProfileTitle,
             ),
       body: Stack(
         children: [
@@ -261,7 +260,7 @@ class _CreatorProfileScreenState extends ConsumerState<CreatorProfileScreen> {
                 ),
                 padding: EdgeInsets.fromLTRB(
                   AppSpacing.lg,
-                  _isOwnProfile ? 68 : 108,
+                  _isOwnProfile ? 68 : AppSpacing.lg,
                   AppSpacing.lg,
                   AppSpacing.xl,
                 ),

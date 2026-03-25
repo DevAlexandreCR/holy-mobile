@@ -11,6 +11,7 @@ import 'package:holyverso/core/theme/app_text_styles.dart';
 import 'package:holyverso/data/creator_profiles/creator_profiles_repository.dart';
 import 'package:holyverso/domain/creator_profiles/creator_profile.dart';
 import 'package:holyverso/presentation/state/auth/auth_controller.dart';
+import 'package:holyverso/presentation/widgets/common/holy_child_app_bar.dart';
 
 class CreatorProfileEditScreen extends ConsumerStatefulWidget {
   const CreatorProfileEditScreen({super.key});
@@ -182,13 +183,7 @@ class _CreatorProfileEditScreenState
 
     return Scaffold(
       backgroundColor: AppColors.midnightFaith,
-      extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        foregroundColor: AppColors.pureWhite,
-        title: Text(l10n.creatorProfileEditTitle),
-      ),
+      appBar: HolyChildAppBar(title: l10n.creatorProfileEditTitle),
       body: Stack(
         children: [
           const _EditProfileBackground(),
@@ -198,6 +193,7 @@ class _CreatorProfileEditScreenState
             )
           else
             SafeArea(
+              top: false,
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(
                   AppSpacing.lg,

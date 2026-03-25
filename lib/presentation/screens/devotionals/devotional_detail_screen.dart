@@ -12,6 +12,7 @@ import 'package:holyverso/presentation/state/devotionals/devotional_comments_con
 import 'package:holyverso/presentation/state/devotionals/devotional_comments_state.dart';
 import 'package:holyverso/presentation/state/devotionals/devotional_detail_controller.dart';
 import 'package:holyverso/presentation/state/devotionals/devotional_detail_state.dart';
+import 'package:holyverso/presentation/widgets/common/holy_child_app_bar.dart';
 import 'package:holyverso/presentation/widgets/devotionals/devotional_content_view.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -206,11 +207,9 @@ class _DevotionalDetailScreenState
 
     return Scaffold(
       backgroundColor: AppColors.midnightFaith,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        title: Text(l10n.devotionalDetailTitle),
-      ),
+      appBar: HolyChildAppBar(title: l10n.devotionalDetailTitle),
       body: SafeArea(
+        top: false,
         child: switch (state.status) {
           DevotionalDetailStatus.loading => const Center(
             child: CircularProgressIndicator(color: AppColors.holyGold),

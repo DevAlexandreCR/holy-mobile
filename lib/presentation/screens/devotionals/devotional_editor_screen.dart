@@ -19,6 +19,7 @@ import 'package:holyverso/domain/devotionals/devotional.dart';
 import 'package:holyverso/domain/devotionals/devotional_status.dart';
 import 'package:holyverso/domain/devotionals/devotional_verse_reference.dart';
 import 'package:holyverso/presentation/state/auth/auth_controller.dart';
+import 'package:holyverso/presentation/widgets/common/holy_child_app_bar.dart';
 import 'package:holyverso/presentation/widgets/holy_button.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -791,16 +792,10 @@ class _DevotionalEditorScreenState
           backgroundColor: AppColors.midnightFaith,
           appBar: _isEditorFullscreen
               ? null
-              : AppBar(
-                  title: Text(
-                    widget.devotionalId == null
-                        ? l10n.createDevotional
-                        : l10n.editDevotional,
-                    style: AppTextStyles.headline3.copyWith(
-                      color: AppColors.pureWhite,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
+              : HolyChildAppBar(
+                  title: widget.devotionalId == null
+                      ? l10n.createDevotional
+                      : l10n.editDevotional,
                 ),
           body: PopScope(
             canPop: !_isEditorFullscreen && !isPublishing,
@@ -817,6 +812,7 @@ class _DevotionalEditorScreenState
                   ),
                 ),
                 SafeArea(
+                  top: false,
                   child: _isLoading
                       ? const Center(
                           child: CircularProgressIndicator(
