@@ -148,6 +148,7 @@ class AppLocalizations {
   String get navDevotionalsLabel => _string('navDevotionalsLabel');
   String get navSearchLabel => _string('navSearchLabel');
   String get navSavedLabel => _string('navSavedLabel');
+  String get navProfileLabel => _string('navProfileLabel');
   String get navSettingsLabel => _string('navSettingsLabel');
   String get navUsersLabel => _string('navUsersLabel');
   String get preferencesTitle => _string('preferencesTitle');
@@ -306,6 +307,8 @@ class AppLocalizations {
   String get creatorProfileSaving => _string('creatorProfileSaving');
   String get creatorProfileAvatarFallback =>
       _string('creatorProfileAvatarFallback');
+  String get creatorProfileEditFootnote =>
+      _string('creatorProfileEditFootnote');
   String get creatorHandleLabel => _string('creatorHandleLabel');
   String get creatorHandleHint => _string('creatorHandleHint');
   String get creatorHandleTaken => _string('creatorHandleTaken');
@@ -459,6 +462,7 @@ class AppLocalizations {
       'navDevotionalsLabel': 'Devocionales',
       'navSearchLabel': 'Búsqueda',
       'navSavedLabel': 'Guardados',
+      'navProfileLabel': 'Perfil',
       'navSettingsLabel': 'Ajustes',
       'navUsersLabel': 'Usuarios',
       'preferencesTitle': 'Preferencias',
@@ -598,7 +602,7 @@ class AppLocalizations {
       'creatorProfileFollowers': 'Seguidores',
       'creatorProfileFollowing': 'Siguiendo',
       'creatorProfilePublished': 'Publicados',
-      'creatorProfileDevotionalsSection': 'Devocionales publicados',
+      'creatorProfileDevotionalsSection': 'Devocionales públicos',
       'creatorProfileEmpty':
           'Este perfil todavía no tiene devocionales públicos visibles.',
       'creatorProfileFollow': 'Seguir',
@@ -612,6 +616,8 @@ class AppLocalizations {
       'creatorProfileRemoveAvatar': 'Quitar foto',
       'creatorProfileSaving': 'Guardando...',
       'creatorProfileAvatarFallback': 'Perfil',
+      'creatorProfileEditFootnote':
+          'Tu camino es único; tu perfil refleja tu jornada.',
       'creatorHandleLabel': 'Usuario público',
       'creatorHandleHint': 'Ej. luz_para_hoy',
       'creatorHandleTaken': 'Ese usuario ya está en uso.',
@@ -749,6 +755,7 @@ class AppLocalizations {
       'navDevotionalsLabel': 'Devotionals',
       'navSearchLabel': 'Search',
       'navSavedLabel': 'Saved',
+      'navProfileLabel': 'Profile',
       'navSettingsLabel': 'Settings',
       'navUsersLabel': 'Users',
       'preferencesTitle': 'Preferences',
@@ -885,7 +892,7 @@ class AppLocalizations {
       'creatorProfileFollowers': 'Followers',
       'creatorProfileFollowing': 'Following',
       'creatorProfilePublished': 'Published',
-      'creatorProfileDevotionalsSection': 'Published devotionals',
+      'creatorProfileDevotionalsSection': 'Public devotionals',
       'creatorProfileEmpty':
           'This profile does not have visible public devotionals yet.',
       'creatorProfileFollow': 'Follow',
@@ -898,6 +905,8 @@ class AppLocalizations {
       'creatorProfileRemoveAvatar': 'Remove photo',
       'creatorProfileSaving': 'Saving...',
       'creatorProfileAvatarFallback': 'Profile',
+      'creatorProfileEditFootnote':
+          'Your path is unique; your profile reflects your journey.',
       'creatorHandleLabel': 'Public handle',
       'creatorHandleHint': 'e.g. light_for_today',
       'creatorHandleTaken': 'That handle is already taken.',

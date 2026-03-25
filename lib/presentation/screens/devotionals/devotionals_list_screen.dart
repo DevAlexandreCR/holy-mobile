@@ -59,13 +59,6 @@ class _DevotionalsListScreenState extends ConsumerState<DevotionalsListScreen>
     unawaited(ref.read(devotionalsListControllerProvider.notifier).refresh());
   }
 
-  Future<void> _openProfileEditor() async {
-    await context.push('/users/me/edit-profile');
-    if (!mounted) return;
-    unawaited(ref.read(forYouFeedControllerProvider.notifier).refresh());
-    unawaited(ref.read(followingFeedControllerProvider.notifier).refresh());
-  }
-
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
@@ -101,10 +94,7 @@ class _DevotionalsListScreenState extends ConsumerState<DevotionalsListScreen>
         controller: _tabController,
         children: [
           const _PublicFeedTab(),
-          _MyDevotionalsTab(
-            onOpenEditor: _openEditor,
-            onOpenProfileEditor: _openProfileEditor,
-          ),
+          _MyDevotionalsTab(onOpenEditor: _openEditor),
         ],
       ),
     );
@@ -353,13 +343,9 @@ class _PublicFeedModeViewState extends ConsumerState<_PublicFeedModeView> {
 }
 
 class _MyDevotionalsTab extends ConsumerStatefulWidget {
-  const _MyDevotionalsTab({
-    required this.onOpenEditor,
-    required this.onOpenProfileEditor,
-  });
+  const _MyDevotionalsTab({required this.onOpenEditor});
 
   final Future<void> Function([String? devotionalId]) onOpenEditor;
-  final Future<void> Function() onOpenProfileEditor;
 
   @override
   ConsumerState<_MyDevotionalsTab> createState() => _MyDevotionalsTabState();
@@ -555,15 +541,6 @@ class _MyDevotionalsTabState extends ConsumerState<_MyDevotionalsTab> {
                     ),
                   ),
                 ],
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: OutlinedButton.icon(
-                  onPressed: widget.onOpenProfileEditor,
-                  icon: const Icon(Icons.person_outline),
-                  label: Text(l10n.creatorProfileEdit),
-                ),
               ),
             ],
           ),

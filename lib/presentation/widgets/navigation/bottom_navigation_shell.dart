@@ -252,8 +252,8 @@ List<_NavItem> _buildItems(AppLocalizations l10n, bool canManageUsers) {
   items.add(
     _NavItem(
       branchIndex: 3,
-      icon: Icons.settings_rounded,
-      label: l10n.navSettingsLabel,
+      icon: Icons.person_rounded,
+      label: l10n.navProfileLabel,
     ),
   );
 

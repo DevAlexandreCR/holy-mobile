@@ -124,11 +124,30 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             ],
           ),
           StatefulShellBranch(
-            initialLocation: '/settings',
+            initialLocation: '/profile',
             routes: [
               GoRoute(
+                path: '/profile',
+                builder: (context, state) {
+                  final userId = ref.read(authControllerProvider).user?.id;
+                  if (userId == null) {
+                    return const SizedBox.shrink();
+                  }
+                  return CreatorProfileScreen(creatorId: userId);
+                },
+              ),
+              GoRoute(
+                path: '/profile/edit',
+                builder: (context, state) => const CreatorProfileEditScreen(),
+              ),
+              GoRoute(
+                path: '/profile/settings',
+                builder: (context, state) =>
+                    const SettingsScreen(showBackButton: true),
+              ),
+              GoRoute(
                 path: '/settings',
-                builder: (context, state) => const SettingsScreen(),
+                redirect: (context, state) => '/profile/settings',
               ),
             ],
           ),
@@ -175,7 +194,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               ),
               GoRoute(
                 path: '/users/me/edit-profile',
-                builder: (context, state) => const CreatorProfileEditScreen(),
+                redirect: (context, state) => '/profile/edit',
               ),
               GoRoute(
                 path: '/users/:id',
@@ -201,6 +220,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final canManageUsers = ref.watch(canManageUsersProvider);
       final isProtectedRoute =
           location == '/saved' ||
+          location == '/profile' ||
+          location.startsWith('/profile/') ||
           location == '/settings' ||
           location == '/users' ||
           location == '/users/me/edit-profile' ||
@@ -244,7 +265,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       if (authState.canAccessProtectedRoutes &&
           location == '/users' &&
           !canManageUsers) {
-        return '/settings';
+        return '/profile';
       }
 
       return null;

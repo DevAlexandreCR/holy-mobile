@@ -880,7 +880,7 @@ class _EmptyState extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.md),
         FilledButton.icon(
-          onPressed: () => context.go('/settings'),
+          onPressed: () => context.go('/profile/settings'),
           icon: const Icon(Icons.settings_outlined),
           label: const Text('Ir a Ajustes'),
         ),

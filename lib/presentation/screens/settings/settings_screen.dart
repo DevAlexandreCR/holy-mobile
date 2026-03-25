@@ -21,7 +21,9 @@ import 'package:holyverso/presentation/widgets/users/role_badge.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
-  const SettingsScreen({super.key});
+  const SettingsScreen({super.key, this.showBackButton = false});
+
+  final bool showBackButton;
 
   @override
   ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
@@ -89,7 +91,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       backgroundColor: AppColors.midnightFaith.withValues(alpha: 0.82),
       elevation: 0,
       centerTitle: true,
-      automaticallyImplyLeading: false,
+      automaticallyImplyLeading: widget.showBackButton,
       title: Text(
         context.l10n.settingsTitle,
         style: AppTextStyles.headline3.copyWith(

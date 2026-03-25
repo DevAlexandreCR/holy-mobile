@@ -99,7 +99,7 @@ class _CreatorProfileScreenState extends ConsumerState<CreatorProfileScreen> {
         _errorMessage = AppErrorMapper.toMessage(
           error,
           l10n: context.l10n,
-          fallbackMessage: context.l10n.devotionalsLoadError,
+          fallbackMessage: context.l10n.creatorProfileLoadError,
         );
       });
     }
@@ -212,14 +212,16 @@ class _CreatorProfileScreenState extends ConsumerState<CreatorProfileScreen> {
   }
 
   Future<void> _editProfile() async {
-    final updated = await context.push<CreatorProfile>(
-      '/users/me/edit-profile',
-    );
+    final updated = await context.push<CreatorProfile>('/profile/edit');
     if (!mounted || updated == null) return;
     _syncProfile(updated);
     setState(() {
       _profile = updated;
     });
+  }
+
+  Future<void> _openSettings() async {
+    await context.push('/profile/settings');
   }
 
   Future<void> _openDevotional(Devotional devotional) async {
@@ -228,37 +230,53 @@ class _CreatorProfileScreenState extends ConsumerState<CreatorProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = context.l10n;
-
     return Scaffold(
       backgroundColor: AppColors.midnightFaith,
-      appBar: AppBar(
-        title: Text(l10n.creatorProfileTitle),
-        actions: [
-          if (_isOwnProfile)
-            TextButton(
-              onPressed: _editProfile,
-              child: Text(l10n.creatorProfileEdit),
+      extendBodyBehindAppBar: true,
+      appBar: _isOwnProfile
+          ? null
+          : AppBar(
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              foregroundColor: AppColors.pureWhite,
             ),
-        ],
-      ),
-      body: _loadingProfile && _profile == null
-          ? const Center(
+      body: Stack(
+        children: [
+          const _ProfileBackground(),
+          if (_loadingProfile && _profile == null)
+            const Center(
               child: CircularProgressIndicator(color: AppColors.holyGold),
             )
-          : _errorMessage != null && _profile == null
-          ? _CreatorProfileError(message: _errorMessage!, onRetry: _load)
-          : RefreshIndicator(
+          else if (_errorMessage != null && _profile == null)
+            _CreatorProfileError(message: _errorMessage!, onRetry: _load)
+          else
+            RefreshIndicator(
+              color: AppColors.holyGold,
+              backgroundColor: AppColors.midnightFaith,
               onRefresh: _refresh,
               child: ListView(
                 controller: _scrollController,
-                padding: const EdgeInsets.fromLTRB(
+                physics: const AlwaysScrollableScrollPhysics(
+                  parent: BouncingScrollPhysics(),
+                ),
+                padding: EdgeInsets.fromLTRB(
                   AppSpacing.lg,
-                  AppSpacing.md,
+                  _isOwnProfile ? 68 : 108,
                   AppSpacing.lg,
                   AppSpacing.xl,
                 ),
                 children: [
+                  if (_isOwnProfile) ...[
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: _IconActionButton(
+                        icon: Icons.menu_rounded,
+                        tooltip: context.l10n.settingsTooltip,
+                        onPressed: _openSettings,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                  ],
                   if (_profile != null)
                     _CreatorProfileHeader(
                       profile: _profile!,
@@ -271,17 +289,15 @@ class _CreatorProfileScreenState extends ConsumerState<CreatorProfileScreen> {
                     const SizedBox(height: AppSpacing.md),
                     _CreatorProfileInlineError(message: _errorMessage!),
                   ],
-                  const SizedBox(height: AppSpacing.lg),
-                  Text(
-                    l10n.creatorProfileDevotionalsSection,
-                    style: AppTextStyles.headline3.copyWith(
-                      color: AppColors.pureWhite,
-                      fontWeight: FontWeight.w700,
-                    ),
+                  const SizedBox(height: AppSpacing.xl),
+                  _SectionHeading(
+                    title: context.l10n.creatorProfileDevotionalsSection,
                   ),
                   const SizedBox(height: AppSpacing.md),
                   if (_items.isEmpty && !_loadingList)
-                    _CreatorProfileEmpty(message: l10n.creatorProfileEmpty)
+                    _CreatorProfileEmpty(
+                      message: context.l10n.creatorProfileEmpty,
+                    )
                   else
                     ..._items.map(
                       (devotional) => _CreatorDevotionalCard(
@@ -301,6 +317,71 @@ class _CreatorProfileScreenState extends ConsumerState<CreatorProfileScreen> {
                 ],
               ),
             ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ProfileBackground extends StatelessWidget {
+  const _ProfileBackground();
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(gradient: AppColors.midnightGradient),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          Positioned(
+            top: -120,
+            right: -60,
+            child: _BlurCircle(
+              size: 220,
+              color: AppColors.holyGold.withValues(alpha: 0.14),
+            ),
+          ),
+          Positioned(
+            top: 180,
+            left: -80,
+            child: _BlurCircle(
+              size: 190,
+              color: AppColors.morningLight.withValues(alpha: 0.12),
+            ),
+          ),
+          Positioned(
+            bottom: -70,
+            right: -30,
+            child: _BlurCircle(
+              size: 170,
+              color: AppColors.holyGold.withValues(alpha: 0.08),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BlurCircle extends StatelessWidget {
+  const _BlurCircle({required this.size, required this.color});
+
+  final double size;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return IgnorePointer(
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(color: color, blurRadius: 80, spreadRadius: 30),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -322,96 +403,178 @@ class _CreatorProfileHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      decoration: BoxDecoration(
-        color: AppColors.midnightFaith.withValues(alpha: 0.9),
-        borderRadius: AppBorderRadius.card,
-        border: Border.all(color: AppColors.pureWhite.withValues(alpha: 0.08)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _CreatorAvatar(
-                imageUrl: profile.avatarUrl,
-                name: profile.name,
-                radius: 30,
+    final bio = profile.bio?.trim();
+    final hasBio = bio != null && bio.isNotEmpty;
+    final handle = profile.handle?.trim();
+
+    return Column(
+      children: [
+        _CreatorAvatar(
+          imageUrl: profile.avatarUrl,
+          name: profile.name,
+          radius: 46,
+        ),
+        const SizedBox(height: AppSpacing.md),
+        Text(
+          profile.name,
+          textAlign: TextAlign.center,
+          style: AppTextStyles.headline2.copyWith(
+            color: AppColors.holyGold,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        if (handle != null && handle.isNotEmpty) ...[
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            '@$handle',
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: AppColors.softMist.withValues(alpha: 0.82),
+            ),
+          ),
+        ],
+        if (hasBio) ...[
+          const SizedBox(height: AppSpacing.md),
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 320),
+            child: Text(
+              bio,
+              textAlign: TextAlign.center,
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.softMist.withValues(alpha: 0.9),
+                height: 1.65,
               ),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      profile.name,
-                      style: AppTextStyles.headline3.copyWith(
-                        color: AppColors.pureWhite,
-                        fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+        const SizedBox(height: AppSpacing.lg),
+        if (isOwnProfile)
+          SizedBox(
+            width: 176,
+            child: FilledButton(
+              onPressed: onEditProfile,
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.holyGold,
+                foregroundColor: AppColors.midnightFaithDark,
+                minimumSize: const Size.fromHeight(AppSizes.buttonHeight),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppBorderRadius.full),
+                ),
+                textStyle: AppTextStyles.button.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              child: Text(context.l10n.creatorProfileEdit),
+            ),
+          )
+        else
+          SizedBox(
+            width: double.infinity,
+            child: profile.followedByMe
+                ? OutlinedButton(
+                    onPressed: isTogglingFollow ? null : onToggleFollow,
+                    style: OutlinedButton.styleFrom(
+                      side: BorderSide(
+                        color: AppColors.holyGold.withValues(alpha: 0.78),
                       ),
-                    ),
-                    if (profile.handle != null && profile.handle!.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(top: AppSpacing.xs),
-                        child: Text(
-                          '@${profile.handle}',
-                          style: AppTextStyles.bodyMedium.copyWith(
-                            color: AppColors.holyGold,
-                          ),
+                      foregroundColor: AppColors.holyGold,
+                      minimumSize: const Size.fromHeight(AppSizes.buttonHeight),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(
+                          AppBorderRadius.full,
                         ),
                       ),
-                  ],
+                    ),
+                    child: Text(context.l10n.creatorProfileUnfollow),
+                  )
+                : FilledButton(
+                    onPressed: isTogglingFollow ? null : onToggleFollow,
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.holyGold,
+                      foregroundColor: AppColors.midnightFaithDark,
+                      minimumSize: const Size.fromHeight(AppSizes.buttonHeight),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(
+                          AppBorderRadius.full,
+                        ),
+                      ),
+                    ),
+                    child: Text(context.l10n.creatorProfileFollow),
+                  ),
+          ),
+        const SizedBox(height: AppSpacing.lg),
+        Container(
+          decoration: BoxDecoration(
+            color: AppColors.midnightFaith.withValues(alpha: 0.72),
+            borderRadius: AppBorderRadius.card,
+            border: Border.all(
+              color: AppColors.holyGold.withValues(alpha: 0.22),
+            ),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: _ProfileStat(
+                  value: profile.followersCount,
+                  label: context.l10n.creatorProfileFollowers,
+                ),
+              ),
+              _StatDivider(),
+              Expanded(
+                child: _ProfileStat(
+                  value: profile.followingCount,
+                  label: context.l10n.creatorProfileFollowing,
+                ),
+              ),
+              _StatDivider(),
+              Expanded(
+                child: _ProfileStat(
+                  value: profile.publishedDevotionalsCount,
+                  label: context.l10n.creatorProfilePublished,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: AppSpacing.md),
-          Row(
-            children: [
-              _CountPill(
-                label: context.l10n.creatorProfileFollowers,
-                value: profile.followersCount,
+        ),
+      ],
+    );
+  }
+}
+
+class _IconActionButton extends StatelessWidget {
+  const _IconActionButton({
+    required this.icon,
+    required this.tooltip,
+    required this.onPressed,
+  });
+
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: SizedBox(
+        width: AppSizes.buttonHeight,
+        height: AppSizes.buttonHeight,
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onPressed,
+            borderRadius: BorderRadius.circular(AppBorderRadius.full),
+            child: Ink(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.midnightFaith.withValues(alpha: 0.6),
+                border: Border.all(
+                  color: AppColors.holyGold.withValues(alpha: 0.34),
+                ),
               ),
-              const SizedBox(width: AppSpacing.sm),
-              _CountPill(
-                label: context.l10n.creatorProfileFollowing,
-                value: profile.followingCount,
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              _CountPill(
-                label: context.l10n.creatorProfilePublished,
-                value: profile.publishedDevotionalsCount,
-              ),
-            ],
+              child: Icon(icon, color: AppColors.holyGold),
+            ),
           ),
-          if (profile.bio != null && profile.bio!.trim().isNotEmpty) ...[
-            const SizedBox(height: AppSpacing.md),
-            Text(
-              profile.bio!,
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: AppColors.softMist,
-                height: 1.5,
-              ),
-            ),
-          ],
-          const SizedBox(height: AppSpacing.md),
-          if (isOwnProfile)
-            OutlinedButton(
-              onPressed: onEditProfile,
-              child: Text(context.l10n.creatorProfileEdit),
-            )
-          else
-            ElevatedButton(
-              onPressed: isTogglingFollow ? null : onToggleFollow,
-              child: Text(
-                profile.followedByMe
-                    ? context.l10n.creatorProfileUnfollow
-                    : context.l10n.creatorProfileFollow,
-              ),
-            ),
-        ],
+        ),
       ),
     );
   }
@@ -430,65 +593,125 @@ class _CreatorAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (imageUrl != null && imageUrl!.isNotEmpty) {
-      return CircleAvatar(
-        radius: radius,
-        backgroundImage: CachedNetworkImageProvider(imageUrl!),
-      );
-    }
+    final avatar = imageUrl != null && imageUrl!.isNotEmpty
+        ? CircleAvatar(
+            radius: radius,
+            backgroundImage: CachedNetworkImageProvider(imageUrl!),
+          )
+        : CircleAvatar(
+            radius: radius,
+            backgroundColor: AppColors.inputBackground,
+            child: Text(
+              name.isNotEmpty ? name.characters.first.toUpperCase() : '?',
+              style: AppTextStyles.headline2.copyWith(
+                color: AppColors.holyGold,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          );
 
-    return CircleAvatar(
-      radius: radius,
-      backgroundColor: AppColors.holyGold.withValues(alpha: 0.18),
-      child: Text(
-        name.isNotEmpty ? name.characters.first.toUpperCase() : '?',
-        style: AppTextStyles.headline3.copyWith(
-          color: AppColors.holyGold,
-          fontWeight: FontWeight.w700,
-        ),
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(color: AppColors.holyGold.withValues(alpha: 0.7)),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.holyGold.withValues(alpha: 0.15),
+            blurRadius: 24,
+            spreadRadius: 2,
+          ),
+        ],
+      ),
+      child: avatar,
+    );
+  }
+}
+
+class _ProfileStat extends StatelessWidget {
+  const _ProfileStat({required this.value, required this.label});
+
+  final int value;
+  final String label;
+
+  String _formatCount(int amount) {
+    if (amount >= 1000000) {
+      final value = amount / 1000000;
+      return '${value.toStringAsFixed(value >= 10 ? 0 : 1)}M';
+    }
+    if (amount >= 1000) {
+      final value = amount / 1000;
+      return '${value.toStringAsFixed(value >= 10 ? 0 : 1)}k';
+    }
+    return amount.toString();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.md,
+      ),
+      child: Column(
+        children: [
+          Text(
+            _formatCount(value),
+            style: AppTextStyles.headline3.copyWith(
+              color: AppColors.holyGold,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            label.toUpperCase(),
+            textAlign: TextAlign.center,
+            style: AppTextStyles.labelSmall.copyWith(
+              color: AppColors.softMist.withValues(alpha: 0.62),
+              letterSpacing: 1.3,
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
-class _CountPill extends StatelessWidget {
-  const _CountPill({required this.label, required this.value});
+class _StatDivider extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 1,
+      height: 72,
+      color: AppColors.holyGold.withValues(alpha: 0.16),
+    );
+  }
+}
 
-  final String label;
-  final int value;
+class _SectionHeading extends StatelessWidget {
+  const _SectionHeading({required this.title});
+
+  final String title;
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.sm,
-          vertical: AppSpacing.sm,
+    return Row(
+      children: [
+        Text(
+          title,
+          style: AppTextStyles.labelLarge.copyWith(
+            color: AppColors.holyGold,
+            fontWeight: FontWeight.w700,
+          ),
         ),
-        decoration: BoxDecoration(
-          color: AppColors.midnightFaithDark,
-          borderRadius: BorderRadius.circular(AppBorderRadius.md),
+        const SizedBox(width: AppSpacing.md),
+        Expanded(
+          child: Container(
+            height: 1,
+            color: AppColors.holyGold.withValues(alpha: 0.16),
+          ),
         ),
-        child: Column(
-          children: [
-            Text(
-              value.toString(),
-              style: AppTextStyles.headline3.copyWith(
-                color: AppColors.pureWhite,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.xs),
-            Text(
-              label,
-              textAlign: TextAlign.center,
-              style: AppTextStyles.bodySmall.copyWith(
-                color: AppColors.softMist,
-              ),
-            ),
-          ],
-        ),
-      ),
+      ],
     );
   }
 }
@@ -502,56 +725,129 @@ class _CreatorDevotionalCard extends StatelessWidget {
   final Devotional devotional;
   final VoidCallback onOpen;
 
+  String _tag() {
+    if (devotional.primaryReferences.isNotEmpty) {
+      return devotional.primaryReferences.first.book.toUpperCase();
+    }
+    if (devotional.verseReferences.isNotEmpty) {
+      return devotional.verseReferences.first.book.toUpperCase();
+    }
+    return 'DEVOCIONAL';
+  }
+
   @override
   Widget build(BuildContext context) {
+    final imageUrl = devotional.previewImageUrl ?? devotional.coverImageUrl;
+
     return Container(
-      margin: const EdgeInsets.only(bottom: AppSpacing.md),
+      margin: const EdgeInsets.only(bottom: AppSpacing.lg),
       decoration: BoxDecoration(
-        color: AppColors.midnightFaith.withValues(alpha: 0.9),
+        color: AppColors.inputBackground.withValues(alpha: 0.9),
         borderRadius: AppBorderRadius.card,
-        border: Border.all(color: AppColors.pureWhite.withValues(alpha: 0.08)),
+        border: Border.all(color: AppColors.pureWhite.withValues(alpha: 0.06)),
       ),
       child: InkWell(
         borderRadius: AppBorderRadius.card,
         onTap: onOpen,
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                devotional.title,
-                style: AppTextStyles.headline3.copyWith(
-                  color: AppColors.pureWhite,
-                  fontWeight: FontWeight.w700,
-                ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ClipRRect(
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(AppBorderRadius.lg),
               ),
-              const SizedBox(height: AppSpacing.sm),
-              Text(
-                devotional.previewText,
-                style: AppTextStyles.bodyMedium.copyWith(
-                  color: AppColors.softMist,
-                ),
+              child: SizedBox(
+                height: 172,
+                width: double.infinity,
+                child: imageUrl != null && imageUrl.isNotEmpty
+                    ? CachedNetworkImage(
+                        imageUrl: imageUrl,
+                        fit: BoxFit.cover,
+                        alignment: Alignment(0, devotional.coverImageFocusY),
+                      )
+                    : Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              AppColors.holyGold.withValues(alpha: 0.16),
+                              AppColors.morningLight.withValues(alpha: 0.2),
+                              AppColors.midnightFaithDark,
+                            ],
+                          ),
+                        ),
+                        child: const Center(
+                          child: Icon(
+                            Icons.menu_book_rounded,
+                            color: AppColors.holyGold,
+                            size: 34,
+                          ),
+                        ),
+                      ),
               ),
-              const SizedBox(height: AppSpacing.md),
-              Row(
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.md,
+                AppSpacing.md,
+                AppSpacing.md,
+                AppSpacing.lg,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(
-                    Icons.menu_book_rounded,
-                    size: 16,
-                    color: AppColors.holyGold,
-                  ),
-                  const SizedBox(width: AppSpacing.xs),
                   Text(
-                    '${devotional.estimatedReadTime} ${context.l10n.devotionalMinutesShort}',
-                    style: AppTextStyles.bodySmall.copyWith(
+                    _tag(),
+                    style: AppTextStyles.labelSmall.copyWith(
                       color: AppColors.holyGold,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.8,
                     ),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  Text(
+                    devotional.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.headline3.copyWith(
+                      color: AppColors.pureWhite,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  Text(
+                    devotional.previewText,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: AppColors.softMist.withValues(alpha: 0.82),
+                      height: 1.6,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        context.l10n.devotionalOpenDetail,
+                        style: AppTextStyles.labelMedium.copyWith(
+                          color: AppColors.holyGold,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.xs),
+                      const Icon(
+                        Icons.chevron_right_rounded,
+                        color: AppColors.holyGold,
+                        size: 18,
+                      ),
+                    ],
                   ),
                 ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -580,8 +876,12 @@ class _CreatorProfileError extends StatelessWidget {
               ),
             ),
             const SizedBox(height: AppSpacing.md),
-            ElevatedButton(
+            FilledButton(
               onPressed: onRetry,
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.holyGold,
+                foregroundColor: AppColors.midnightFaithDark,
+              ),
               child: Text(context.l10n.errorRetry),
             ),
           ],
@@ -622,12 +922,16 @@ class _CreatorProfileEmpty extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
-        color: AppColors.midnightFaith.withValues(alpha: 0.9),
+        color: AppColors.inputBackground.withValues(alpha: 0.84),
         borderRadius: AppBorderRadius.card,
+        border: Border.all(color: AppColors.holyGold.withValues(alpha: 0.14)),
       ),
       child: Text(
         message,
-        style: AppTextStyles.bodyMedium.copyWith(color: AppColors.softMist),
+        style: AppTextStyles.bodyMedium.copyWith(
+          color: AppColors.softMist.withValues(alpha: 0.88),
+          height: 1.6,
+        ),
       ),
     );
   }
