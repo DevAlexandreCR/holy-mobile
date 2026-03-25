@@ -1274,66 +1274,68 @@ class _DevotionalEditorScreenState
 
   Widget _buildFullscreenEditor(AppLocalizations l10n) {
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.lg,
-            AppSpacing.sm,
-            AppSpacing.lg,
-            AppSpacing.sm,
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      l10n.devotionalEditorFullscreenTitle,
-                      style: AppTextStyles.labelLarge.copyWith(
-                        color: AppColors.pureWhite,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      '$_wordCount palabras',
-                      style: AppTextStyles.caption.copyWith(
-                        color: AppColors.softMist.withValues(alpha: 0.8),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              IconButton(
-                onPressed: _hideKeyboard,
-                tooltip: l10n.devotionalHideKeyboard,
-                icon: const Icon(Icons.keyboard_hide_outlined),
-                color: AppColors.softMist,
-              ),
-              TextButton(
-                onPressed: _exitFullscreenEditor,
-                style: TextButton.styleFrom(
-                  foregroundColor: AppColors.holyGold,
-                  textStyle: AppTextStyles.labelMedium.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                child: Text(l10n.devotionalEditorDone),
-              ),
-            ],
-          ),
-        ),
-        Expanded(
-          child: Padding(
+    return SafeArea(
+      bottom: false,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
             padding: const EdgeInsets.fromLTRB(
               AppSpacing.lg,
-              0,
+              AppSpacing.sm,
               AppSpacing.lg,
-              AppSpacing.lg,
+              AppSpacing.sm,
             ),
-            child: Container(
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        l10n.devotionalEditorFullscreenTitle,
+                        style: AppTextStyles.labelLarge.copyWith(
+                          color: AppColors.pureWhite,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '$_wordCount palabras',
+                        style: AppTextStyles.caption.copyWith(
+                          color: AppColors.softMist.withValues(alpha: 0.8),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  onPressed: _hideKeyboard,
+                  tooltip: l10n.devotionalHideKeyboard,
+                  icon: const Icon(Icons.keyboard_hide_outlined),
+                  color: AppColors.softMist,
+                ),
+                TextButton(
+                  onPressed: _exitFullscreenEditor,
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppColors.holyGold,
+                    textStyle: AppTextStyles.labelMedium.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  child: Text(l10n.devotionalEditorDone),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg,
+                0,
+                AppSpacing.lg,
+                AppSpacing.lg,
+              ),
+              child: Container(
               decoration: BoxDecoration(
                 color: AppColors.inputBackground,
                 borderRadius: BorderRadius.circular(AppBorderRadius.md),
@@ -1485,10 +1487,11 @@ class _DevotionalEditorScreenState
                   ),
                 ],
               ),
+              ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
