@@ -8,18 +8,27 @@ class DevotionalDetailState {
     this.status = DevotionalDetailStatus.idle,
     this.errorMessage,
     this.isTogglingLike = false,
+    this.isTogglingSave = false,
+    this.isReporting = false,
+    this.hasReportedReadComplete = false,
   });
 
   final Devotional? devotional;
   final DevotionalDetailStatus status;
   final String? errorMessage;
   final bool isTogglingLike;
+  final bool isTogglingSave;
+  final bool isReporting;
+  final bool hasReportedReadComplete;
 
   DevotionalDetailState copyWith({
     Devotional? devotional,
     DevotionalDetailStatus? status,
     String? errorMessage,
     bool? isTogglingLike,
+    bool? isTogglingSave,
+    bool? isReporting,
+    bool? hasReportedReadComplete,
     bool clearError = false,
     bool clearDevotional = false,
   }) {
@@ -28,6 +37,10 @@ class DevotionalDetailState {
       status: status ?? this.status,
       errorMessage: clearError ? null : errorMessage ?? this.errorMessage,
       isTogglingLike: isTogglingLike ?? this.isTogglingLike,
+      isTogglingSave: isTogglingSave ?? this.isTogglingSave,
+      isReporting: isReporting ?? this.isReporting,
+      hasReportedReadComplete:
+          hasReportedReadComplete ?? this.hasReportedReadComplete,
     );
   }
 }

@@ -22,6 +22,7 @@ class DevotionalDetailController extends Notifier<DevotionalDetailState> {
       status: DevotionalDetailStatus.loading,
       clearError: true,
       clearDevotional: state.devotional?.id != devotionalId,
+      hasReportedReadComplete: false,
     );
 
     try {
@@ -57,6 +58,73 @@ class DevotionalDetailController extends Notifier<DevotionalDetailState> {
       state = state.copyWith(errorMessage: _mapError(error));
     } finally {
       state = state.copyWith(isTogglingLike: false);
+    }
+  }
+
+  Future<void> toggleSave() async {
+    final devotional = state.devotional;
+    if (devotional == null || state.isTogglingSave) return;
+
+    state = state.copyWith(isTogglingSave: true, clearError: true);
+    try {
+      final result = devotional.saved
+          ? await _repository.unsaveDevotional(devotional.id)
+          : await _repository.saveDevotional(devotional.id);
+      state = state.copyWith(
+        devotional: devotional.copyWith(
+          saveCount: result.saveCount,
+          saved: result.saved,
+        ),
+      );
+    } catch (error) {
+      state = state.copyWith(errorMessage: _mapError(error));
+    } finally {
+      state = state.copyWith(isTogglingSave: false);
+    }
+  }
+
+  Future<void> registerShare() async {
+    final devotional = state.devotional;
+    if (devotional == null) return;
+
+    try {
+      final shareCount = await _repository.shareDevotional(devotional.id);
+      state = state.copyWith(
+        devotional: devotional.copyWith(shareCount: shareCount),
+      );
+    } catch (_) {}
+  }
+
+  Future<void> reportReadComplete() async {
+    final devotional = state.devotional;
+    if (devotional == null || state.hasReportedReadComplete) return;
+
+    try {
+      final count = await _repository.markReadComplete(devotional.id);
+      state = state.copyWith(
+        devotional: devotional.copyWith(readCompleteCount: count),
+        hasReportedReadComplete: true,
+      );
+    } catch (_) {}
+  }
+
+  Future<bool> report({required String reason, String? details}) async {
+    final devotional = state.devotional;
+    if (devotional == null || state.isReporting) return false;
+
+    state = state.copyWith(isReporting: true, clearError: true);
+    try {
+      await _repository.reportDevotional(
+        devotionalId: devotional.id,
+        reason: reason,
+        details: details,
+      );
+      return true;
+    } catch (error) {
+      state = state.copyWith(errorMessage: _mapError(error));
+      return false;
+    } finally {
+      state = state.copyWith(isReporting: false);
     }
   }
 

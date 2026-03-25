@@ -3,8 +3,6 @@ import 'package:holyverso/domain/devotionals/devotional_status.dart';
 
 enum DevotionalsListStatus { idle, loading, success, error }
 
-enum DevotionalsListMode { all, mine }
-
 class DevotionalsListState {
   const DevotionalsListState({
     this.items = const [],
@@ -14,8 +12,6 @@ class DevotionalsListState {
     this.limit = 20,
     this.total = 0,
     this.isFetchingMore = false,
-    this.likingDevotionalId,
-    this.mode = DevotionalsListMode.all,
     this.statusFilter = DevotionalStatus.published,
   });
 
@@ -26,8 +22,6 @@ class DevotionalsListState {
   final int limit;
   final int total;
   final bool isFetchingMore;
-  final String? likingDevotionalId;
-  final DevotionalsListMode mode;
   final DevotionalStatus statusFilter;
 
   bool get hasMore => page * limit < total;
@@ -40,8 +34,6 @@ class DevotionalsListState {
     int? limit,
     int? total,
     bool? isFetchingMore,
-    String? likingDevotionalId,
-    DevotionalsListMode? mode,
     DevotionalStatus? statusFilter,
     bool clearError = false,
   }) {
@@ -53,8 +45,6 @@ class DevotionalsListState {
       limit: limit ?? this.limit,
       total: total ?? this.total,
       isFetchingMore: isFetchingMore ?? this.isFetchingMore,
-      likingDevotionalId: likingDevotionalId ?? this.likingDevotionalId,
-      mode: mode ?? this.mode,
       statusFilter: statusFilter ?? this.statusFilter,
     );
   }

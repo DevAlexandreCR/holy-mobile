@@ -10,6 +10,7 @@ import 'package:holyverso/presentation/screens/auth/login_screen.dart';
 import 'package:holyverso/presentation/screens/auth/register_screen.dart';
 import 'package:holyverso/presentation/screens/auth/reset_password_screen.dart';
 import 'package:holyverso/presentation/screens/devotionals/devotional_editor_screen.dart';
+import 'package:holyverso/presentation/screens/devotionals/devotional_detail_screen.dart';
 import 'package:holyverso/presentation/screens/devotionals/devotional_preview_screen.dart';
 import 'package:holyverso/presentation/screens/devotionals/devotionals_list_screen.dart';
 import 'package:holyverso/presentation/screens/search/search_screen.dart';
@@ -167,7 +168,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 path: '/devotionals/:id',
                 builder: (context, state) {
                   final id = state.pathParameters['id']!;
-                  return DevotionalsListScreen(initialDevotionalId: id);
+                  return DevotionalDetailScreen(devotionalId: id);
                 },
               ),
             ],

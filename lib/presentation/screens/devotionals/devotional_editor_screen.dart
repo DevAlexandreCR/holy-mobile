@@ -9,6 +9,7 @@ import 'package:flutter_quill_extensions/flutter_quill_extensions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:holyverso/core/errors/app_error_mapper.dart';
 import 'package:holyverso/core/l10n/app_localizations.dart';
 import 'package:holyverso/core/theme/app_colors.dart';
 import 'package:holyverso/core/theme/app_design_tokens.dart';
@@ -40,6 +41,7 @@ class _DevotionalEditorScreenState
   final FocusNode _editorFocusNode = FocusNode();
   final List<DevotionalVerseReference> _references = [];
   String? _coverImageUrl;
+  String? _imageAssetId;
   double _coverImageFocusY = 0;
   bool _isLoading = false;
   bool _isSaving = false;
@@ -382,18 +384,25 @@ class _DevotionalEditorScreenState
       );
       if (image == null) return;
 
-      final url = await ref
+      final uploaded = await ref
           .read(devotionalsRepositoryProvider)
           .uploadImage(File(image.path));
       setState(() {
-        _coverImageUrl = url;
+        _imageAssetId = uploaded.assetId;
+        _coverImageUrl = uploaded.previewImageUrl;
         _coverImageFocusY = 0;
       });
-    } catch (_) {
+    } catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(context.l10n.devotionalsImageUploadError),
+            content: Text(
+              AppErrorMapper.toMessage(
+                error,
+                l10n: context.l10n,
+                fallbackMessage: context.l10n.devotionalsImageUploadError,
+              ),
+            ),
             backgroundColor: Colors.red.shade700,
           ),
         );
@@ -449,17 +458,19 @@ class _DevotionalEditorScreenState
           title: _titleController.text.trim(),
           content: contentOps,
           verseReferences: _references,
-          coverImageUrl: _coverImageUrl,
+          imageAssetId: _imageAssetId,
           coverImageFocusY: _coverImageUrl == null ? null : _coverImageFocusY,
-          status: publish ? DevotionalStatus.published : DevotionalStatus.draft,
         );
+        if (publish) {
+          saved = await repository.publishDevotional(saved.id);
+        }
       } else {
         saved = await repository.updateDevotional(
           devotionalId: widget.devotionalId!,
           title: _titleController.text.trim(),
           content: contentOps,
           verseReferences: _references,
-          coverImageUrl: _coverImageUrl,
+          imageAssetId: _imageAssetId,
           coverImageFocusY: _coverImageUrl == null ? null : _coverImageFocusY,
         );
 
@@ -481,11 +492,21 @@ class _DevotionalEditorScreenState
         );
         context.go('/devotionals');
       }
-    } catch (_) {
+    } catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(context.l10n.devotionalsSaveError),
+            content: Text(
+              AppErrorMapper.toMessage(
+                error,
+                l10n: context.l10n,
+                fallbackMessage: context.l10n.devotionalsSaveError,
+                businessCodeMessages: {
+                  'DEVOTIONAL_PUBLISH_BLOCKED':
+                      context.l10n.devotionalPublishBlocked,
+                },
+              ),
+            ),
             backgroundColor: Colors.red.shade700,
           ),
         );

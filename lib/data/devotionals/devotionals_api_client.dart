@@ -5,11 +5,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:holyverso/core/l10n/app_localizations.dart';
 import 'package:holyverso/data/network/api_client.dart';
+import 'package:holyverso/domain/core/cursor_paged_result.dart';
 import 'package:holyverso/domain/core/paged_result.dart';
 import 'package:holyverso/domain/devotionals/devotional.dart';
 import 'package:holyverso/domain/devotionals/devotional_comment.dart';
 import 'package:holyverso/domain/devotionals/devotional_status.dart';
 import 'package:holyverso/domain/devotionals/devotional_verse_reference.dart';
+import 'package:holyverso/domain/devotionals/uploaded_devotional_image.dart';
 
 class DevotionalsApiClient {
   DevotionalsApiClient(this._dio);
@@ -30,9 +32,13 @@ class DevotionalsApiClient {
   }
 
   Map<String, dynamic> _normalizeDevotional(Map<String, dynamic> map) {
-    final cover = map['cover_image_url']?.toString();
-    if (cover == null || cover.isEmpty) return map;
-    return {...map, 'cover_image_url': _resolveUrl(cover)};
+    final cover = _resolveUrl(map['cover_image_url']?.toString());
+    final preview = _resolveUrl(map['preview_image_url']?.toString());
+    return {
+      ...map,
+      if (cover != null) 'cover_image_url': cover,
+      if (preview != null) 'preview_image_url': preview,
+    };
   }
 
   Map<String, dynamic> _unwrapData(dynamic rawData, {String? errorMessage}) {
@@ -79,6 +85,39 @@ class DevotionalsApiClient {
     );
   }
 
+  Future<CursorPagedResult<Devotional>> fetchFeed({
+    String? cursor,
+    int limit = 20,
+  }) async {
+    final response = await _dio.get(
+      '/devotionals/feed',
+      queryParameters: {
+        if (cursor != null && cursor.isNotEmpty) 'cursor': cursor,
+        'limit': limit,
+      },
+    );
+
+    final data = _unwrapData(response.data);
+    final itemsRaw = data['items'] as List? ?? [];
+
+    return CursorPagedResult<Devotional>(
+      items: itemsRaw
+          .whereType<Map>()
+          .map(
+            (item) => Devotional.fromMap(
+              _normalizeDevotional(Map<String, dynamic>.from(item)),
+            ),
+          )
+          .toList(),
+      nextCursor: data['next_cursor']?.toString(),
+      hasMore: data['has_more'] == true,
+    );
+  }
+
+  Future<void> recordFeedEvents(List<Map<String, dynamic>> events) async {
+    await _dio.post('/devotionals/feed/events', data: {'events': events});
+  }
+
   Future<Devotional> getDevotional(String id) async {
     final response = await _dio.get('/devotionals/$id');
     final data = _unwrapData(response.data);
@@ -89,21 +128,19 @@ class DevotionalsApiClient {
     required String title,
     required List<dynamic> content,
     required List<DevotionalVerseReference> verseReferences,
-    String? coverImageUrl,
+    String? imageAssetId,
     double? coverImageFocusY,
-    DevotionalStatus status = DevotionalStatus.draft,
   }) async {
     final response = await _dio.post(
       '/devotionals',
       data: {
         'title': title,
         'content': content,
-        'cover_image_url': coverImageUrl,
+        'image_asset_id': imageAssetId,
         'cover_image_focus_y': coverImageFocusY,
         'verse_references': verseReferences
             .map((reference) => reference.toMap())
             .toList(),
-        'status': status.apiValue,
       },
     );
 
@@ -116,13 +153,13 @@ class DevotionalsApiClient {
     String? title,
     List<dynamic>? content,
     List<DevotionalVerseReference>? verseReferences,
-    String? coverImageUrl,
+    String? imageAssetId,
     double? coverImageFocusY,
   }) async {
     final payload = <String, dynamic>{};
     if (title != null) payload['title'] = title;
     if (content != null) payload['content'] = content;
-    if (coverImageUrl != null) payload['cover_image_url'] = coverImageUrl;
+    if (imageAssetId != null) payload['image_asset_id'] = imageAssetId;
     if (coverImageFocusY != null) {
       payload['cover_image_focus_y'] = coverImageFocusY;
     }
@@ -162,6 +199,56 @@ class DevotionalsApiClient {
     return (
       liked: data['liked'] == true,
       likesCount: (data['likes_count'] as num?)?.toInt() ?? 0,
+    );
+  }
+
+  Future<({bool saved, int saveCount})> saveDevotional(
+    String devotionalId,
+  ) async {
+    final response = await _dio.post('/devotionals/$devotionalId/save');
+    final data = _unwrapData(response.data);
+    return (
+      saved: data['saved'] == true,
+      saveCount: (data['save_count'] as num?)?.toInt() ?? 0,
+    );
+  }
+
+  Future<({bool saved, int saveCount})> unsaveDevotional(
+    String devotionalId,
+  ) async {
+    final response = await _dio.delete('/devotionals/$devotionalId/save');
+    final data = _unwrapData(response.data);
+    return (
+      saved: data['saved'] == true,
+      saveCount: (data['save_count'] as num?)?.toInt() ?? 0,
+    );
+  }
+
+  Future<int> shareDevotional(String devotionalId) async {
+    final response = await _dio.post('/devotionals/$devotionalId/share');
+    final data = _unwrapData(response.data);
+    return (data['share_count'] as num?)?.toInt() ?? 0;
+  }
+
+  Future<int> markReadComplete(String devotionalId) async {
+    final response = await _dio.post(
+      '/devotionals/$devotionalId/read-complete',
+    );
+    final data = _unwrapData(response.data);
+    return (data['read_complete_count'] as num?)?.toInt() ?? 0;
+  }
+
+  Future<void> reportDevotional({
+    required String devotionalId,
+    required String reason,
+    String? details,
+  }) async {
+    await _dio.post(
+      '/devotionals/$devotionalId/report',
+      data: {
+        'reason': reason,
+        if (details != null && details.isNotEmpty) 'details': details,
+      },
     );
   }
 
@@ -226,7 +313,7 @@ class DevotionalsApiClient {
     await _dio.delete('/devotionals/$devotionalId/comments/$commentId');
   }
 
-  Future<String> uploadImage(File file) async {
+  Future<UploadedDevotionalImage> uploadImage(File file) async {
     final formData = FormData.fromMap({
       'image': await MultipartFile.fromFile(file.path),
     });
@@ -238,11 +325,11 @@ class DevotionalsApiClient {
     );
 
     final data = _unwrapData(response.data);
-    final url = _resolveUrl(data['url']?.toString());
-    if (url == null || url.isEmpty) {
-      throw StateError(_l10n.genericError);
-    }
-    return url;
+    final normalized = {
+      ...data,
+      'preview_image_url': _resolveUrl(data['preview_image_url']?.toString()),
+    };
+    return UploadedDevotionalImage.fromMap(normalized);
   }
 }
 

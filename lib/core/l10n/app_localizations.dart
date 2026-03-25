@@ -165,6 +165,7 @@ class AppLocalizations {
 
   String get devotionalsTitle => _string('devotionalsTitle');
   String get devotionalsAll => _string('devotionalsAll');
+  String get devotionalsPublic => _string('devotionalsPublic');
   String get devotionalsMine => _string('devotionalsMine');
   String get devotionalsDrafts => _string('devotionalsDrafts');
   String get devotionalsPublished => _string('devotionalsPublished');
@@ -215,6 +216,39 @@ class AppLocalizations {
   String get devotionalTitleRequired => _string('devotionalTitleRequired');
   String get devotionalPrimaryReferenceRequired =>
       _string('devotionalPrimaryReferenceRequired');
+  String get devotionalPublishBlocked => _string('devotionalPublishBlocked');
+  String get devotionalDetailTitle => _string('devotionalDetailTitle');
+  String get devotionalSave => _string('devotionalSave');
+  String get devotionalOpenDetail => _string('devotionalOpenDetail');
+  String get devotionalArchiveAction => _string('devotionalArchiveAction');
+  String get devotionalCommentsEmpty => _string('devotionalCommentsEmpty');
+  String get devotionalMinutesShort => _string('devotionalMinutesShort');
+  String get devotionalModerationClear => _string('devotionalModerationClear');
+  String get devotionalModerationUnderReview =>
+      _string('devotionalModerationUnderReview');
+  String get devotionalModerationRestricted =>
+      _string('devotionalModerationRestricted');
+  String get devotionalReportAction => _string('devotionalReportAction');
+  String get devotionalReportTitle => _string('devotionalReportTitle');
+  String get devotionalReportDetailsHint =>
+      _string('devotionalReportDetailsHint');
+  String get devotionalReportSuccess => _string('devotionalReportSuccess');
+  String get devotionalReportInappropriate =>
+      _string('devotionalReportInappropriate');
+  String get devotionalReportOffensive => _string('devotionalReportOffensive');
+  String get devotionalReportSexual => _string('devotionalReportSexual');
+  String get devotionalReportViolence => _string('devotionalReportViolence');
+  String get devotionalReportSpam => _string('devotionalReportSpam');
+  String get devotionalReportImage => _string('devotionalReportImage');
+  String get devotionalReportMisleading =>
+      _string('devotionalReportMisleading');
+  String get devotionalReportOther => _string('devotionalReportOther');
+  String get devotionalsFeedEmptyTitle => _string('devotionalsFeedEmptyTitle');
+  String get devotionalsFeedEmptySubtitle =>
+      _string('devotionalsFeedEmptySubtitle');
+  String get devotionalsMyEmptyTitle => _string('devotionalsMyEmptyTitle');
+  String get devotionalsMyEmptySubtitle =>
+      _string('devotionalsMyEmptySubtitle');
   String get likesLabel => _string('likesLabel');
   String get commentsLabel => _string('commentsLabel');
   String get viewsLabel => _string('viewsLabel');
@@ -387,6 +421,7 @@ class AppLocalizations {
           'Correo o contraseña incorrectos. Verifica tus datos.',
       'devotionalsTitle': 'Devocionales',
       'devotionalsAll': 'Todos',
+      'devotionalsPublic': 'Público',
       'devotionalsMine': 'Mis devocionales',
       'devotionalsDrafts': 'Borradores',
       'devotionalsPublished': 'Publicados',
@@ -438,6 +473,35 @@ class AppLocalizations {
       'devotionalTitleRequired': 'El título es obligatorio.',
       'devotionalPrimaryReferenceRequired':
           'Agrega al menos una referencia principal.',
+      'devotionalPublishBlocked':
+          'No pudimos publicar el devocional por una revisión de contenido.',
+      'devotionalDetailTitle': 'Detalle del devocional',
+      'devotionalSave': 'Guardar',
+      'devotionalOpenDetail': 'Leer completo',
+      'devotionalArchiveAction': 'Archivar',
+      'devotionalCommentsEmpty': 'Todavía no hay comentarios.',
+      'devotionalMinutesShort': 'min',
+      'devotionalModerationClear': 'Visible',
+      'devotionalModerationUnderReview': 'En revisión',
+      'devotionalModerationRestricted': 'Restringido',
+      'devotionalReportAction': 'Reportar',
+      'devotionalReportTitle': 'Reportar devocional',
+      'devotionalReportDetailsHint': 'Cuéntanos un poco más (opcional)',
+      'devotionalReportSuccess': 'Tu reporte fue enviado.',
+      'devotionalReportInappropriate': 'Contenido inapropiado',
+      'devotionalReportOffensive': 'Ofensivo',
+      'devotionalReportSexual': 'Contenido sexual',
+      'devotionalReportViolence': 'Violencia',
+      'devotionalReportSpam': 'Spam',
+      'devotionalReportImage': 'Imagen inapropiada',
+      'devotionalReportMisleading': 'Contenido engañoso',
+      'devotionalReportOther': 'Otro motivo',
+      'devotionalsFeedEmptyTitle': 'Todavía no hay devocionales en el feed',
+      'devotionalsFeedEmptySubtitle':
+          'Cuando la comunidad publique nuevos devocionales, aparecerán aquí.',
+      'devotionalsMyEmptyTitle': 'Aún no tienes devocionales',
+      'devotionalsMyEmptySubtitle':
+          'Crea tu primer devocional y compártelo con la comunidad.',
       'likesLabel': 'Me gusta',
       'commentsLabel': 'Comentarios',
       'viewsLabel': 'Vistas',
@@ -590,6 +654,7 @@ class AppLocalizations {
           'Incorrect email or password. Please check your credentials.',
       'devotionalsTitle': 'Devotionals',
       'devotionalsAll': 'All',
+      'devotionalsPublic': 'Public',
       'devotionalsMine': 'My devotionals',
       'devotionalsDrafts': 'Drafts',
       'devotionalsPublished': 'Published',
@@ -639,6 +704,35 @@ class AppLocalizations {
       'devotionalTitleRequired': 'Title is required.',
       'devotionalPrimaryReferenceRequired':
           'Add at least one primary reference.',
+      'devotionalPublishBlocked':
+          'We could not publish the devotional due to content review.',
+      'devotionalDetailTitle': 'Devotional detail',
+      'devotionalSave': 'Save',
+      'devotionalOpenDetail': 'Read full',
+      'devotionalArchiveAction': 'Archive',
+      'devotionalCommentsEmpty': 'There are no comments yet.',
+      'devotionalMinutesShort': 'min',
+      'devotionalModerationClear': 'Visible',
+      'devotionalModerationUnderReview': 'Under review',
+      'devotionalModerationRestricted': 'Restricted',
+      'devotionalReportAction': 'Report',
+      'devotionalReportTitle': 'Report devotional',
+      'devotionalReportDetailsHint': 'Tell us more (optional)',
+      'devotionalReportSuccess': 'Your report was submitted.',
+      'devotionalReportInappropriate': 'Inappropriate content',
+      'devotionalReportOffensive': 'Offensive',
+      'devotionalReportSexual': 'Sexual content',
+      'devotionalReportViolence': 'Violence',
+      'devotionalReportSpam': 'Spam',
+      'devotionalReportImage': 'Inappropriate image',
+      'devotionalReportMisleading': 'Misleading content',
+      'devotionalReportOther': 'Other',
+      'devotionalsFeedEmptyTitle': 'There are no devotionals in the feed yet',
+      'devotionalsFeedEmptySubtitle':
+          'When the community publishes new devotionals, they will appear here.',
+      'devotionalsMyEmptyTitle': 'You do not have devotionals yet',
+      'devotionalsMyEmptySubtitle':
+          'Create your first devotional and share it with the community.',
       'likesLabel': 'Likes',
       'commentsLabel': 'Comments',
       'viewsLabel': 'Views',

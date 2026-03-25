@@ -2,11 +2,13 @@ import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:holyverso/data/devotionals/devotionals_api_client.dart';
+import 'package:holyverso/domain/core/cursor_paged_result.dart';
 import 'package:holyverso/domain/core/paged_result.dart';
 import 'package:holyverso/domain/devotionals/devotional.dart';
 import 'package:holyverso/domain/devotionals/devotional_comment.dart';
 import 'package:holyverso/domain/devotionals/devotional_status.dart';
 import 'package:holyverso/domain/devotionals/devotional_verse_reference.dart';
+import 'package:holyverso/domain/devotionals/uploaded_devotional_image.dart';
 
 class DevotionalsRepository {
   DevotionalsRepository(this._client);
@@ -27,6 +29,17 @@ class DevotionalsRepository {
     );
   }
 
+  Future<CursorPagedResult<Devotional>> fetchFeed({
+    String? cursor,
+    int limit = 20,
+  }) {
+    return _client.fetchFeed(cursor: cursor, limit: limit);
+  }
+
+  Future<void> recordFeedEvents(List<Map<String, dynamic>> events) {
+    return _client.recordFeedEvents(events);
+  }
+
   Future<Devotional> getDevotional(String id) {
     return _client.getDevotional(id);
   }
@@ -35,17 +48,15 @@ class DevotionalsRepository {
     required String title,
     required List<dynamic> content,
     required List<DevotionalVerseReference> verseReferences,
-    String? coverImageUrl,
+    String? imageAssetId,
     double? coverImageFocusY,
-    DevotionalStatus status = DevotionalStatus.draft,
   }) {
     return _client.createDevotional(
       title: title,
       content: content,
       verseReferences: verseReferences,
-      coverImageUrl: coverImageUrl,
+      imageAssetId: imageAssetId,
       coverImageFocusY: coverImageFocusY,
-      status: status,
     );
   }
 
@@ -54,7 +65,7 @@ class DevotionalsRepository {
     String? title,
     List<dynamic>? content,
     List<DevotionalVerseReference>? verseReferences,
-    String? coverImageUrl,
+    String? imageAssetId,
     double? coverImageFocusY,
   }) {
     return _client.updateDevotional(
@@ -62,7 +73,7 @@ class DevotionalsRepository {
       title: title,
       content: content,
       verseReferences: verseReferences,
-      coverImageUrl: coverImageUrl,
+      imageAssetId: imageAssetId,
       coverImageFocusY: coverImageFocusY,
     );
   }
@@ -81,6 +92,34 @@ class DevotionalsRepository {
 
   Future<({bool liked, int likesCount})> toggleLike(String devotionalId) {
     return _client.toggleLike(devotionalId);
+  }
+
+  Future<({bool saved, int saveCount})> saveDevotional(String devotionalId) {
+    return _client.saveDevotional(devotionalId);
+  }
+
+  Future<({bool saved, int saveCount})> unsaveDevotional(String devotionalId) {
+    return _client.unsaveDevotional(devotionalId);
+  }
+
+  Future<int> shareDevotional(String devotionalId) {
+    return _client.shareDevotional(devotionalId);
+  }
+
+  Future<int> markReadComplete(String devotionalId) {
+    return _client.markReadComplete(devotionalId);
+  }
+
+  Future<void> reportDevotional({
+    required String devotionalId,
+    required String reason,
+    String? details,
+  }) {
+    return _client.reportDevotional(
+      devotionalId: devotionalId,
+      reason: reason,
+      details: details,
+    );
   }
 
   Future<PagedResult<DevotionalComment>> fetchComments({
@@ -124,7 +163,7 @@ class DevotionalsRepository {
     );
   }
 
-  Future<String> uploadImage(File file) {
+  Future<UploadedDevotionalImage> uploadImage(File file) {
     return _client.uploadImage(file);
   }
 }
