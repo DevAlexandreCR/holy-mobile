@@ -160,6 +160,26 @@ class _DevotionalDetailScreenState
                     maxLines: 4,
                     decoration: InputDecoration(
                       hintText: l10n.devotionalReportDetailsHint,
+                      filled: true,
+                      fillColor: AppColors.inputBackground,
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(AppBorderRadius.md),
+                        borderSide: BorderSide(
+                          color: AppColors.inputBorder.withValues(alpha: 0.7),
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(AppBorderRadius.md),
+                        borderSide: const BorderSide(
+                          color: AppColors.holyGold,
+                          width: 1.2,
+                        ),
+                      ),
+                      hintStyle: AppTextStyles.bodyMedium.copyWith(
+                        color: AppColors.inputPlaceholder.withValues(
+                          alpha: 0.78,
+                        ),
+                      ),
                     ),
                     style: AppTextStyles.bodyMedium.copyWith(
                       color: AppColors.pureWhite,
@@ -453,9 +473,27 @@ class _DetailContent extends StatelessWidget {
             maxLines: 3,
             decoration: InputDecoration(
               hintText: context.l10n.writeComment,
+              filled: true,
+              fillColor: AppColors.inputBackground,
+              hintStyle: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.inputPlaceholder.withValues(alpha: 0.82),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+                borderSide: BorderSide(
+                  color: AppColors.inputBorder.withValues(alpha: 0.7),
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+                borderSide: const BorderSide(
+                  color: AppColors.holyGold,
+                  width: 1.2,
+                ),
+              ),
               suffixIcon: IconButton(
                 onPressed: onSubmitComment,
-                icon: const Icon(Icons.send_rounded),
+                icon: const Icon(Icons.send_rounded, color: AppColors.holyGold),
               ),
             ),
             style: AppTextStyles.bodyMedium.copyWith(
