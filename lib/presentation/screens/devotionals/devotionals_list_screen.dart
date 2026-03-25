@@ -30,21 +30,8 @@ class DevotionalsListScreen extends ConsumerStatefulWidget {
       _DevotionalsListScreenState();
 }
 
-class _DevotionalsListScreenState extends ConsumerState<DevotionalsListScreen>
-    with SingleTickerProviderStateMixin {
-  late final TabController _tabController;
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 3, vsync: this);
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
+class _DevotionalsListScreenState extends ConsumerState<DevotionalsListScreen> {
+  int _selectedTabIndex = 0;
 
   Future<void> _openEditor([String? devotionalId]) async {
     if (devotionalId == null) {
@@ -95,7 +82,13 @@ class _DevotionalsListScreenState extends ConsumerState<DevotionalsListScreen>
                   0,
                 ),
                 child: _TopLevelDevotionalsTabs(
-                  controller: _tabController,
+                  selectedIndex: _selectedTabIndex,
+                  onSelected: (index) {
+                    if (_selectedTabIndex == index) return;
+                    setState(() {
+                      _selectedTabIndex = index;
+                    });
+                  },
                   tabs: [
                     _TopLevelTabData(
                       key: const Key('devotionals-tab-for-you'),
@@ -114,8 +107,8 @@ class _DevotionalsListScreenState extends ConsumerState<DevotionalsListScreen>
               ),
               const SizedBox(height: AppSpacing.md),
               Expanded(
-                child: TabBarView(
-                  controller: _tabController,
+                child: IndexedStack(
+                  index: _selectedTabIndex,
                   children: [
                     _PublicFeedModeView(
                       mode: DevotionalFeedMode.forYou,
@@ -146,36 +139,83 @@ class _TopLevelTabData {
 
 class _TopLevelDevotionalsTabs extends StatelessWidget {
   const _TopLevelDevotionalsTabs({
-    required this.controller,
+    required this.selectedIndex,
+    required this.onSelected,
     required this.tabs,
   });
 
-  final TabController controller;
+  final int selectedIndex;
+  final ValueChanged<int> onSelected;
   final List<_TopLevelTabData> tabs;
 
   @override
   Widget build(BuildContext context) {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: TabBar(
-        controller: controller,
-        isScrollable: true,
-        dividerColor: Colors.transparent,
-        indicatorColor: AppColors.holyGold,
-        indicatorWeight: 2,
-        indicatorSize: TabBarIndicatorSize.label,
-        labelPadding: const EdgeInsets.only(right: AppSpacing.lg),
-        labelStyle: AppTextStyles.labelMedium.copyWith(
-          color: AppColors.holyGold,
-          fontWeight: FontWeight.w700,
+    return Row(
+      children: [
+        for (final entry in tabs.asMap().entries)
+          Expanded(
+            child: _TopLevelTabButton(
+              key: entry.value.key,
+              label: entry.value.label,
+              selected: selectedIndex == entry.key,
+              onTap: () => onSelected(entry.key),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _TopLevelTabButton extends StatelessWidget {
+  const _TopLevelTabButton({
+    super.key,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppBorderRadius.md),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: AppTextStyles.labelMedium.copyWith(
+                  color: selected
+                      ? AppColors.holyGold
+                      : AppColors.softMist.withValues(alpha: 0.72),
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                curve: Curves.easeOutCubic,
+                height: 2,
+                width: selected ? 44 : 24,
+                decoration: BoxDecoration(
+                  color: selected ? AppColors.holyGold : Colors.transparent,
+                  borderRadius: BorderRadius.circular(AppBorderRadius.full),
+                ),
+              ),
+            ],
+          ),
         ),
-        unselectedLabelStyle: AppTextStyles.labelMedium.copyWith(
-          color: AppColors.softMist.withValues(alpha: 0.72),
-          fontWeight: FontWeight.w500,
-        ),
-        tabs: tabs
-            .map((tab) => Tab(key: tab.key, text: tab.label))
-            .toList(growable: false),
       ),
     );
   }
