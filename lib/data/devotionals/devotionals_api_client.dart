@@ -126,8 +126,19 @@ class DevotionalsApiClient {
     await _dio.post('/devotionals/feed/events', data: {'events': events});
   }
 
-  Future<Devotional> getDevotional(String id) async {
-    final response = await _dio.get('/devotionals/$id');
+  Future<Devotional> getDevotional(
+    String id, {
+    String? shareToken,
+    String? deviceId,
+  }) async {
+    final response = await _dio.get(
+      '/devotionals/$id',
+      queryParameters: {
+        if (shareToken != null && shareToken.isNotEmpty)
+          'share_token': shareToken,
+        if (deviceId != null && deviceId.isNotEmpty) 'device_id': deviceId,
+      },
+    );
     final data = _unwrapData(response.data);
     return Devotional.fromMap(_normalizeDevotional(data));
   }
@@ -217,8 +228,15 @@ class DevotionalsApiClient {
 
   Future<({bool saved, int saveCount})> saveDevotional(
     String devotionalId,
+    {String? deliveryToken}
   ) async {
-    final response = await _dio.post('/devotionals/$devotionalId/save');
+    final response = await _dio.post(
+      '/devotionals/$devotionalId/save',
+      data: {
+        if (deliveryToken != null && deliveryToken.isNotEmpty)
+          'delivery_token': deliveryToken,
+      },
+    );
     final data = _unwrapData(response.data);
     return (
       saved: data['saved'] == true,
@@ -237,15 +255,38 @@ class DevotionalsApiClient {
     );
   }
 
-  Future<int> shareDevotional(String devotionalId) async {
-    final response = await _dio.post('/devotionals/$devotionalId/share');
+  Future<({int shareCount, String shareUrl})> shareDevotional(
+    String devotionalId, {
+    String? deliveryToken,
+  }) async {
+    final response = await _dio.post(
+      '/devotionals/$devotionalId/share',
+      data: {
+        if (deliveryToken != null && deliveryToken.isNotEmpty)
+          'delivery_token': deliveryToken,
+      },
+    );
     final data = _unwrapData(response.data);
-    return (data['share_count'] as num?)?.toInt() ?? 0;
+    return (
+      shareCount: (data['share_count'] as num?)?.toInt() ?? 0,
+      shareUrl: data['share_url']?.toString() ?? '',
+    );
   }
 
-  Future<int> markReadComplete(String devotionalId) async {
+  Future<int> markReadComplete(
+    String devotionalId, {
+    String? deliveryToken,
+    String? shareToken,
+    String? deviceId,
+  }) async {
     final response = await _dio.post(
       '/devotionals/$devotionalId/read-complete',
+      data: {
+        if (deliveryToken != null && deliveryToken.isNotEmpty)
+          'delivery_token': deliveryToken,
+        if (shareToken != null && shareToken.isNotEmpty) 'share_token': shareToken,
+        if (deviceId != null && deviceId.isNotEmpty) 'device_id': deviceId,
+      },
     );
     final data = _unwrapData(response.data);
     return (data['read_complete_count'] as num?)?.toInt() ?? 0;
@@ -255,12 +296,15 @@ class DevotionalsApiClient {
     required String devotionalId,
     required String reason,
     String? details,
+    String? deliveryToken,
   }) async {
     await _dio.post(
       '/devotionals/$devotionalId/report',
       data: {
         'reason': reason,
         if (details != null && details.isNotEmpty) 'details': details,
+        if (deliveryToken != null && deliveryToken.isNotEmpty)
+          'delivery_token': deliveryToken,
       },
     );
   }

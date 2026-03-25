@@ -5,7 +5,9 @@ import 'package:holyverso/data/auth/models/user_settings.dart';
 import 'package:holyverso/data/bible/bible_repository.dart';
 import 'package:holyverso/data/bible/models/bible_version.dart';
 import 'package:holyverso/domain/roles/user_role.dart';
+import 'package:holyverso/domain/verse/bible_book.dart';
 import 'package:holyverso/domain/verse/book_suggestion.dart';
+import 'package:holyverso/domain/verse/chapter.dart';
 import 'package:holyverso/domain/verse/search_result.dart';
 import 'package:holyverso/presentation/state/auth/auth_controller.dart';
 import 'package:holyverso/presentation/state/auth/auth_state.dart';
@@ -103,6 +105,16 @@ class _StubBibleRepository implements BibleRepository {
   @override
   Future<List<BookSuggestion>> getAutocompleteSuggestions(String query) async {
     return const [];
+  }
+
+  @override
+  Future<List<BibleBook>> fetchBooks() async {
+    return const [];
+  }
+
+  @override
+  Future<Chapter> fetchChapter({required String book, required int chapter}) {
+    throw UnimplementedError();
   }
 }
 

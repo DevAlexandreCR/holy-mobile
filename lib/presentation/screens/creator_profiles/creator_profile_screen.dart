@@ -221,6 +221,10 @@ class _CreatorProfileScreenState extends ConsumerState<CreatorProfileScreen> {
     });
   }
 
+  Future<void> _openInsights() async {
+    await context.push('/profile/insights');
+  }
+
   Future<void> _openSettings() async {
     await context.push('/profile/settings');
   }
@@ -268,10 +272,21 @@ class _CreatorProfileScreenState extends ConsumerState<CreatorProfileScreen> {
                   if (_isOwnProfile) ...[
                     Align(
                       alignment: Alignment.centerRight,
-                      child: _IconActionButton(
-                        icon: Icons.menu_rounded,
-                        tooltip: context.l10n.settingsTooltip,
-                        onPressed: _openSettings,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _IconActionButton(
+                            icon: Icons.insights_outlined,
+                            tooltip: 'Insights',
+                            onPressed: _openInsights,
+                          ),
+                          const SizedBox(width: AppSpacing.sm),
+                          _IconActionButton(
+                            icon: Icons.menu_rounded,
+                            tooltip: context.l10n.settingsTooltip,
+                            onPressed: _openSettings,
+                          ),
+                        ],
                       ),
                     ),
                     const SizedBox(height: AppSpacing.md),

@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -5,6 +6,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:holyverso/core/l10n/app_localizations.dart';
 import 'package:holyverso/core/theme/app_theme.dart';
+import 'package:holyverso/data/devotionals/devotionals_api_client.dart';
+import 'package:holyverso/data/devotionals/devotionals_repository.dart';
 import 'package:holyverso/domain/devotionals/devotional.dart';
 import 'package:holyverso/domain/devotionals/devotional_author.dart';
 import 'package:holyverso/domain/devotionals/devotional_feed_mode.dart';
@@ -211,6 +214,9 @@ class _TestApp extends StatelessWidget {
 
     return ProviderScope(
       overrides: [
+        devotionalsRepositoryProvider.overrideWith(
+          (ref) => DevotionalsRepository(_FakeDevotionalsApiClient()),
+        ),
         forYouFeedControllerProvider.overrideWith(
           () => _StaticForYouFeedController(forYouState),
         ),
@@ -229,6 +235,21 @@ class _TestApp extends StatelessWidget {
         darkTheme: AppTheme.dark(),
         routerConfig: router,
       ),
+    );
+  }
+}
+
+class _FakeDevotionalsApiClient extends DevotionalsApiClient {
+  _FakeDevotionalsApiClient() : super(Dio());
+
+  @override
+  Future<({int shareCount, String shareUrl})> shareDevotional(
+    String devotionalId, {
+    String? deliveryToken,
+  }) async {
+    return (
+      shareCount: 1,
+      shareUrl: 'https://holyverso.com/devotionals/$devotionalId',
     );
   }
 }
@@ -263,7 +284,7 @@ class _StaticForYouFeedController extends ForYouFeedController {
   Future<void> registerOpen(Devotional devotional) async {}
 
   @override
-  Future<void> registerShare(Devotional devotional) async {}
+  Future<void> registerShare(Devotional devotional, {int? shareCount}) async {}
 
   @override
   void syncUpdatedDevotional(Devotional devotional) {}
@@ -299,7 +320,7 @@ class _StaticFollowingFeedController extends FollowingFeedController {
   Future<void> registerOpen(Devotional devotional) async {}
 
   @override
-  Future<void> registerShare(Devotional devotional) async {}
+  Future<void> registerShare(Devotional devotional, {int? shareCount}) async {}
 
   @override
   void syncUpdatedDevotional(Devotional devotional) {}

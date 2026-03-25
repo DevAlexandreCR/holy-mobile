@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:holyverso/core/l10n/app_localizations.dart';
+import 'package:holyverso/core/services/phase_three_runtime_service.dart';
 import 'package:holyverso/core/theme/app_colors.dart';
 import 'package:holyverso/core/theme/app_design_tokens.dart';
 import 'package:holyverso/core/theme/app_text_styles.dart';
@@ -29,8 +30,6 @@ class SettingsScreen extends ConsumerStatefulWidget {
 }
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
-  bool _verseNotificationEnabled = true;
-  bool _reminderEnabled = false;
   bool _isAppInfoLoading = true;
   String? _appVersion;
   String? _buildNumber;
@@ -42,6 +41,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     _loadAppInfo();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(versionsControllerProvider.notifier).loadVersions();
+      ref
+          .read(authControllerProvider.notifier)
+          .refreshNotificationPreferences();
     });
   }
 
@@ -224,6 +226,57 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       SnackBar(
         content: Text(message),
         backgroundColor: success ? AppColors.holyGold : Colors.red,
+      ),
+    );
+  }
+
+  Future<void> _updateNotificationPreferences({
+    bool? devotionalNotificationsEnabled,
+    bool? followedCreatorNotificationsEnabled,
+    bool? featuredDevotionalNotificationsEnabled,
+  }) async {
+    final settings = ref.read(authControllerProvider).settings;
+    if (settings == null) {
+      return;
+    }
+
+    final targetDevotionalNotificationsEnabled =
+        devotionalNotificationsEnabled ??
+        settings.devotionalNotificationsEnabled;
+    PushPermissionRequestResult permissionResult =
+        PushPermissionRequestResult.unavailable;
+
+    if (!settings.devotionalNotificationsEnabled &&
+        targetDevotionalNotificationsEnabled) {
+      permissionResult = await ref
+          .read(phaseThreeRuntimeServiceProvider)
+          .requestNotificationPermission();
+    }
+
+    final success = await ref
+        .read(authControllerProvider.notifier)
+        .updateNotificationPreferences(
+          devotionalNotificationsEnabled: targetDevotionalNotificationsEnabled,
+          followedCreatorNotificationsEnabled:
+              followedCreatorNotificationsEnabled ??
+              settings.followedCreatorNotificationsEnabled,
+          featuredDevotionalNotificationsEnabled:
+              featuredDevotionalNotificationsEnabled ??
+              settings.featuredDevotionalNotificationsEnabled,
+        );
+
+    if (!mounted) return;
+    final message = success
+        ? permissionResult == PushPermissionRequestResult.denied
+              ? 'Preferencias actualizadas. Activa el permiso del sistema para recibir notificaciones.'
+              : 'Preferencias de notificación actualizadas'
+        : (ref.read(authControllerProvider).errorMessage ??
+              'No se pudieron actualizar las notificaciones');
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: success ? AppColors.holyGold : Colors.red.shade700,
       ),
     );
   }
@@ -447,6 +500,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ? 'v$_appVersion'
         : (_isAppInfoLoading ? 'Cargando...' : 'No disponible');
     final buildLabel = _buildNumber ?? (_isAppInfoLoading ? '--' : 'N/D');
+    final notificationSettings = authState.settings;
+    final devotionalNotificationsEnabled =
+        notificationSettings?.devotionalNotificationsEnabled ?? true;
+    final followedCreatorNotificationsEnabled =
+        notificationSettings?.followedCreatorNotificationsEnabled ?? true;
+    final featuredDevotionalNotificationsEnabled =
+        notificationSettings?.featuredDevotionalNotificationsEnabled ?? true;
 
     return Scaffold(
       backgroundColor: AppColors.midnightFaith,
@@ -556,38 +616,81 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     children: [
                       SettingTile(
                         icon: Icons.notifications_active_outlined,
-                        title: 'Verso diario',
-                        subtitle: 'Recibe el versículo al iniciar el día',
+                        title: 'Devocionales',
+                        subtitle:
+                            'Activa o pausa todas las notificaciones de devocionales',
                         trailing: Switch.adaptive(
-                          value: _verseNotificationEnabled,
+                          value: devotionalNotificationsEnabled,
                           activeThumbColor: AppColors.holyGold,
                           activeTrackColor: AppColors.holyGold.withValues(
                             alpha: 0.3,
                           ),
-                          onChanged: (value) =>
-                              setState(() => _verseNotificationEnabled = value),
+                          onChanged: isUpdating
+                              ? null
+                              : (value) => _updateNotificationPreferences(
+                                  devotionalNotificationsEnabled: value,
+                                ),
                         ),
-                        onTap: () => setState(
-                          () => _verseNotificationEnabled =
-                              !_verseNotificationEnabled,
-                        ),
+                        onTap: isUpdating
+                            ? null
+                            : () => _updateNotificationPreferences(
+                                devotionalNotificationsEnabled:
+                                    !devotionalNotificationsEnabled,
+                              ),
                       ),
                       SettingTile(
-                        icon: Icons.alarm_outlined,
-                        title: 'Recordatorios',
-                        subtitle: 'Programa alertas suaves para orar',
+                        icon: Icons.people_alt_outlined,
+                        title: 'Creadores que sigues',
+                        subtitle:
+                            'Recibe alertas cuando publiquen un nuevo devocional',
                         trailing: Switch.adaptive(
-                          value: _reminderEnabled,
+                          value:
+                              devotionalNotificationsEnabled &&
+                              followedCreatorNotificationsEnabled,
                           activeThumbColor: AppColors.holyGold,
                           activeTrackColor: AppColors.holyGold.withValues(
                             alpha: 0.3,
                           ),
-                          onChanged: (value) =>
-                              setState(() => _reminderEnabled = value),
+                          onChanged:
+                              isUpdating || !devotionalNotificationsEnabled
+                              ? null
+                              : (value) => _updateNotificationPreferences(
+                                  followedCreatorNotificationsEnabled: value,
+                                ),
                         ),
-                        onTap: () => setState(
-                          () => _reminderEnabled = !_reminderEnabled,
+                        onTap: isUpdating || !devotionalNotificationsEnabled
+                            ? null
+                            : () => _updateNotificationPreferences(
+                                followedCreatorNotificationsEnabled:
+                                    !followedCreatorNotificationsEnabled,
+                              ),
+                      ),
+                      SettingTile(
+                        icon: Icons.auto_awesome_outlined,
+                        title: 'Destacados',
+                        subtitle:
+                            'Permite sugerencias editoriales y devocionales destacados',
+                        trailing: Switch.adaptive(
+                          value:
+                              devotionalNotificationsEnabled &&
+                              featuredDevotionalNotificationsEnabled,
+                          activeThumbColor: AppColors.holyGold,
+                          activeTrackColor: AppColors.holyGold.withValues(
+                            alpha: 0.3,
+                          ),
+                          onChanged:
+                              isUpdating || !devotionalNotificationsEnabled
+                              ? null
+                              : (value) => _updateNotificationPreferences(
+                                  featuredDevotionalNotificationsEnabled: value,
+                                ),
                         ),
+                        onTap: isUpdating || !devotionalNotificationsEnabled
+                            ? null
+                            : () => _updateNotificationPreferences(
+                                featuredDevotionalNotificationsEnabled:
+                                    !featuredDevotionalNotificationsEnabled,
+                              ),
                       ),
                     ],
                   ),

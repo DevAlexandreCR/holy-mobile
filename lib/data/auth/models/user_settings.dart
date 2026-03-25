@@ -32,11 +32,17 @@ class UserSettings {
     this.preferredVersionId,
     this.timezone,
     this.widgetFontSize = WidgetFontSize.large,
+    this.devotionalNotificationsEnabled = true,
+    this.followedCreatorNotificationsEnabled = true,
+    this.featuredDevotionalNotificationsEnabled = true,
   });
 
   final int? preferredVersionId;
   final String? timezone;
   final WidgetFontSize widgetFontSize;
+  final bool devotionalNotificationsEnabled;
+  final bool followedCreatorNotificationsEnabled;
+  final bool featuredDevotionalNotificationsEnabled;
 
   factory UserSettings.fromMap(Map<String, dynamic> map) {
     final rawPreferred =
@@ -53,6 +59,12 @@ class UserSettings {
       widgetFontSize: WidgetFontSize.fromString(
         map['widget_font_size'] as String?,
       ),
+      devotionalNotificationsEnabled:
+          map['devotional_notifications_enabled'] as bool? ?? true,
+      followedCreatorNotificationsEnabled:
+          map['followed_creator_notifications_enabled'] as bool? ?? true,
+      featuredDevotionalNotificationsEnabled:
+          map['featured_devotional_notifications_enabled'] as bool? ?? true,
     );
   }
 
@@ -61,6 +73,11 @@ class UserSettings {
       'preferred_version_id': preferredVersionId,
       'timezone': timezone,
       'widget_font_size': widgetFontSize.toApiString(),
+      'devotional_notifications_enabled': devotionalNotificationsEnabled,
+      'followed_creator_notifications_enabled':
+          followedCreatorNotificationsEnabled,
+      'featured_devotional_notifications_enabled':
+          featuredDevotionalNotificationsEnabled,
     };
   }
 }

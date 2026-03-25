@@ -50,9 +50,12 @@ dependencies:
   url_launcher: ^6.2.4
   emoji_picker_flutter: ^2.0.0
   flutter_dotenv: ^6.0.0
+  firebase_core: ^3.15.2
+  firebase_messaging: ^15.2.10
   screenshot: ^3.0.0
   path_provider: ^2.1.5
   flutter_timezone: ^3.0.1
+  app_links: ^6.4.0
   package_info_plus: ^8.0.2
   visibility_detector: ^0.4.0+2
 

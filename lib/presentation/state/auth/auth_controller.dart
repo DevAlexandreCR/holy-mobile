@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:holyverso/core/errors/app_error_mapper.dart';
 import 'package:holyverso/core/l10n/app_localizations.dart';
+import 'package:holyverso/core/services/phase_three_runtime_service.dart';
 import 'package:holyverso/data/auth/auth_repository.dart';
 import 'package:holyverso/data/auth/models/auth_payload.dart';
 import 'package:holyverso/data/auth/models/auth_restore_result.dart';
@@ -69,6 +70,11 @@ class AuthController extends Notifier<AuthState> {
         payload,
         sessionStatus: AuthSessionStatus.authenticated,
       );
+      try {
+        await ref
+            .read(phaseThreeRuntimeServiceProvider)
+            .discardPendingShareAttribution();
+      } catch (_) {}
       return true;
     } catch (error) {
       state = state.copyWith(
@@ -101,6 +107,11 @@ class AuthController extends Notifier<AuthState> {
         payload,
         sessionStatus: AuthSessionStatus.authenticated,
       );
+      try {
+        await ref
+            .read(phaseThreeRuntimeServiceProvider)
+            .handleRegistrationCompleted();
+      } catch (_) {}
       return true;
     } catch (error) {
       state = state.copyWith(
@@ -162,6 +173,9 @@ class AuthController extends Notifier<AuthState> {
   }
 
   Future<void> logout() async {
+    try {
+      await ref.read(phaseThreeRuntimeServiceProvider).prepareForSignOut();
+    } catch (_) {}
     await _repository.logout();
     state = const AuthState(sessionStatus: AuthSessionStatus.guest);
   }
@@ -174,6 +188,9 @@ class AuthController extends Notifier<AuthState> {
       clearInfo: true,
     );
     try {
+      try {
+        await ref.read(phaseThreeRuntimeServiceProvider).prepareForSignOut();
+      } catch (_) {}
       await _repository.deleteAccount();
       state = AuthState(infoMessage: _l10n.deleteAccountSuccess);
       return true;
@@ -238,6 +255,60 @@ class AuthController extends Notifier<AuthState> {
       // Reload the verse so the widget picks up the new font size
       ref.read(verseControllerProvider.notifier).loadVerse(forceRefresh: true);
 
+      return true;
+    } catch (error) {
+      state = state.copyWith(
+        isUpdatingSettings: false,
+        errorMessage: _mapError(error),
+        clearInfo: true,
+      );
+      return false;
+    }
+  }
+
+  Future<bool> refreshNotificationPreferences() async {
+    if (state.user == null) return false;
+    try {
+      final updatedSettings = await _repository.getNotificationPreferences();
+      await _repository.persistSessionSnapshot(
+        user: state.user!,
+        settings: updatedSettings,
+      );
+      state = state.copyWith(settings: updatedSettings);
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> updateNotificationPreferences({
+    required bool devotionalNotificationsEnabled,
+    required bool followedCreatorNotificationsEnabled,
+    required bool featuredDevotionalNotificationsEnabled,
+  }) async {
+    if (state.user == null) return false;
+
+    state = state.copyWith(
+      isUpdatingSettings: true,
+      clearError: true,
+      clearInfo: true,
+    );
+    try {
+      final updatedSettings = await _repository.updateNotificationPreferences(
+        devotionalNotificationsEnabled: devotionalNotificationsEnabled,
+        followedCreatorNotificationsEnabled:
+            followedCreatorNotificationsEnabled,
+        featuredDevotionalNotificationsEnabled:
+            featuredDevotionalNotificationsEnabled,
+      );
+      await _repository.persistSessionSnapshot(
+        user: state.user!,
+        settings: updatedSettings,
+      );
+      state = state.copyWith(
+        settings: updatedSettings,
+        isUpdatingSettings: false,
+      );
       return true;
     } catch (error) {
       state = state.copyWith(
@@ -316,6 +387,9 @@ class AuthController extends Notifier<AuthState> {
   }
 
   Future<void> markSessionExpired({String? message}) async {
+    try {
+      await ref.read(phaseThreeRuntimeServiceProvider).prepareForSignOut();
+    } catch (_) {}
     await _repository.clearSession();
     state = AuthState(
       sessionStatus: AuthSessionStatus.expired,

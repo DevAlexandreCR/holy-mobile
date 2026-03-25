@@ -116,6 +116,24 @@ class AuthRepository {
     return _client.updateTimezone(timezone);
   }
 
+  Future<UserSettings> getNotificationPreferences() {
+    return _client.getNotificationPreferences();
+  }
+
+  Future<UserSettings> updateNotificationPreferences({
+    required bool devotionalNotificationsEnabled,
+    required bool followedCreatorNotificationsEnabled,
+    required bool featuredDevotionalNotificationsEnabled,
+  }) {
+    return _client.updateNotificationPreferences(
+      devotionalNotificationsEnabled: devotionalNotificationsEnabled,
+      followedCreatorNotificationsEnabled:
+          followedCreatorNotificationsEnabled,
+      featuredDevotionalNotificationsEnabled:
+          featuredDevotionalNotificationsEnabled,
+    );
+  }
+
   Future<void> persistSessionSnapshot({
     required User user,
     UserSettings? settings,

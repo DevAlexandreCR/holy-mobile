@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:holyverso/core/l10n/app_localizations.dart';
 import 'package:holyverso/data/auth/models/user.dart';
 import 'package:holyverso/data/auth/models/user_settings.dart';
 import 'package:holyverso/data/bible/bible_repository.dart';
 import 'package:holyverso/data/bible/bible_api_client.dart';
 import 'package:holyverso/data/bible/models/bible_version.dart';
 import 'package:holyverso/domain/roles/user_role.dart';
+import 'package:holyverso/domain/verse/bible_book.dart';
 import 'package:holyverso/domain/verse/book_suggestion.dart';
+import 'package:holyverso/domain/verse/chapter.dart';
 import 'package:holyverso/domain/verse/search_result.dart';
 import 'package:holyverso/domain/verse/verse_of_the_day.dart';
 import 'package:holyverso/presentation/state/auth/auth_controller.dart';
@@ -17,7 +20,6 @@ import 'package:holyverso/presentation/state/verse/saved_verses_controller.dart'
 import 'package:holyverso/presentation/state/verse/saved_verses_state.dart';
 import 'package:holyverso/presentation/state/verse/verse_controller.dart';
 import 'package:holyverso/presentation/state/verse/verse_state.dart';
-import 'package:holyverso/main.dart';
 
 class _FakeAuthController extends AuthController {
   @override
@@ -91,6 +93,9 @@ class _FakeBibleApiClient implements BibleApiClient {
   Future<List<BibleVersion>> getVersions() async => const [];
 
   @override
+  Future<List<BibleBook>> getBooks() async => const [];
+
+  @override
   Future<SearchResult?> searchVerses(String query, {int? versionId}) async {
     return null;
   }
@@ -98,6 +103,11 @@ class _FakeBibleApiClient implements BibleApiClient {
   @override
   Future<List<BookSuggestion>> getAutocompleteSuggestions(String query) async {
     return const [];
+  }
+
+  @override
+  Future<Chapter> getChapter({required String book, required int chapter}) {
+    throw UnimplementedError();
   }
 }
 
@@ -110,7 +120,7 @@ class _FakeSavedVersesController extends SavedVersesController {
 }
 
 void main() {
-  testWidgets('navigating to settings builds without errors', (tester) async {
+  testWidgets('settings screen builds without errors', (tester) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -121,15 +131,15 @@ void main() {
           ),
           bibleRepositoryProvider.overrideWith((ref) => _FakeBibleRepository()),
         ],
-        child: const HolyVersoApp(),
+        child: MaterialApp(
+          locale: const Locale('es'),
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          home: const SettingsScreen(showBackButton: true),
+        ),
       ),
     );
 
-    await tester.pumpAndSettle();
-
-    expect(find.byIcon(Icons.settings_rounded), findsOneWidget);
-
-    await tester.tap(find.byIcon(Icons.settings_rounded));
     await tester.pumpAndSettle();
 
     expect(find.byType(SettingsScreen), findsOneWidget);

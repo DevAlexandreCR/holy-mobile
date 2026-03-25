@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:holyverso/core/l10n/app_localizations.dart';
+import 'package:holyverso/core/services/app_runtime_storage.dart';
 import 'package:holyverso/core/theme/app_colors.dart';
 import 'package:holyverso/core/theme/app_design_tokens.dart';
 import 'package:holyverso/core/theme/app_text_styles.dart';
+import 'package:holyverso/data/devotionals/devotionals_repository.dart';
 import 'package:holyverso/domain/devotionals/devotional.dart';
 import 'package:holyverso/domain/devotionals/devotional_comment.dart';
 import 'package:holyverso/presentation/state/devotionals/devotional_comments_controller.dart';
@@ -17,9 +19,16 @@ import 'package:holyverso/presentation/widgets/devotionals/devotional_content_vi
 import 'package:share_plus/share_plus.dart';
 
 class DevotionalDetailScreen extends ConsumerStatefulWidget {
-  const DevotionalDetailScreen({super.key, required this.devotionalId});
+  const DevotionalDetailScreen({
+    super.key,
+    required this.devotionalId,
+    this.initialDeliveryToken,
+    this.initialShareToken,
+  });
 
   final String devotionalId;
+  final String? initialDeliveryToken;
+  final String? initialShareToken;
 
   @override
   ConsumerState<DevotionalDetailScreen> createState() =>
@@ -35,9 +44,7 @@ class _DevotionalDetailScreenState
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref
-          .read(devotionalDetailControllerProvider.notifier)
-          .load(widget.devotionalId);
+      _loadDetail();
       ref
           .read(devotionalCommentsControllerProvider.notifier)
           .load(widget.devotionalId);
@@ -64,11 +71,36 @@ class _DevotionalDetailScreenState
     }
   }
 
+  Future<void> _loadDetail() async {
+    final deviceId = await ref
+        .read(appRuntimeStorageProvider)
+        .getOrCreateDeviceId();
+    if (!mounted) return;
+
+    await ref
+        .read(devotionalDetailControllerProvider.notifier)
+        .load(
+          widget.devotionalId,
+          deliveryToken: widget.initialDeliveryToken,
+          shareToken: widget.initialShareToken,
+          deviceId: deviceId,
+        );
+  }
+
   Future<void> _share(Devotional devotional) async {
+    final detailState = ref.read(devotionalDetailControllerProvider);
+    final result = await ref
+        .read(devotionalsRepositoryProvider)
+        .shareDevotional(
+          devotional.id,
+          deliveryToken: detailState.deliveryToken,
+        );
+    if (!mounted) return;
+
     final shareText = [
       devotional.title.trim(),
       if (devotional.previewText.isNotEmpty) devotional.previewText,
-      'https://holyverso.com/devotionals/${devotional.id}',
+      result.shareUrl,
     ].join('\n\n');
 
     final box = context.findRenderObject() as RenderBox?;
@@ -82,7 +114,9 @@ class _DevotionalDetailScreenState
       sharePositionOrigin: origin,
     );
 
-    await ref.read(devotionalDetailControllerProvider.notifier).registerShare();
+    await ref
+        .read(devotionalDetailControllerProvider.notifier)
+        .registerShare(shareCount: result.shareCount);
   }
 
   Future<void> _submitComment() async {
@@ -236,9 +270,9 @@ class _DevotionalDetailScreenState
           ),
           DevotionalDetailStatus.error => _DetailError(
             message: state.errorMessage ?? l10n.genericError,
-            onRetry: () => ref
-                .read(devotionalDetailControllerProvider.notifier)
-                .load(widget.devotionalId),
+            onRetry: () {
+              _loadDetail();
+            },
           ),
           _ => _DetailContent(
             devotional: state.devotional,
@@ -246,9 +280,7 @@ class _DevotionalDetailScreenState
             commentController: _commentController,
             scrollController: _scrollController,
             onRefresh: () async {
-              await ref
-                  .read(devotionalDetailControllerProvider.notifier)
-                  .load(widget.devotionalId);
+              await _loadDetail();
               await ref
                   .read(devotionalCommentsControllerProvider.notifier)
                   .refresh();

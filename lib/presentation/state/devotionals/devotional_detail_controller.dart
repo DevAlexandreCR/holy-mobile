@@ -16,17 +16,29 @@ class DevotionalDetailController extends Notifier<DevotionalDetailState> {
     return const DevotionalDetailState();
   }
 
-  Future<void> load(String devotionalId) async {
+  Future<void> load(
+    String devotionalId, {
+    String? deliveryToken,
+    String? shareToken,
+    String? deviceId,
+  }) async {
     _activeDevotionalId = devotionalId;
     state = state.copyWith(
       status: DevotionalDetailStatus.loading,
       clearError: true,
       clearDevotional: state.devotional?.id != devotionalId,
       hasReportedReadComplete: false,
+      deliveryToken: deliveryToken,
+      shareToken: shareToken,
+      deviceId: deviceId,
     );
 
     try {
-      final devotional = await _repository.getDevotional(devotionalId);
+      final devotional = await _repository.getDevotional(
+        devotionalId,
+        shareToken: shareToken,
+        deviceId: deviceId,
+      );
       if (_activeDevotionalId != devotionalId) return;
       state = state.copyWith(
         devotional: devotional,
@@ -69,7 +81,10 @@ class DevotionalDetailController extends Notifier<DevotionalDetailState> {
     try {
       final result = devotional.saved
           ? await _repository.unsaveDevotional(devotional.id)
-          : await _repository.saveDevotional(devotional.id);
+          : await _repository.saveDevotional(
+              devotional.id,
+              deliveryToken: state.deliveryToken,
+            );
       state = state.copyWith(
         devotional: devotional.copyWith(
           saveCount: result.saveCount,
@@ -83,14 +98,24 @@ class DevotionalDetailController extends Notifier<DevotionalDetailState> {
     }
   }
 
-  Future<void> registerShare() async {
+  Future<void> registerShare({int? shareCount}) async {
     final devotional = state.devotional;
     if (devotional == null) return;
 
-    try {
-      final shareCount = await _repository.shareDevotional(devotional.id);
+    if (shareCount != null) {
       state = state.copyWith(
         devotional: devotional.copyWith(shareCount: shareCount),
+      );
+      return;
+    }
+
+    try {
+      final result = await _repository.shareDevotional(
+        devotional.id,
+        deliveryToken: state.deliveryToken,
+      );
+      state = state.copyWith(
+        devotional: devotional.copyWith(shareCount: result.shareCount),
       );
     } catch (_) {}
   }
@@ -100,7 +125,12 @@ class DevotionalDetailController extends Notifier<DevotionalDetailState> {
     if (devotional == null || state.hasReportedReadComplete) return;
 
     try {
-      final count = await _repository.markReadComplete(devotional.id);
+      final count = await _repository.markReadComplete(
+        devotional.id,
+        deliveryToken: state.deliveryToken,
+        shareToken: state.shareToken,
+        deviceId: state.deviceId,
+      );
       state = state.copyWith(
         devotional: devotional.copyWith(readCompleteCount: count),
         hasReportedReadComplete: true,
@@ -118,6 +148,7 @@ class DevotionalDetailController extends Notifier<DevotionalDetailState> {
         devotionalId: devotional.id,
         reason: reason,
         details: details,
+        deliveryToken: state.deliveryToken,
       );
       return true;
     } catch (error) {

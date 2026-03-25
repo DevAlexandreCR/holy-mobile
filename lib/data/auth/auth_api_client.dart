@@ -92,6 +92,34 @@ class AuthApiClient {
     final data = rawData is Map ? rawData['data'] ?? rawData : rawData;
     return UserSettings.fromMap(Map<String, dynamic>.from(data as Map));
   }
+
+  Future<UserSettings> getNotificationPreferences() async {
+    final response = await _dio.get('/users/me/notification-preferences');
+    final rawData = response.data;
+    final data = rawData is Map ? rawData['data'] ?? rawData : rawData;
+    return UserSettings.fromMap(Map<String, dynamic>.from(data as Map));
+  }
+
+  Future<UserSettings> updateNotificationPreferences({
+    required bool devotionalNotificationsEnabled,
+    required bool followedCreatorNotificationsEnabled,
+    required bool featuredDevotionalNotificationsEnabled,
+  }) async {
+    final response = await _dio.put(
+      '/users/me/notification-preferences',
+      data: {
+        'devotional_notifications_enabled': devotionalNotificationsEnabled,
+        'followed_creator_notifications_enabled':
+            followedCreatorNotificationsEnabled,
+        'featured_devotional_notifications_enabled':
+            featuredDevotionalNotificationsEnabled,
+      },
+    );
+
+    final rawData = response.data;
+    final data = rawData is Map ? rawData['data'] ?? rawData : rawData;
+    return UserSettings.fromMap(Map<String, dynamic>.from(data as Map));
+  }
 }
 
 final authApiClientProvider = Provider<AuthApiClient>((ref) {

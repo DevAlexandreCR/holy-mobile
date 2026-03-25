@@ -6,6 +6,9 @@ class DevotionalDetailState {
   const DevotionalDetailState({
     this.devotional,
     this.status = DevotionalDetailStatus.idle,
+    this.deliveryToken,
+    this.shareToken,
+    this.deviceId,
     this.errorMessage,
     this.isTogglingLike = false,
     this.isTogglingSave = false,
@@ -15,6 +18,9 @@ class DevotionalDetailState {
 
   final Devotional? devotional;
   final DevotionalDetailStatus status;
+  final String? deliveryToken;
+  final String? shareToken;
+  final String? deviceId;
   final String? errorMessage;
   final bool isTogglingLike;
   final bool isTogglingSave;
@@ -24,6 +30,9 @@ class DevotionalDetailState {
   DevotionalDetailState copyWith({
     Devotional? devotional,
     DevotionalDetailStatus? status,
+    String? deliveryToken,
+    String? shareToken,
+    String? deviceId,
     String? errorMessage,
     bool? isTogglingLike,
     bool? isTogglingSave,
@@ -35,6 +44,9 @@ class DevotionalDetailState {
     return DevotionalDetailState(
       devotional: clearDevotional ? null : devotional ?? this.devotional,
       status: status ?? this.status,
+      deliveryToken: deliveryToken ?? this.deliveryToken,
+      shareToken: shareToken ?? this.shareToken,
+      deviceId: deviceId ?? this.deviceId,
       errorMessage: clearError ? null : errorMessage ?? this.errorMessage,
       isTogglingLike: isTogglingLike ?? this.isTogglingLike,
       isTogglingSave: isTogglingSave ?? this.isTogglingSave,

@@ -15,6 +15,8 @@ import 'package:holyverso/presentation/screens/devotionals/devotional_preview_sc
 import 'package:holyverso/presentation/screens/devotionals/devotionals_list_screen.dart';
 import 'package:holyverso/presentation/screens/creator_profiles/creator_profile_edit_screen.dart';
 import 'package:holyverso/presentation/screens/creator_profiles/creator_profile_screen.dart';
+import 'package:holyverso/presentation/screens/insights/creator_insights_screen.dart';
+import 'package:holyverso/presentation/screens/insights/devotional_insight_detail_screen.dart';
 import 'package:holyverso/presentation/screens/search/search_screen.dart';
 import 'package:holyverso/presentation/screens/settings/settings_screen.dart';
 import 'package:holyverso/presentation/screens/splash/splash_screen.dart';
@@ -146,6 +148,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                     const SettingsScreen(showBackButton: true),
               ),
               GoRoute(
+                path: '/profile/insights',
+                builder: (context, state) => const CreatorInsightsScreen(),
+              ),
+              GoRoute(
+                path: '/profile/insights/devotionals/:id',
+                builder: (context, state) => DevotionalInsightDetailScreen(
+                  devotionalId: state.pathParameters['id']!,
+                ),
+              ),
+              GoRoute(
                 path: '/settings',
                 redirect: (context, state) => '/profile/settings',
               ),
@@ -189,7 +201,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 path: '/devotionals/:id',
                 builder: (context, state) {
                   final id = state.pathParameters['id']!;
-                  return DevotionalDetailScreen(devotionalId: id);
+                  return DevotionalDetailScreen(
+                    devotionalId: id,
+                    initialDeliveryToken:
+                        state.uri.queryParameters['delivery_token'],
+                    initialShareToken: state.uri.queryParameters['share_token'],
+                  );
                 },
               ),
               GoRoute(
@@ -217,7 +234,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           state.matchedLocation == '/register' ||
           state.matchedLocation == '/forgot-password';
       final location = state.matchedLocation;
+      final path = state.uri.path;
       final canManageUsers = ref.watch(canManageUsersProvider);
+      final pathSegments = state.uri.pathSegments;
+      final isDevotionalDetailRoute =
+          pathSegments.length == 2 &&
+          pathSegments.first == 'devotionals' &&
+          pathSegments[1] != 'create' &&
+          pathSegments[1] != 'preview';
       final isProtectedRoute =
           location == '/saved' ||
           location == '/profile' ||
@@ -226,8 +250,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           location == '/users' ||
           location == '/users/me/edit-profile' ||
           (location.startsWith('/users/') && location != '/users') ||
-          location == '/devotionals' ||
-          location.startsWith('/devotionals') ||
+          path == '/devotionals' ||
+          (path.startsWith('/devotionals') && !isDevotionalDetailRoute) ||
           location == '/verse/saved';
 
       if (bootstrapping && !atResetPassword && !atAuthRoute) {

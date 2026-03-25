@@ -264,10 +264,18 @@ class _PublicFeedModeViewState extends ConsumerState<_PublicFeedModeView> {
   }
 
   Future<void> _share(Devotional devotional) async {
+    final result = await ref
+        .read(devotionalsRepositoryProvider)
+        .shareDevotional(
+          devotional.id,
+          deliveryToken: devotional.deliveryToken,
+        );
+    if (!mounted) return;
+
     final shareText = [
       devotional.title.trim(),
       if (devotional.previewText.isNotEmpty) devotional.previewText,
-      'https://holyverso.com/devotionals/${devotional.id}',
+      result.shareUrl,
     ].join('\n\n');
 
     final box = context.findRenderObject() as RenderBox?;
@@ -282,14 +290,19 @@ class _PublicFeedModeViewState extends ConsumerState<_PublicFeedModeView> {
     );
 
     if (!mounted) return;
-    await ref.read(widget.provider.notifier).registerShare(devotional);
+    await ref
+        .read(widget.provider.notifier)
+        .registerShare(devotional, shareCount: result.shareCount);
   }
 
   Future<void> _openDetail(Devotional devotional) async {
     await ref.read(widget.provider.notifier).registerOpen(devotional);
     if (!mounted) return;
+    final query = devotional.deliveryToken != null
+        ? '?delivery_token=${Uri.encodeComponent(devotional.deliveryToken!)}'
+        : '';
     final updated = await context.push<Devotional>(
-      '/devotionals/${devotional.id}',
+      '/devotionals/${devotional.id}$query',
     );
     if (updated != null && mounted) {
       ref.read(widget.provider.notifier).syncUpdatedDevotional(updated);
@@ -567,6 +580,10 @@ class _MyDevotionalsTabState extends ConsumerState<_MyDevotionalsTab> {
     }
   }
 
+  Future<void> _openInsightDetail(Devotional devotional) async {
+    await context.push('/profile/insights/devotionals/${devotional.id}');
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(devotionalsListControllerProvider);
@@ -641,6 +658,7 @@ class _MyDevotionalsTabState extends ConsumerState<_MyDevotionalsTab> {
                             devotional: devotional,
                             pendingAction: pendingAction,
                             onEdit: () => widget.onOpenEditor(devotional.id),
+                            onInsights: () => _openInsightDetail(devotional),
                             onPublish:
                                 devotional.status == DevotionalStatus.draft &&
                                     pendingAction == null
@@ -910,6 +928,7 @@ class _OwnerDevotionalCard extends StatelessWidget {
   const _OwnerDevotionalCard({
     required this.devotional,
     required this.onEdit,
+    required this.onInsights,
     required this.onOpen,
     this.pendingAction,
     this.onPublish,
@@ -918,6 +937,7 @@ class _OwnerDevotionalCard extends StatelessWidget {
 
   final Devotional devotional;
   final VoidCallback onEdit;
+  final VoidCallback onInsights;
   final VoidCallback? onOpen;
   final _OwnerDevotionalAction? pendingAction;
   final VoidCallback? onPublish;
@@ -1028,6 +1048,10 @@ class _OwnerDevotionalCard extends StatelessWidget {
                     _OwnerActionButton(
                       label: l10n.editDevotional,
                       onPressed: isBusy ? null : onEdit,
+                    ),
+                    _OwnerActionButton(
+                      label: 'Insights',
+                      onPressed: isBusy ? null : onInsights,
                     ),
                     if (onPublish != null)
                       _OwnerActionButton(

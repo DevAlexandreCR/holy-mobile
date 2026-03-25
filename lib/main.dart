@@ -1,12 +1,17 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:holyverso/core/l10n/app_localizations.dart';
 import 'package:holyverso/core/router/app_router.dart';
+import 'package:holyverso/core/services/phase_three_runtime_service.dart';
 import 'package:holyverso/core/theme/app_theme.dart';
 import 'package:holyverso/data/auth/token_storage.dart';
 import 'package:holyverso/data/widget/widget_verse_storage.dart';
+import 'package:holyverso/presentation/state/auth/auth_controller.dart';
+import 'package:holyverso/presentation/state/auth/auth_state.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -32,14 +37,31 @@ class HolyVersoApp extends ConsumerStatefulWidget {
 
 class _HolyVersoAppState extends ConsumerState<HolyVersoApp>
     with WidgetsBindingObserver {
+  late final PhaseThreeRuntimeService _runtimeService;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _runtimeService = ref.read(phaseThreeRuntimeServiceProvider);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final router = ref.read(appRouterProvider);
+      final authState = ref.read(authControllerProvider);
+
+      unawaited(_runtimeService.start(router));
+      unawaited(
+        _runtimeService.syncSession(
+          isAuthenticated: authState.isAuthenticated,
+          userId: authState.user?.id,
+          forceSessionStart: authState.isAuthenticated,
+        ),
+      );
+    });
   }
 
   @override
   void dispose() {
+    unawaited(_runtimeService.dispose());
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -52,12 +74,28 @@ class _HolyVersoAppState extends ConsumerState<HolyVersoApp>
     if (state == AppLifecycleState.resumed) {
       debugPrint('[AppLifecycle] App resumed, refreshing widgets...');
       ref.read(widgetVerseStorageProvider).refreshWidgets();
+      unawaited(_runtimeService.handleAppResumed());
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final router = ref.watch(appRouterProvider);
+    ref.listen<AuthState>(authControllerProvider, (previous, next) {
+      final didAuthenticate =
+          next.isAuthenticated &&
+          (previous?.isAuthenticated != true ||
+              previous?.user?.id != next.user?.id);
+
+      unawaited(
+        _runtimeService.syncSession(
+          isAuthenticated: next.isAuthenticated,
+          userId: next.user?.id,
+          forceSessionStart: didAuthenticate,
+        ),
+      );
+    });
+    _runtimeService.attachRouter(router);
 
     return MaterialApp.router(
       onGenerateTitle: (context) => context.l10n.appTitle,

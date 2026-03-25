@@ -128,7 +128,10 @@ abstract class BaseDevotionalsFeedController
     try {
       final result = devotional.saved
           ? await _repository.unsaveDevotional(devotionalId)
-          : await _repository.saveDevotional(devotionalId);
+          : await _repository.saveDevotional(
+              devotionalId,
+              deliveryToken: devotional.deliveryToken,
+            );
       final items = [...state.items];
       items[index] = items[index].copyWith(
         saved: result.saved,
@@ -182,14 +185,24 @@ abstract class BaseDevotionalsFeedController
     } catch (_) {}
   }
 
-  Future<void> registerShare(Devotional devotional) async {
+  Future<void> registerShare(Devotional devotional, {int? shareCount}) async {
     final index = state.items.indexWhere((item) => item.id == devotional.id);
     if (index == -1) return;
 
-    try {
-      final shareCount = await _repository.shareDevotional(devotional.id);
+    if (shareCount != null) {
       final items = [...state.items];
       items[index] = items[index].copyWith(shareCount: shareCount);
+      state = state.copyWith(items: items);
+      return;
+    }
+
+    try {
+      final result = await _repository.shareDevotional(
+        devotional.id,
+        deliveryToken: devotional.deliveryToken,
+      );
+      final items = [...state.items];
+      items[index] = items[index].copyWith(shareCount: result.shareCount);
       state = state.copyWith(items: items);
     } catch (_) {}
   }

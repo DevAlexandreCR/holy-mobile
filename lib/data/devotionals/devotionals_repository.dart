@@ -42,8 +42,16 @@ class DevotionalsRepository {
     return _client.recordFeedEvents(events);
   }
 
-  Future<Devotional> getDevotional(String id) {
-    return _client.getDevotional(id);
+  Future<Devotional> getDevotional(
+    String id, {
+    String? shareToken,
+    String? deviceId,
+  }) {
+    return _client.getDevotional(
+      id,
+      shareToken: shareToken,
+      deviceId: deviceId,
+    );
   }
 
   Future<Devotional> createDevotional({
@@ -98,31 +106,55 @@ class DevotionalsRepository {
     return _client.toggleLike(devotionalId);
   }
 
-  Future<({bool saved, int saveCount})> saveDevotional(String devotionalId) {
-    return _client.saveDevotional(devotionalId);
+  Future<({bool saved, int saveCount})> saveDevotional(
+    String devotionalId, {
+    String? deliveryToken,
+  }) {
+    return _client.saveDevotional(
+      devotionalId,
+      deliveryToken: deliveryToken,
+    );
   }
 
   Future<({bool saved, int saveCount})> unsaveDevotional(String devotionalId) {
     return _client.unsaveDevotional(devotionalId);
   }
 
-  Future<int> shareDevotional(String devotionalId) {
-    return _client.shareDevotional(devotionalId);
+  Future<({int shareCount, String shareUrl})> shareDevotional(
+    String devotionalId, {
+    String? deliveryToken,
+  }) {
+    return _client.shareDevotional(
+      devotionalId,
+      deliveryToken: deliveryToken,
+    );
   }
 
-  Future<int> markReadComplete(String devotionalId) {
-    return _client.markReadComplete(devotionalId);
+  Future<int> markReadComplete(
+    String devotionalId, {
+    String? deliveryToken,
+    String? shareToken,
+    String? deviceId,
+  }) {
+    return _client.markReadComplete(
+      devotionalId,
+      deliveryToken: deliveryToken,
+      shareToken: shareToken,
+      deviceId: deviceId,
+    );
   }
 
   Future<void> reportDevotional({
     required String devotionalId,
     required String reason,
     String? details,
+    String? deliveryToken,
   }) {
     return _client.reportDevotional(
       devotionalId: devotionalId,
       reason: reason,
       details: details,
+      deliveryToken: deliveryToken,
     );
   }
 
