@@ -42,6 +42,7 @@ class _DevotionalEditorScreenState
   final List<DevotionalVerseReference> _references = [];
   String? _coverImageUrl;
   String? _imageAssetId;
+  String? _effectiveDevotionalId;
   bool _clearImageAsset = false;
   double _coverImageFocusY = 0;
   bool _isLoading = false;
@@ -55,10 +56,11 @@ class _DevotionalEditorScreenState
   @override
   void initState() {
     super.initState();
+    _effectiveDevotionalId = widget.devotionalId;
     _quillController = QuillController.basic();
     _quillController.addListener(_handleEditorChange);
     _updateWordCount();
-    if (widget.devotionalId != null) {
+    if (_effectiveDevotionalId != null) {
       _loadDevotional();
     }
   }
@@ -74,11 +76,16 @@ class _DevotionalEditorScreenState
   }
 
   Future<void> _loadDevotional() async {
+    final devotionalId = _effectiveDevotionalId;
+    if (devotionalId == null) {
+      return;
+    }
+
     setState(() => _isLoading = true);
     try {
       final devotional = await ref
           .read(devotionalsRepositoryProvider)
-          .getDevotional(widget.devotionalId!);
+          .getDevotional(devotionalId);
       _titleController.text = devotional.title;
       _coverImageUrl = devotional.coverImageUrl;
       _imageAssetId = null;
@@ -468,6 +475,58 @@ class _DevotionalEditorScreenState
     return true;
   }
 
+  Future<Devotional> _ensureDraftExists(
+    DevotionalsRepository repository,
+    List<dynamic> contentOps,
+  ) async {
+    final devotionalId = _effectiveDevotionalId;
+    if (devotionalId != null) {
+      return repository.updateDevotional(
+        devotionalId: devotionalId,
+        title: _titleController.text.trim(),
+        content: contentOps,
+        verseReferences: _references,
+        imageAssetId: _imageAssetId,
+        coverImageFocusY: _coverImageUrl == null ? null : _coverImageFocusY,
+        clearImageAsset: _clearImageAsset,
+      );
+    }
+
+    final created = await repository.createDevotional(
+      title: _titleController.text.trim(),
+      content: contentOps,
+      verseReferences: _references,
+      imageAssetId: _imageAssetId,
+      coverImageFocusY: _coverImageUrl == null ? null : _coverImageFocusY,
+    );
+
+    if (mounted) {
+      setState(() {
+        _effectiveDevotionalId = created.id;
+        _clearImageAsset = false;
+      });
+    } else {
+      _effectiveDevotionalId = created.id;
+      _clearImageAsset = false;
+    }
+
+    return created;
+  }
+
+  void _syncRouteToDraftIfNeeded(String devotionalId) {
+    if (!mounted || widget.devotionalId != null) {
+      return;
+    }
+
+    final currentLocation = GoRouterState.of(context).uri.toString();
+    final targetLocation = '/devotionals/$devotionalId/edit';
+    if (currentLocation == targetLocation) {
+      return;
+    }
+
+    context.replace(targetLocation);
+  }
+
   Future<void> _save({required bool publish}) async {
     if (_isSaving) return;
     if (!_validateForm()) return;
@@ -477,36 +536,19 @@ class _DevotionalEditorScreenState
       _isPublishing = publish;
     });
 
+    String? createdDraftId;
     try {
       final contentOps = _quillController.document.toDelta().toJson();
       final repository = ref.read(devotionalsRepositoryProvider);
+      final wasCreatingDraft = _effectiveDevotionalId == null;
 
-      Devotional saved;
-      if (widget.devotionalId == null) {
-        saved = await repository.createDevotional(
-          title: _titleController.text.trim(),
-          content: contentOps,
-          verseReferences: _references,
-          imageAssetId: _imageAssetId,
-          coverImageFocusY: _coverImageUrl == null ? null : _coverImageFocusY,
-        );
-        if (publish) {
-          saved = await repository.publishDevotional(saved.id);
-        }
-      } else {
-        saved = await repository.updateDevotional(
-          devotionalId: widget.devotionalId!,
-          title: _titleController.text.trim(),
-          content: contentOps,
-          verseReferences: _references,
-          imageAssetId: _imageAssetId,
-          coverImageFocusY: _coverImageUrl == null ? null : _coverImageFocusY,
-          clearImageAsset: _clearImageAsset,
-        );
+      Devotional saved = await _ensureDraftExists(repository, contentOps);
+      if (wasCreatingDraft) {
+        createdDraftId = saved.id;
+      }
 
-        if (publish && saved.status != DevotionalStatus.published) {
-          saved = await repository.publishDevotional(saved.id);
-        }
+      if (publish && saved.status != DevotionalStatus.published) {
+        saved = await repository.publishDevotional(saved.id);
       }
 
       if (mounted) {
@@ -536,12 +578,18 @@ class _DevotionalEditorScreenState
                       context.l10n.devotionalPublishBlocked,
                   'OPENAI_MODERATION_UNAVAILABLE':
                       context.l10n.devotionalsModerationUnavailable,
+                  'IMAGE_ASSET_ALREADY_ATTACHED':
+                      context.l10n.devotionalImageAlreadyAttached,
                 },
               ),
             ),
             backgroundColor: Colors.red.shade700,
           ),
         );
+      }
+
+      if (createdDraftId != null) {
+        _syncRouteToDraftIfNeeded(createdDraftId);
       }
     } finally {
       if (mounted) {

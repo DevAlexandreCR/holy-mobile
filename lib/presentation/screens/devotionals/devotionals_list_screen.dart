@@ -12,6 +12,8 @@ import 'package:holyverso/core/theme/app_text_styles.dart';
 import 'package:holyverso/data/devotionals/devotionals_repository.dart';
 import 'package:holyverso/domain/devotionals/devotional.dart';
 import 'package:holyverso/domain/devotionals/devotional_status.dart';
+import 'package:holyverso/domain/devotionals/devotional_verse_reference.dart';
+import 'package:holyverso/presentation/screens/devotionals/devotional_editor_screen.dart';
 import 'package:holyverso/presentation/state/devotionals/devotionals_feed_controller.dart';
 import 'package:holyverso/presentation/state/devotionals/devotionals_feed_state.dart';
 import 'package:holyverso/presentation/state/devotionals/devotionals_list_controller.dart';
@@ -271,6 +273,7 @@ class _MyDevotionalsTab extends ConsumerStatefulWidget {
 
 class _MyDevotionalsTabState extends ConsumerState<_MyDevotionalsTab> {
   final ScrollController _scrollController = ScrollController();
+  final Map<String, _OwnerDevotionalAction> _pendingActions = {};
 
   @override
   void initState() {
@@ -295,14 +298,123 @@ class _MyDevotionalsTabState extends ConsumerState<_MyDevotionalsTab> {
     }
   }
 
-  Future<void> _publish(Devotional devotional) async {
+  Future<void> _runOwnerAction({
+    required Devotional devotional,
+    required _OwnerDevotionalAction action,
+    required Future<void> Function() request,
+    required String successMessage,
+    required String fallbackMessage,
+    Map<String, String> businessCodeMessages = const {},
+  }) async {
+    if (_pendingActions.containsKey(devotional.id)) return;
+
+    setState(() {
+      _pendingActions[devotional.id] = action;
+    });
+
     try {
-      await ref
-          .read(devotionalsRepositoryProvider)
-          .publishDevotional(devotional.id);
+      await request();
+      await Future.wait([
+        ref.read(devotionalsListControllerProvider.notifier).refresh(),
+        ref.read(devotionalsFeedControllerProvider.notifier).refresh(),
+      ]);
+
       if (!mounted) return;
-      await ref.read(devotionalsListControllerProvider.notifier).refresh();
-      await ref.read(devotionalsFeedControllerProvider.notifier).refresh();
+      final messenger = ScaffoldMessenger.of(context);
+      messenger.hideCurrentSnackBar();
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            successMessage,
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: AppColors.midnightFaith,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          backgroundColor: AppColors.holyGold,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      final messenger = ScaffoldMessenger.of(context);
+      messenger.hideCurrentSnackBar();
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            AppErrorMapper.toMessage(
+              error,
+              l10n: context.l10n,
+              fallbackMessage: fallbackMessage,
+              businessCodeMessages: businessCodeMessages,
+            ),
+          ),
+          backgroundColor: Colors.red.shade700,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _pendingActions.remove(devotional.id);
+        });
+      }
+    }
+  }
+
+  Future<void> _publish(Devotional devotional) async {
+    await _runOwnerAction(
+      devotional: devotional,
+      action: _OwnerDevotionalAction.publishing,
+      request: () => ref
+          .read(devotionalsRepositoryProvider)
+          .publishDevotional(devotional.id),
+      successMessage: context.l10n.devotionalPublishedMovedMessage,
+      fallbackMessage: context.l10n.devotionalsSaveError,
+      businessCodeMessages: {
+        'DEVOTIONAL_PUBLISH_BLOCKED': context.l10n.devotionalPublishBlocked,
+        'OPENAI_MODERATION_UNAVAILABLE':
+            context.l10n.devotionalsModerationUnavailable,
+      },
+    );
+  }
+
+  Future<void> _archive(Devotional devotional) async {
+    await _runOwnerAction(
+      devotional: devotional,
+      action: _OwnerDevotionalAction.archiving,
+      request: () => ref
+          .read(devotionalsRepositoryProvider)
+          .archiveDevotional(devotional.id),
+      successMessage: context.l10n.devotionalArchivedMovedMessage,
+      fallbackMessage: context.l10n.devotionalsSaveError,
+    );
+  }
+
+  Future<void> _openOwnerDevotional(Devotional devotional) async {
+    if (devotional.isPubliclyVisible) {
+      await context.push('/devotionals/${devotional.id}');
+      return;
+    }
+
+    try {
+      final fullDevotional = await ref
+          .read(devotionalsRepositoryProvider)
+          .getDevotional(devotional.id);
+      if (!mounted) return;
+
+      final payload = DevotionalPreviewPayload(
+        title: fullDevotional.title,
+        content: fullDevotional.content ?? const [],
+        coverImageUrl: fullDevotional.coverImageUrl,
+        coverImageFocusY: fullDevotional.coverImageFocusY,
+        references: List<DevotionalVerseReference>.from(
+          fullDevotional.verseReferences,
+        ),
+        authorName: fullDevotional.author.name,
+      );
+
+      await context.push('/devotionals/preview', extra: payload);
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -311,28 +423,14 @@ class _MyDevotionalsTabState extends ConsumerState<_MyDevotionalsTab> {
             AppErrorMapper.toMessage(
               error,
               l10n: context.l10n,
-              fallbackMessage: context.l10n.devotionalsSaveError,
-              businessCodeMessages: {
-                'DEVOTIONAL_PUBLISH_BLOCKED':
-                    context.l10n.devotionalPublishBlocked,
-                'OPENAI_MODERATION_UNAVAILABLE':
-                    context.l10n.devotionalsModerationUnavailable,
-              },
+              fallbackMessage: context.l10n.devotionalsLoadError,
             ),
           ),
           backgroundColor: Colors.red.shade700,
+          behavior: SnackBarBehavior.floating,
         ),
       );
     }
-  }
-
-  Future<void> _archive(Devotional devotional) async {
-    await ref
-        .read(devotionalsRepositoryProvider)
-        .archiveDevotional(devotional.id);
-    if (!mounted) return;
-    await ref.read(devotionalsListControllerProvider.notifier).refresh();
-    await ref.read(devotionalsFeedControllerProvider.notifier).refresh();
   }
 
   @override
@@ -403,19 +501,25 @@ class _MyDevotionalsTabState extends ConsumerState<_MyDevotionalsTab> {
                           }
 
                           final devotional = state.items[index];
+                          final pendingAction = _pendingActions[devotional.id];
                           return _OwnerDevotionalCard(
                             devotional: devotional,
+                            pendingAction: pendingAction,
                             onEdit: () => widget.onOpenEditor(devotional.id),
                             onPublish:
-                                devotional.status == DevotionalStatus.draft
+                                devotional.status == DevotionalStatus.draft &&
+                                    pendingAction == null
                                 ? () => _publish(devotional)
                                 : null,
                             onArchive:
-                                devotional.status != DevotionalStatus.archived
+                                devotional.status !=
+                                        DevotionalStatus.archived &&
+                                    pendingAction == null
                                 ? () => _archive(devotional)
                                 : null,
-                            onOpen: () =>
-                                context.push('/devotionals/${devotional.id}'),
+                            onOpen: pendingAction == null
+                                ? () => _openOwnerDevotional(devotional)
+                                : null,
                           );
                         },
                       ),
@@ -666,19 +770,22 @@ class _OwnerDevotionalCard extends StatelessWidget {
     required this.devotional,
     required this.onEdit,
     required this.onOpen,
+    this.pendingAction,
     this.onPublish,
     this.onArchive,
   });
 
   final Devotional devotional;
   final VoidCallback onEdit;
-  final VoidCallback onOpen;
+  final VoidCallback? onOpen;
+  final _OwnerDevotionalAction? pendingAction;
   final VoidCallback? onPublish;
   final VoidCallback? onArchive;
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final isBusy = pendingAction != null;
 
     return Container(
       margin: const EdgeInsets.only(bottom: AppSpacing.md),
@@ -760,26 +867,49 @@ class _OwnerDevotionalCard extends StatelessWidget {
                   runSpacing: AppSpacing.sm,
                   children: [
                     OutlinedButton(
-                      onPressed: onOpen,
+                      onPressed: isBusy ? null : onOpen,
                       child: Text(l10n.devotionalOpenDetail),
                     ),
                     if (devotional.status != DevotionalStatus.archived)
                       OutlinedButton(
-                        onPressed: onEdit,
+                        onPressed: isBusy ? null : onEdit,
                         child: Text(l10n.editDevotional),
                       ),
                     if (onPublish != null)
                       ElevatedButton(
                         onPressed: onPublish,
-                        child: Text(l10n.publish),
+                        child: _ActionButtonContent(
+                          isLoading:
+                              pendingAction ==
+                              _OwnerDevotionalAction.publishing,
+                          label:
+                              pendingAction == _OwnerDevotionalAction.publishing
+                              ? l10n.devotionalPublishingAction
+                              : l10n.publish,
+                          spinnerColor: AppColors.midnightFaith,
+                          textColor: AppColors.midnightFaith,
+                        ),
                       ),
                     if (onArchive != null)
                       TextButton(
                         onPressed: onArchive,
-                        child: Text(l10n.devotionalArchiveAction),
+                        child: _ActionButtonContent(
+                          isLoading:
+                              pendingAction == _OwnerDevotionalAction.archiving,
+                          label:
+                              pendingAction == _OwnerDevotionalAction.archiving
+                              ? l10n.devotionalArchivingAction
+                              : l10n.devotionalArchiveAction,
+                          spinnerColor: AppColors.holyGold,
+                          textColor: AppColors.holyGold,
+                        ),
                       ),
                   ],
                 ),
+                if (pendingAction != null) ...[
+                  const SizedBox(height: AppSpacing.sm),
+                  _ActionFeedbackBanner(action: pendingAction!),
+                ],
               ],
             ),
           ),
@@ -807,6 +937,102 @@ class _OwnerDevotionalCard extends StatelessWidget {
       return l10n.devotionalModerationRestricted;
     }
     return l10n.devotionalModerationClear;
+  }
+}
+
+enum _OwnerDevotionalAction { publishing, archiving }
+
+class _ActionButtonContent extends StatelessWidget {
+  const _ActionButtonContent({
+    required this.isLoading,
+    required this.label,
+    required this.spinnerColor,
+    required this.textColor,
+  });
+
+  final bool isLoading;
+  final String label;
+  final Color spinnerColor;
+  final Color textColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (isLoading) ...[
+          SizedBox(
+            width: 16,
+            height: 16,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              valueColor: AlwaysStoppedAnimation<Color>(spinnerColor),
+            ),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+        ],
+        Text(
+          label,
+          style: AppTextStyles.labelMedium.copyWith(
+            color: textColor,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ActionFeedbackBanner extends StatelessWidget {
+  const _ActionFeedbackBanner({required this.action});
+
+  final _OwnerDevotionalAction action;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final message = switch (action) {
+      _OwnerDevotionalAction.publishing => l10n.devotionalPublishingFeedback,
+      _OwnerDevotionalAction.archiving => l10n.devotionalArchivingFeedback,
+    };
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.pureWhite.withValues(alpha: 0.06),
+        borderRadius: AppBorderRadius.input,
+        border: Border.all(color: AppColors.holyGold.withValues(alpha: 0.22)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(
+            padding: EdgeInsets.only(top: 2),
+            child: SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(AppColors.holyGold),
+              ),
+            ),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Text(
+              message,
+              style: AppTextStyles.bodySmall.copyWith(
+                color: AppColors.softMist,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 

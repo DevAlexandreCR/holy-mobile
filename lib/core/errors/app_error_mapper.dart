@@ -33,15 +33,15 @@ class AppErrorMapper {
         return l10n.authInvalidCredentials;
       }
 
-      if (statusCode == 401 || statusCode == 403) {
-        return l10n.sessionExpiredMessage;
-      }
-
       if (code != null && businessCodeMessages != null) {
         final mappedMessage = businessCodeMessages[code];
         if (mappedMessage != null && mappedMessage.isNotEmpty) {
           return mappedMessage;
         }
+      }
+
+      if (statusCode == 401) {
+        return l10n.sessionExpiredMessage;
       }
 
       if (statusCode != null && statusCode >= 500) {
@@ -55,7 +55,7 @@ class AppErrorMapper {
   static bool isUnauthorized(Object error) {
     if (error is! DioException) return false;
     final statusCode = error.response?.statusCode;
-    return statusCode == 401 || statusCode == 403;
+    return statusCode == 401;
   }
 
   static bool isRecoverableSessionError(Object error) {

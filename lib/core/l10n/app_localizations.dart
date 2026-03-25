@@ -184,6 +184,8 @@ class AppLocalizations {
       _string('devotionalsImageUploadError');
   String get devotionalsModerationUnavailable =>
       _string('devotionalsModerationUnavailable');
+  String get devotionalImageAlreadyAttached =>
+      _string('devotionalImageAlreadyAttached');
 
   String get createDevotional => _string('createDevotional');
   String get editDevotional => _string('editDevotional');
@@ -222,6 +224,17 @@ class AppLocalizations {
   String get devotionalImageRejected => _string('devotionalImageRejected');
   String get devotionalImageModerationInProgress =>
       _string('devotionalImageModerationInProgress');
+  String get devotionalPublishingAction =>
+      _string('devotionalPublishingAction');
+  String get devotionalArchivingAction => _string('devotionalArchivingAction');
+  String get devotionalPublishingFeedback =>
+      _string('devotionalPublishingFeedback');
+  String get devotionalArchivingFeedback =>
+      _string('devotionalArchivingFeedback');
+  String get devotionalPublishedMovedMessage =>
+      _string('devotionalPublishedMovedMessage');
+  String get devotionalArchivedMovedMessage =>
+      _string('devotionalArchivedMovedMessage');
   String get devotionalPublishModerationInProgress =>
       _string('devotionalPublishModerationInProgress');
   String get devotionalPublishModerationHelper =>
@@ -451,6 +464,8 @@ class AppLocalizations {
           'No pudimos subir la imagen. Inténtalo nuevamente.',
       'devotionalsModerationUnavailable':
           'La revisión de contenido no está disponible en este momento. Inténtalo de nuevo.',
+      'devotionalImageAlreadyAttached':
+          'Esta imagen ya está asociada a otro borrador. Vuelve a abrir el devocional e inténtalo de nuevo.',
       'createDevotional': 'Crear devocional',
       'editDevotional': 'Editar devocional',
       'devotionalTitleLabel': 'Título del devocional',
@@ -489,6 +504,16 @@ class AppLocalizations {
       'devotionalImageRejected':
           'La imagen fue rechazada. Puedes continuar y publicar solo texto.',
       'devotionalImageModerationInProgress': 'Revisando imagen...',
+      'devotionalPublishingAction': 'Publicando...',
+      'devotionalArchivingAction': 'Archivando...',
+      'devotionalPublishingFeedback':
+          'Estamos publicando tu devocional y actualizando su estado.',
+      'devotionalArchivingFeedback':
+          'Estamos archivando tu devocional y actualizando la lista.',
+      'devotionalPublishedMovedMessage':
+          'Devocional publicado. Ahora lo encuentras en Publicados.',
+      'devotionalArchivedMovedMessage':
+          'Devocional archivado. Ahora lo encuentras en Archivados.',
       'devotionalPublishModerationInProgress':
           'Revisando tu devocional antes de publicarlo...',
       'devotionalPublishModerationHelper':
@@ -692,6 +717,8 @@ class AppLocalizations {
           'We could not upload the image. Please try again.',
       'devotionalsModerationUnavailable':
           'Content review is unavailable right now. Please try again.',
+      'devotionalImageAlreadyAttached':
+          'This image is already attached to another draft. Reopen the devotional and try again.',
       'createDevotional': 'Create devotional',
       'editDevotional': 'Edit devotional',
       'devotionalTitleLabel': 'Devotional title',
@@ -729,6 +756,16 @@ class AppLocalizations {
       'devotionalImageRejected':
           'The image was rejected. You can continue and publish text only.',
       'devotionalImageModerationInProgress': 'Reviewing image...',
+      'devotionalPublishingAction': 'Publishing...',
+      'devotionalArchivingAction': 'Archiving...',
+      'devotionalPublishingFeedback':
+          'We are publishing your devotional and updating its status.',
+      'devotionalArchivingFeedback':
+          'We are archiving your devotional and updating the list.',
+      'devotionalPublishedMovedMessage':
+          'Devotional published. You can now find it in Published.',
+      'devotionalArchivedMovedMessage':
+          'Devotional archived. You can now find it in Archived.',
       'devotionalPublishModerationInProgress':
           'Reviewing your devotional before publishing...',
       'devotionalPublishModerationHelper':

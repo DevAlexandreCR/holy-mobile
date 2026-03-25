@@ -35,9 +35,7 @@ final dioProvider = Provider<Dio>((ref) {
             error.requestOptions.extra['deferAuthStateHandling'] == true;
         final statusCode = error.response?.statusCode;
 
-        if (hasAuthHeader &&
-            !deferAuthStateHandling &&
-            (statusCode == 401 || statusCode == 403)) {
+        if (hasAuthHeader && !deferAuthStateHandling && statusCode == 401) {
           final authNotifier = ref.read(authControllerProvider.notifier);
           await authNotifier.markSessionExpired();
         }
