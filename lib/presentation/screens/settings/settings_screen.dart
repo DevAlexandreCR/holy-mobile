@@ -234,6 +234,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     bool? devotionalNotificationsEnabled,
     bool? followedCreatorNotificationsEnabled,
     bool? featuredDevotionalNotificationsEnabled,
+    bool? authorModerationNotificationsEnabled,
+    bool? editorReviewNotificationsEnabled,
   }) async {
     final settings = ref.read(authControllerProvider).settings;
     if (settings == null) {
@@ -243,11 +245,24 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final targetDevotionalNotificationsEnabled =
         devotionalNotificationsEnabled ??
         settings.devotionalNotificationsEnabled;
+    final targetAuthorModerationNotificationsEnabled =
+        authorModerationNotificationsEnabled ??
+        settings.authorModerationNotificationsEnabled;
+    final targetEditorReviewNotificationsEnabled =
+        editorReviewNotificationsEnabled ??
+        settings.editorReviewNotificationsEnabled;
     PushPermissionRequestResult permissionResult =
         PushPermissionRequestResult.unavailable;
 
-    if (!settings.devotionalNotificationsEnabled &&
-        targetDevotionalNotificationsEnabled) {
+    final shouldRequestPermission =
+        (!settings.devotionalNotificationsEnabled &&
+            targetDevotionalNotificationsEnabled) ||
+        (!settings.authorModerationNotificationsEnabled &&
+            targetAuthorModerationNotificationsEnabled) ||
+        (!settings.editorReviewNotificationsEnabled &&
+            targetEditorReviewNotificationsEnabled);
+
+    if (shouldRequestPermission) {
       permissionResult = await ref
           .read(phaseThreeRuntimeServiceProvider)
           .requestNotificationPermission();
@@ -263,6 +278,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           featuredDevotionalNotificationsEnabled:
               featuredDevotionalNotificationsEnabled ??
               settings.featuredDevotionalNotificationsEnabled,
+          authorModerationNotificationsEnabled:
+              targetAuthorModerationNotificationsEnabled,
+          editorReviewNotificationsEnabled:
+              targetEditorReviewNotificationsEnabled,
         );
 
     if (!mounted) return;
@@ -507,6 +526,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         notificationSettings?.followedCreatorNotificationsEnabled ?? true;
     final featuredDevotionalNotificationsEnabled =
         notificationSettings?.featuredDevotionalNotificationsEnabled ?? true;
+    final authorModerationNotificationsEnabled =
+        notificationSettings?.authorModerationNotificationsEnabled ?? true;
+    final editorReviewNotificationsEnabled =
+        notificationSettings?.editorReviewNotificationsEnabled ?? true;
+    final canEditContent = authState.user?.role.canEditContent ?? false;
 
     return Scaffold(
       backgroundColor: AppColors.midnightFaith,
@@ -692,6 +716,55 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                     !featuredDevotionalNotificationsEnabled,
                               ),
                       ),
+                      SettingTile(
+                        icon: Icons.fact_check_outlined,
+                        title: 'Estado de moderación',
+                        subtitle:
+                            'Recibe una alerta cuando aprueben o restrinjan uno de tus devocionales',
+                        trailing: Switch.adaptive(
+                          value: authorModerationNotificationsEnabled,
+                          activeThumbColor: AppColors.holyGold,
+                          activeTrackColor: AppColors.holyGold.withValues(
+                            alpha: 0.3,
+                          ),
+                          onChanged: isUpdating
+                              ? null
+                              : (value) => _updateNotificationPreferences(
+                                  authorModerationNotificationsEnabled: value,
+                                ),
+                        ),
+                        onTap: isUpdating
+                            ? null
+                            : () => _updateNotificationPreferences(
+                                authorModerationNotificationsEnabled:
+                                    !authorModerationNotificationsEnabled,
+                              ),
+                      ),
+                      if (canEditContent)
+                        SettingTile(
+                          icon: Icons.rule_folder_outlined,
+                          title: 'Bandeja editorial',
+                          subtitle:
+                              'Recibe alertas cuando entre un nuevo devocional en revisión',
+                          trailing: Switch.adaptive(
+                            value: editorReviewNotificationsEnabled,
+                            activeThumbColor: AppColors.holyGold,
+                            activeTrackColor: AppColors.holyGold.withValues(
+                              alpha: 0.3,
+                            ),
+                            onChanged: isUpdating
+                                ? null
+                                : (value) => _updateNotificationPreferences(
+                                    editorReviewNotificationsEnabled: value,
+                                  ),
+                          ),
+                          onTap: isUpdating
+                              ? null
+                              : () => _updateNotificationPreferences(
+                                  editorReviewNotificationsEnabled:
+                                      !editorReviewNotificationsEnabled,
+                                ),
+                        ),
                     ],
                   ),
                   const SizedBox(height: AppSpacing.lg),

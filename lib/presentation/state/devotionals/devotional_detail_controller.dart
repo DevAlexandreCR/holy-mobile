@@ -29,6 +29,8 @@ class DevotionalDetailController extends Notifier<DevotionalDetailState> {
       clearDevotional: state.devotional?.id != devotionalId,
       isReportingReadComplete: false,
       hasReportedReadComplete: false,
+      isApprovingReview: false,
+      isRestrictingReview: false,
       deliveryToken: deliveryToken,
       shareToken: shareToken,
       deviceId: deviceId,
@@ -168,6 +170,43 @@ class DevotionalDetailController extends Notifier<DevotionalDetailState> {
       return false;
     } finally {
       state = state.copyWith(isReporting: false);
+    }
+  }
+
+  Future<bool> approveReview() async {
+    final devotional = state.devotional;
+    if (devotional == null || state.isApprovingReview) return false;
+
+    state = state.copyWith(isApprovingReview: true, clearError: true);
+    try {
+      final updated = await _repository.approveDevotionalReview(devotional.id);
+      state = state.copyWith(devotional: updated);
+      return true;
+    } catch (error) {
+      state = state.copyWith(errorMessage: _mapError(error));
+      return false;
+    } finally {
+      state = state.copyWith(isApprovingReview: false);
+    }
+  }
+
+  Future<bool> restrictReview(String reason) async {
+    final devotional = state.devotional;
+    if (devotional == null || state.isRestrictingReview) return false;
+
+    state = state.copyWith(isRestrictingReview: true, clearError: true);
+    try {
+      final updated = await _repository.restrictDevotionalReview(
+        devotionalId: devotional.id,
+        reason: reason,
+      );
+      state = state.copyWith(devotional: updated);
+      return true;
+    } catch (error) {
+      state = state.copyWith(errorMessage: _mapError(error));
+      return false;
+    } finally {
+      state = state.copyWith(isRestrictingReview: false);
     }
   }
 

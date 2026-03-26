@@ -91,6 +91,37 @@ class DevotionalsApiClient {
     );
   }
 
+  Future<PagedResult<Devotional>> fetchReviewQueue({
+    int page = 1,
+    int limit = 20,
+  }) async {
+    final response = await _dio.get(
+      '/devotionals',
+      queryParameters: {
+        'status': 'UNDER_REVIEW',
+        'page': page,
+        'limit': limit,
+      },
+    );
+
+    final data = _unwrapData(response.data);
+    final itemsRaw = data['items'] as List? ?? [];
+
+    return PagedResult<Devotional>(
+      items: itemsRaw
+          .whereType<Map>()
+          .map(
+            (item) => Devotional.fromMap(
+              _normalizeDevotional(Map<String, dynamic>.from(item)),
+            ),
+          )
+          .toList(),
+      page: (data['page'] as num?)?.toInt() ?? page,
+      limit: (data['limit'] as num?)?.toInt() ?? limit,
+      total: (data['total'] as num?)?.toInt() ?? itemsRaw.length,
+    );
+  }
+
   Future<CursorPagedResult<Devotional>> fetchFeed({
     required DevotionalFeedMode mode,
     String? cursor,
@@ -213,6 +244,26 @@ class DevotionalsApiClient {
 
   Future<Devotional> archiveDevotional(String devotionalId) async {
     final response = await _dio.post('/devotionals/$devotionalId/archive');
+    final data = _unwrapData(response.data);
+    return Devotional.fromMap(_normalizeDevotional(data));
+  }
+
+  Future<Devotional> approveDevotionalReview(String devotionalId) async {
+    final response = await _dio.post('/moderation/devotionals/$devotionalId/approve');
+    final data = _unwrapData(response.data);
+    return Devotional.fromMap(_normalizeDevotional(data));
+  }
+
+  Future<Devotional> restrictDevotionalReview({
+    required String devotionalId,
+    required String reason,
+  }) async {
+    final response = await _dio.post(
+      '/moderation/devotionals/$devotionalId/restrict',
+      data: {
+        'reason': reason,
+      },
+    );
     final data = _unwrapData(response.data);
     return Devotional.fromMap(_normalizeDevotional(data));
   }

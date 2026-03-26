@@ -124,6 +124,8 @@ class AuthRepository {
     required bool devotionalNotificationsEnabled,
     required bool followedCreatorNotificationsEnabled,
     required bool featuredDevotionalNotificationsEnabled,
+    required bool authorModerationNotificationsEnabled,
+    required bool editorReviewNotificationsEnabled,
   }) {
     return _client.updateNotificationPreferences(
       devotionalNotificationsEnabled: devotionalNotificationsEnabled,
@@ -131,6 +133,9 @@ class AuthRepository {
           followedCreatorNotificationsEnabled,
       featuredDevotionalNotificationsEnabled:
           featuredDevotionalNotificationsEnabled,
+      authorModerationNotificationsEnabled:
+          authorModerationNotificationsEnabled,
+      editorReviewNotificationsEnabled: editorReviewNotificationsEnabled,
     );
   }
 

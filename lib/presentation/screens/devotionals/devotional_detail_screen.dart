@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:holyverso/core/errors/app_error_mapper.dart';
 import 'package:holyverso/core/l10n/app_localizations.dart';
 import 'package:holyverso/core/services/app_runtime_storage.dart';
 import 'package:holyverso/core/theme/app_colors.dart';
@@ -14,6 +15,9 @@ import 'package:holyverso/presentation/state/devotionals/devotional_comments_con
 import 'package:holyverso/presentation/state/devotionals/devotional_comments_state.dart';
 import 'package:holyverso/presentation/state/devotionals/devotional_detail_controller.dart';
 import 'package:holyverso/presentation/state/devotionals/devotional_detail_state.dart';
+import 'package:holyverso/presentation/state/devotionals/devotional_review_queue_controller.dart';
+import 'package:holyverso/presentation/state/devotionals/devotionals_feed_controller.dart';
+import 'package:holyverso/presentation/state/devotionals/devotionals_list_controller.dart';
 import 'package:holyverso/presentation/widgets/common/holy_child_app_bar.dart';
 import 'package:holyverso/presentation/widgets/devotionals/devotional_content_view.dart';
 import 'package:share_plus/share_plus.dart';
@@ -253,6 +257,190 @@ class _DevotionalDetailScreenState
     );
   }
 
+  bool get _canModerateCurrentDevotional {
+    final devotional = ref.read(devotionalDetailControllerProvider).devotional;
+    return devotional?.canModerate == true &&
+        devotional?.moderationStatus.name == 'underReview';
+  }
+
+  Future<void> _refreshCollections() async {
+    await Future.wait([
+      ref.read(devotionalReviewQueueControllerProvider.notifier).refresh(),
+      ref.read(devotionalsListControllerProvider.notifier).refresh(),
+      ref.read(forYouFeedControllerProvider.notifier).refresh(),
+      ref.read(followingFeedControllerProvider.notifier).refresh(),
+    ]);
+  }
+
+  Future<void> _approveReview() async {
+    final approved = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.midnightFaithDark,
+        title: Text(
+          'Aprobar devocional',
+          style: AppTextStyles.headline3.copyWith(color: AppColors.pureWhite),
+        ),
+        content: Text(
+          'Este devocional volverá a quedar disponible para lectura pública.',
+          style: AppTextStyles.bodyMedium.copyWith(color: AppColors.softMist),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Aprobar'),
+          ),
+        ],
+      ),
+    );
+
+    if (!mounted || approved != true) return;
+
+    final success = await ref
+        .read(devotionalDetailControllerProvider.notifier)
+        .approveReview();
+    if (!mounted) return;
+
+    if (success) {
+      await _refreshCollections();
+    }
+    if (!mounted) return;
+
+    final message = success
+        ? 'Devocional aprobado correctamente.'
+        : AppErrorMapper.toMessage(
+            Exception('approve-review'),
+            l10n: context.l10n,
+            fallbackMessage:
+                ref.read(devotionalDetailControllerProvider).errorMessage ??
+                'No se pudo aprobar el devocional.',
+          );
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: success ? AppColors.holyGold : Colors.red.shade700,
+      ),
+    );
+  }
+
+  Future<void> _restrictReview() async {
+    final reasonController = TextEditingController();
+    final reason = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: AppColors.midnightFaith,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (context) {
+        final mediaQuery = MediaQuery.of(context);
+        return SafeArea(
+          top: false,
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(
+              AppSpacing.lg,
+              AppSpacing.md,
+              AppSpacing.lg,
+              mediaQuery.viewInsets.bottom + AppSpacing.lg,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Restringir devocional',
+                  style: AppTextStyles.headline3.copyWith(
+                    color: AppColors.pureWhite,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  'Explica por qué se retira de la visibilidad pública.',
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: AppColors.softMist,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                TextField(
+                  controller: reasonController,
+                  minLines: 3,
+                  maxLines: 5,
+                  decoration: InputDecoration(
+                    hintText: 'Motivo de la restricción',
+                    filled: true,
+                    fillColor: AppColors.inputBackground,
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppBorderRadius.md),
+                      borderSide: BorderSide(
+                        color: AppColors.inputBorder.withValues(alpha: 0.7),
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppBorderRadius.md),
+                      borderSide: const BorderSide(
+                        color: AppColors.holyGold,
+                        width: 1.2,
+                      ),
+                    ),
+                  ),
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: AppColors.pureWhite,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      final value = reasonController.text.trim();
+                      if (value.isEmpty) return;
+                      Navigator.of(context).pop(value);
+                    },
+                    child: const Text('Restringir'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+    reasonController.dispose();
+
+    if (!mounted || reason == null || reason.isEmpty) return;
+
+    final success = await ref
+        .read(devotionalDetailControllerProvider.notifier)
+        .restrictReview(reason);
+    if (!mounted) return;
+
+    if (success) {
+      await _refreshCollections();
+    }
+    if (!mounted) return;
+
+    final message = success
+        ? 'Devocional restringido correctamente.'
+        : AppErrorMapper.toMessage(
+            Exception('restrict-review'),
+            l10n: context.l10n,
+            fallbackMessage:
+                ref.read(devotionalDetailControllerProvider).errorMessage ??
+                'No se pudo restringir el devocional.',
+          );
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: success ? AppColors.holyGold : Colors.red.shade700,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(devotionalDetailControllerProvider);
@@ -262,6 +450,14 @@ class _DevotionalDetailScreenState
     return Scaffold(
       backgroundColor: AppColors.midnightFaith,
       appBar: HolyChildAppBar(title: l10n.devotionalDetailTitle),
+      bottomNavigationBar: _canModerateCurrentDevotional
+          ? _ReviewActionBar(
+              isApproving: state.isApprovingReview,
+              isRestricting: state.isRestrictingReview,
+              onApprove: _approveReview,
+              onRestrict: _restrictReview,
+            )
+          : null,
       body: SafeArea(
         top: false,
         child: switch (state.status) {
@@ -578,6 +774,81 @@ class _CommentItem extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ReviewActionBar extends StatelessWidget {
+  const _ReviewActionBar({
+    required this.isApproving,
+    required this.isRestricting,
+    required this.onApprove,
+    required this.onRestrict,
+  });
+
+  final bool isApproving;
+  final bool isRestricting;
+  final Future<void> Function() onApprove;
+  final Future<void> Function() onRestrict;
+
+  @override
+  Widget build(BuildContext context) {
+    final isBusy = isApproving || isRestricting;
+
+    return SafeArea(
+      top: false,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.lg,
+          AppSpacing.sm,
+          AppSpacing.lg,
+          AppSpacing.md,
+        ),
+        decoration: BoxDecoration(
+          color: AppColors.midnightFaithDark,
+          border: Border(
+            top: BorderSide(
+              color: AppColors.pureWhite.withValues(alpha: 0.08),
+            ),
+          ),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: OutlinedButton(
+                onPressed: isBusy ? null : () => onRestrict(),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.warning,
+                  side: const BorderSide(color: AppColors.warning),
+                ),
+                child: isRestricting
+                    ? const SizedBox(
+                        height: 18,
+                        width: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text('Restringir'),
+              ),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: ElevatedButton(
+                onPressed: isBusy ? null : () => onApprove(),
+                child: isApproving
+                    ? const SizedBox(
+                        height: 18,
+                        width: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: AppColors.midnightFaith,
+                        ),
+                      )
+                    : const Text('Aprobar'),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

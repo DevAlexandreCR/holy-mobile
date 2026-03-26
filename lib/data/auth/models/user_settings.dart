@@ -35,6 +35,8 @@ class UserSettings {
     this.devotionalNotificationsEnabled = true,
     this.followedCreatorNotificationsEnabled = true,
     this.featuredDevotionalNotificationsEnabled = true,
+    this.authorModerationNotificationsEnabled = true,
+    this.editorReviewNotificationsEnabled = true,
   });
 
   final int? preferredVersionId;
@@ -43,6 +45,8 @@ class UserSettings {
   final bool devotionalNotificationsEnabled;
   final bool followedCreatorNotificationsEnabled;
   final bool featuredDevotionalNotificationsEnabled;
+  final bool authorModerationNotificationsEnabled;
+  final bool editorReviewNotificationsEnabled;
 
   factory UserSettings.fromMap(Map<String, dynamic> map) {
     final rawPreferred =
@@ -65,6 +69,10 @@ class UserSettings {
           map['followed_creator_notifications_enabled'] as bool? ?? true,
       featuredDevotionalNotificationsEnabled:
           map['featured_devotional_notifications_enabled'] as bool? ?? true,
+      authorModerationNotificationsEnabled:
+          map['author_moderation_notifications_enabled'] as bool? ?? true,
+      editorReviewNotificationsEnabled:
+          map['editor_review_notifications_enabled'] as bool? ?? true,
     );
   }
 
@@ -78,6 +86,9 @@ class UserSettings {
           followedCreatorNotificationsEnabled,
       'featured_devotional_notifications_enabled':
           featuredDevotionalNotificationsEnabled,
+      'author_moderation_notifications_enabled':
+          authorModerationNotificationsEnabled,
+      'editor_review_notifications_enabled': editorReviewNotificationsEnabled,
     };
   }
 }

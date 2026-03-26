@@ -104,6 +104,8 @@ class AuthApiClient {
     required bool devotionalNotificationsEnabled,
     required bool followedCreatorNotificationsEnabled,
     required bool featuredDevotionalNotificationsEnabled,
+    required bool authorModerationNotificationsEnabled,
+    required bool editorReviewNotificationsEnabled,
   }) async {
     final response = await _dio.put(
       '/users/me/notification-preferences',
@@ -113,6 +115,9 @@ class AuthApiClient {
             followedCreatorNotificationsEnabled,
         'featured_devotional_notifications_enabled':
             featuredDevotionalNotificationsEnabled,
+        'author_moderation_notifications_enabled':
+            authorModerationNotificationsEnabled,
+        'editor_review_notifications_enabled': editorReviewNotificationsEnabled,
       },
     );
 

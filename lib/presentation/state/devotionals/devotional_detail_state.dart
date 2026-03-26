@@ -15,6 +15,8 @@ class DevotionalDetailState {
     this.isReporting = false,
     this.isReportingReadComplete = false,
     this.hasReportedReadComplete = false,
+    this.isApprovingReview = false,
+    this.isRestrictingReview = false,
   });
 
   final Devotional? devotional;
@@ -28,6 +30,8 @@ class DevotionalDetailState {
   final bool isReporting;
   final bool isReportingReadComplete;
   final bool hasReportedReadComplete;
+  final bool isApprovingReview;
+  final bool isRestrictingReview;
 
   DevotionalDetailState copyWith({
     Devotional? devotional,
@@ -41,6 +45,8 @@ class DevotionalDetailState {
     bool? isReporting,
     bool? isReportingReadComplete,
     bool? hasReportedReadComplete,
+    bool? isApprovingReview,
+    bool? isRestrictingReview,
     bool clearError = false,
     bool clearDevotional = false,
   }) {
@@ -58,6 +64,8 @@ class DevotionalDetailState {
           isReportingReadComplete ?? this.isReportingReadComplete,
       hasReportedReadComplete:
           hasReportedReadComplete ?? this.hasReportedReadComplete,
+      isApprovingReview: isApprovingReview ?? this.isApprovingReview,
+      isRestrictingReview: isRestrictingReview ?? this.isRestrictingReview,
     );
   }
 }

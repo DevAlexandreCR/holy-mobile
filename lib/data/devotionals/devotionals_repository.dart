@@ -30,6 +30,13 @@ class DevotionalsRepository {
     );
   }
 
+  Future<PagedResult<Devotional>> fetchReviewQueue({
+    int page = 1,
+    int limit = 20,
+  }) {
+    return _client.fetchReviewQueue(page: page, limit: limit);
+  }
+
   Future<CursorPagedResult<Devotional>> fetchFeed({
     required DevotionalFeedMode mode,
     String? cursor,
@@ -100,6 +107,20 @@ class DevotionalsRepository {
 
   Future<Devotional> archiveDevotional(String devotionalId) {
     return _client.archiveDevotional(devotionalId);
+  }
+
+  Future<Devotional> approveDevotionalReview(String devotionalId) {
+    return _client.approveDevotionalReview(devotionalId);
+  }
+
+  Future<Devotional> restrictDevotionalReview({
+    required String devotionalId,
+    required String reason,
+  }) {
+    return _client.restrictDevotionalReview(
+      devotionalId: devotionalId,
+      reason: reason,
+    );
   }
 
   Future<({bool liked, int likesCount})> toggleLike(String devotionalId) {

@@ -285,6 +285,8 @@ class AuthController extends Notifier<AuthState> {
     required bool devotionalNotificationsEnabled,
     required bool followedCreatorNotificationsEnabled,
     required bool featuredDevotionalNotificationsEnabled,
+    required bool authorModerationNotificationsEnabled,
+    required bool editorReviewNotificationsEnabled,
   }) async {
     if (state.user == null) return false;
 
@@ -300,6 +302,9 @@ class AuthController extends Notifier<AuthState> {
             followedCreatorNotificationsEnabled,
         featuredDevotionalNotificationsEnabled:
             featuredDevotionalNotificationsEnabled,
+        authorModerationNotificationsEnabled:
+            authorModerationNotificationsEnabled,
+        editorReviewNotificationsEnabled: editorReviewNotificationsEnabled,
       );
       await _repository.persistSessionSnapshot(
         user: state.user!,

@@ -15,10 +15,12 @@ import 'package:holyverso/domain/devotionals/devotional_feed_mode.dart';
 import 'package:holyverso/domain/devotionals/devotional_status.dart';
 import 'package:holyverso/domain/devotionals/devotional_verse_reference.dart';
 import 'package:holyverso/presentation/screens/devotionals/devotional_editor_screen.dart';
+import 'package:holyverso/presentation/state/auth/auth_controller.dart';
 import 'package:holyverso/presentation/state/devotionals/devotionals_feed_controller.dart';
 import 'package:holyverso/presentation/state/devotionals/devotionals_feed_state.dart';
 import 'package:holyverso/presentation/state/devotionals/devotionals_list_controller.dart';
 import 'package:holyverso/presentation/state/devotionals/devotionals_list_state.dart';
+import 'package:holyverso/presentation/state/devotionals/devotional_review_queue_controller.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
@@ -29,6 +31,8 @@ class DevotionalsListScreen extends ConsumerStatefulWidget {
   ConsumerState<DevotionalsListScreen> createState() =>
       _DevotionalsListScreenState();
 }
+
+enum _DevotionalsTopTab { forYou, following, mine, review }
 
 class _DevotionalsListScreenState extends ConsumerState<DevotionalsListScreen> {
   int _selectedTabIndex = 0;
@@ -44,11 +48,51 @@ class _DevotionalsListScreenState extends ConsumerState<DevotionalsListScreen> {
     unawaited(ref.read(forYouFeedControllerProvider.notifier).refresh());
     unawaited(ref.read(followingFeedControllerProvider.notifier).refresh());
     unawaited(ref.read(devotionalsListControllerProvider.notifier).refresh());
+    unawaited(ref.read(devotionalReviewQueueControllerProvider.notifier).refresh());
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final role = ref.watch(
+      authControllerProvider.select((state) => state.user?.role),
+    );
+    final canModerate = role?.canEditContent ?? false;
+    final tabs = <(_DevotionalsTopTab, _TopLevelTabData)>[
+      (
+        _DevotionalsTopTab.forYou,
+        _TopLevelTabData(
+          key: const Key('devotionals-tab-for-you'),
+          label: l10n.devotionalsForYou,
+        ),
+      ),
+      (
+        _DevotionalsTopTab.following,
+        _TopLevelTabData(
+          key: const Key('devotionals-tab-following'),
+          label: l10n.devotionalsFollowing,
+        ),
+      ),
+      (
+        _DevotionalsTopTab.mine,
+        _TopLevelTabData(
+          key: const Key('devotionals-tab-mine'),
+          label: l10n.devotionalsMine,
+        ),
+      ),
+      if (canModerate)
+        (
+          _DevotionalsTopTab.review,
+          const _TopLevelTabData(
+            key: Key('devotionals-tab-review'),
+            label: 'En revisión',
+          ),
+        ),
+    ];
+
+    if (_selectedTabIndex >= tabs.length) {
+      _selectedTabIndex = tabs.length - 1;
+    }
 
     return Scaffold(
       backgroundColor: AppColors.midnightFaithDark,
@@ -89,37 +133,31 @@ class _DevotionalsListScreenState extends ConsumerState<DevotionalsListScreen> {
                       _selectedTabIndex = index;
                     });
                   },
-                  tabs: [
-                    _TopLevelTabData(
-                      key: const Key('devotionals-tab-for-you'),
-                      label: l10n.devotionalsForYou,
-                    ),
-                    _TopLevelTabData(
-                      key: const Key('devotionals-tab-following'),
-                      label: l10n.devotionalsFollowing,
-                    ),
-                    _TopLevelTabData(
-                      key: const Key('devotionals-tab-mine'),
-                      label: l10n.devotionalsMine,
-                    ),
-                  ],
+                  tabs: tabs.map((entry) => entry.$2).toList(),
                 ),
               ),
               const SizedBox(height: AppSpacing.md),
               Expanded(
                 child: IndexedStack(
                   index: _selectedTabIndex,
-                  children: [
-                    _PublicFeedModeView(
-                      mode: DevotionalFeedMode.forYou,
-                      provider: forYouFeedControllerProvider,
-                    ),
-                    _PublicFeedModeView(
-                      mode: DevotionalFeedMode.following,
-                      provider: followingFeedControllerProvider,
-                    ),
-                    _MyDevotionalsTab(onOpenEditor: _openEditor),
-                  ],
+                  children: tabs.map((entry) {
+                    switch (entry.$1) {
+                      case _DevotionalsTopTab.forYou:
+                        return _PublicFeedModeView(
+                          mode: DevotionalFeedMode.forYou,
+                          provider: forYouFeedControllerProvider,
+                        );
+                      case _DevotionalsTopTab.following:
+                        return _PublicFeedModeView(
+                          mode: DevotionalFeedMode.following,
+                          provider: followingFeedControllerProvider,
+                        );
+                      case _DevotionalsTopTab.mine:
+                        return _MyDevotionalsTab(onOpenEditor: _openEditor);
+                      case _DevotionalsTopTab.review:
+                        return const _ReviewQueueTab();
+                    }
+                  }).toList(),
                 ),
               ),
             ],
@@ -462,6 +500,7 @@ class _MyDevotionalsTabState extends ConsumerState<_MyDevotionalsTab> {
       await request();
       await Future.wait([
         ref.read(devotionalsListControllerProvider.notifier).refresh(),
+        ref.read(devotionalReviewQueueControllerProvider.notifier).refresh(),
         ref.read(forYouFeedControllerProvider.notifier).refresh(),
         ref.read(followingFeedControllerProvider.notifier).refresh(),
       ]);
@@ -681,6 +720,104 @@ class _MyDevotionalsTabState extends ConsumerState<_MyDevotionalsTab> {
         ),
       ],
     );
+  }
+}
+
+class _ReviewQueueTab extends ConsumerStatefulWidget {
+  const _ReviewQueueTab();
+
+  @override
+  ConsumerState<_ReviewQueueTab> createState() => _ReviewQueueTabState();
+}
+
+class _ReviewQueueTabState extends ConsumerState<_ReviewQueueTab> {
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final state = ref.read(devotionalReviewQueueControllerProvider);
+      if (state.items.isEmpty && state.status == DevotionalsListStatus.idle) {
+        ref.read(devotionalReviewQueueControllerProvider.notifier).loadInitial();
+      }
+    });
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent * 0.8) {
+      ref.read(devotionalReviewQueueControllerProvider.notifier).loadMore();
+    }
+  }
+
+  Future<void> _openReview(Devotional devotional) async {
+    await context.push('/devotionals/${devotional.id}');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final state = ref.watch(devotionalReviewQueueControllerProvider);
+    final l10n = context.l10n;
+
+    return switch (state.status) {
+      DevotionalsListStatus.loading when state.items.isEmpty => const Center(
+        child: CircularProgressIndicator(color: AppColors.holyGold),
+      ),
+      DevotionalsListStatus.error when state.items.isEmpty => _ErrorState(
+        message: state.errorMessage ?? l10n.genericError,
+        onRetry: () => ref
+            .read(devotionalReviewQueueControllerProvider.notifier)
+            .loadInitial(forceRefresh: true),
+      ),
+      _ => state.items.isEmpty
+          ? const _EmptyState(
+              title: 'No hay devocionales pendientes',
+              subtitle:
+                  'Cuando un devocional entre en revisión aparecerá en esta bandeja.',
+            )
+          : RefreshIndicator(
+              onRefresh: () =>
+                  ref.read(devotionalReviewQueueControllerProvider.notifier).refresh(),
+              child: ListView.builder(
+                controller: _scrollController,
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.lg,
+                  0,
+                  AppSpacing.lg,
+                  AppSpacing.xxl,
+                ),
+                itemCount: state.items.length + (state.isFetchingMore ? 1 : 0),
+                itemBuilder: (context, index) {
+                  if (index >= state.items.length) {
+                    return const Padding(
+                      padding: EdgeInsets.symmetric(vertical: AppSpacing.md),
+                      child: Center(
+                        child: CircularProgressIndicator(
+                          color: AppColors.holyGold,
+                        ),
+                      ),
+                    );
+                  }
+
+                  final devotional = state.items[index];
+                  return _ReviewDevotionalCard(
+                    devotional: devotional,
+                    onOpen: () => _openReview(devotional),
+                  );
+                },
+              ),
+            ),
+    };
   }
 }
 
@@ -1106,6 +1243,110 @@ class _OwnerDevotionalCard extends StatelessWidget {
       return l10n.devotionalModerationRestricted;
     }
     return l10n.devotionalModerationClear;
+  }
+}
+
+class _ReviewDevotionalCard extends StatelessWidget {
+  const _ReviewDevotionalCard({
+    required this.devotional,
+    required this.onOpen,
+  });
+
+  final Devotional devotional;
+  final VoidCallback onOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    final referenceLabel = _referenceLabel(devotional);
+
+    return _DevotionalSurfaceCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _DevotionalCoverImage(
+            imageUrl: devotional.previewImageUrl ?? devotional.coverImageUrl,
+            focusY: devotional.coverImageFocusY,
+            onTap: onOpen,
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.md,
+              AppSpacing.md,
+              AppSpacing.md,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _AuthorHeader(
+                  authorName: devotional.author.name,
+                  handle: devotional.author.handle,
+                  avatarUrl: devotional.author.avatarUrl,
+                  following: false,
+                  onTap: onOpen,
+                ),
+                if (referenceLabel != null) ...[
+                  const SizedBox(height: AppSpacing.md),
+                  Text(
+                    referenceLabel,
+                    style: AppTextStyles.referenceSmall.copyWith(
+                      color: AppColors.holyGold,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  devotional.title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.headline2.copyWith(
+                    color: AppColors.pureWhite,
+                    fontWeight: FontWeight.w700,
+                    height: 1.2,
+                  ),
+                ),
+                if (devotional.moderationReason != null &&
+                    devotional.moderationReason!.isNotEmpty) ...[
+                  const SizedBox(height: AppSpacing.sm),
+                  Text(
+                    devotional.moderationReason!,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: AppColors.softMist.withValues(alpha: 0.84),
+                      height: 1.45,
+                    ),
+                  ),
+                ],
+                const SizedBox(height: AppSpacing.md),
+                Wrap(
+                  spacing: AppSpacing.sm,
+                  runSpacing: AppSpacing.sm,
+                  children: [
+                    const _StatusPill(label: 'En revisión', isWarning: true),
+                    _MetaChip(
+                      icon: Icons.flag_outlined,
+                      label: '${devotional.reportCount} reportes',
+                    ),
+                    if (devotional.openReportCount > 0)
+                      _MetaChip(
+                        icon: Icons.mark_email_unread_outlined,
+                        label: '${devotional.openReportCount} abiertos',
+                      ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.md),
+                _ReadMoreAction(
+                  key: Key('review-devotional-open-${devotional.id}'),
+                  onTap: onOpen,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 

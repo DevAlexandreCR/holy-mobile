@@ -32,9 +32,12 @@ class Devotional {
     required this.readCompleteCount,
     required this.impressionCount,
     required this.uniqueImpressionCount,
+    required this.reportCount,
+    required this.openReportCount,
     required this.liked,
     required this.saved,
     required this.isOwner,
+    required this.canModerate,
     required this.deliveryToken,
     required this.recommendationReason,
     this.content,
@@ -66,9 +69,12 @@ class Devotional {
   final int readCompleteCount;
   final int impressionCount;
   final int uniqueImpressionCount;
+  final int reportCount;
+  final int openReportCount;
   final bool liked;
   final bool saved;
   final bool isOwner;
+  final bool canModerate;
   final String? deliveryToken;
   final String? recommendationReason;
   final List<dynamic>? content;
@@ -164,9 +170,12 @@ class Devotional {
       impressionCount: (map['impression_count'] as num?)?.toInt() ?? 0,
       uniqueImpressionCount:
           (map['unique_impression_count'] as num?)?.toInt() ?? 0,
+      reportCount: (map['report_count'] as num?)?.toInt() ?? 0,
+      openReportCount: (map['open_report_count'] as num?)?.toInt() ?? 0,
       liked: viewerState?['liked'] == true || map['liked'] == true,
       saved: viewerState?['saved'] == true || map['saved'] == true,
       isOwner: map['is_owner'] == true,
+      canModerate: map['can_moderate'] == true,
       deliveryToken: map['delivery_token']?.toString(),
       recommendationReason: map['recommendation_reason']?.toString(),
       content: content,
@@ -211,9 +220,12 @@ class Devotional {
       readCompleteCount: readCompleteCount ?? this.readCompleteCount,
       impressionCount: impressionCount,
       uniqueImpressionCount: uniqueImpressionCount,
+      reportCount: reportCount,
+      openReportCount: openReportCount,
       liked: liked ?? this.liked,
       saved: saved ?? this.saved,
       isOwner: isOwner,
+      canModerate: canModerate,
       deliveryToken: deliveryToken,
       recommendationReason: recommendationReason,
       content: content ?? this.content,
