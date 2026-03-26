@@ -7,6 +7,9 @@ class AppRuntimeStorage {
   static const _deviceIdKey = 'phase3.device_id';
   static const _pendingShareTokenKey = 'phase3.pending_share_token';
   static const _pushTokenKey = 'phase3.push_token';
+  static const _lastSeenAppVersionKey = 'phase3.last_seen_app_version';
+  static const _notificationPromptAttemptVersionKey =
+      'phase3.notification_prompt_attempt_version';
 
   SharedPreferences? _preferences;
 
@@ -64,6 +67,34 @@ class AppRuntimeStorage {
   Future<void> clearPushToken() async {
     final preferences = await _instance;
     await preferences.remove(_pushTokenKey);
+  }
+
+  Future<void> saveLastSeenAppVersion(String version) async {
+    final preferences = await _instance;
+    await preferences.setString(_lastSeenAppVersionKey, version);
+  }
+
+  Future<String?> readLastSeenAppVersion() async {
+    final preferences = await _instance;
+    final version = preferences.getString(_lastSeenAppVersionKey);
+    if (version == null || version.isEmpty) {
+      return null;
+    }
+    return version;
+  }
+
+  Future<void> saveNotificationPromptAttemptVersion(String version) async {
+    final preferences = await _instance;
+    await preferences.setString(_notificationPromptAttemptVersionKey, version);
+  }
+
+  Future<String?> readNotificationPromptAttemptVersion() async {
+    final preferences = await _instance;
+    final version = preferences.getString(_notificationPromptAttemptVersionKey);
+    if (version == null || version.isEmpty) {
+      return null;
+    }
+    return version;
   }
 
   Future<SharedPreferences> get _instance async {

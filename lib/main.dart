@@ -39,23 +39,25 @@ class _HolyVersoAppState extends ConsumerState<HolyVersoApp>
     with WidgetsBindingObserver {
   late final PhaseThreeRuntimeService _runtimeService;
 
+  Future<void> _initializeRuntime() async {
+    final router = ref.read(appRouterProvider);
+    final authState = ref.read(authControllerProvider);
+
+    await _runtimeService.start(router);
+    await _runtimeService.syncSession(
+      isAuthenticated: authState.isAuthenticated,
+      userId: authState.user?.id,
+      forceSessionStart: authState.isAuthenticated,
+    );
+  }
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _runtimeService = ref.read(phaseThreeRuntimeServiceProvider);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final router = ref.read(appRouterProvider);
-      final authState = ref.read(authControllerProvider);
-
-      unawaited(_runtimeService.start(router));
-      unawaited(
-        _runtimeService.syncSession(
-          isAuthenticated: authState.isAuthenticated,
-          userId: authState.user?.id,
-          forceSessionStart: authState.isAuthenticated,
-        ),
-      );
+      unawaited(_initializeRuntime());
     });
   }
 

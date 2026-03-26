@@ -8,7 +8,7 @@ import 'package:holyverso/core/services/version_detector_service.dart';
 import 'package:holyverso/domain/models/release_note.dart';
 import 'package:holyverso/presentation/providers/navigation_provider.dart';
 import 'package:holyverso/presentation/providers/whats_new_provider.dart';
-import 'package:holyverso/presentation/state/roles/role_provider.dart';
+import 'package:holyverso/presentation/state/auth/auth_controller.dart';
 import 'package:holyverso/presentation/widgets/dialogs/whats_new_dialog.dart';
 
 class BottomNavigationShell extends ConsumerStatefulWidget {
@@ -126,7 +126,11 @@ class _BottomNavigationShellState extends ConsumerState<BottomNavigationShell> {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final currentBranchIndex = widget.navigationShell.currentIndex;
-    final canManageUsers = ref.watch(canManageUsersProvider);
+    final canManageUsers =
+        ref
+            .watch(authControllerProvider.select((state) => state.user?.role))
+            ?.canManageUsers ??
+        false;
     final items = _buildItems(l10n, canManageUsers);
     final currentIndex = items.indexWhere(
       (item) => item.branchIndex == currentBranchIndex,

@@ -143,5 +143,12 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(SettingsScreen), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('Cerrar sesión'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Cerrar sesión'), findsOneWidget);
   });
 }

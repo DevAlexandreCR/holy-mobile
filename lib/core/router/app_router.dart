@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:holyverso/core/l10n/app_localizations.dart';
 import 'package:holyverso/presentation/state/auth/auth_controller.dart';
 import 'package:holyverso/presentation/state/auth/auth_state.dart';
-import 'package:holyverso/presentation/state/roles/role_provider.dart';
 import 'package:holyverso/presentation/screens/auth/forgot_password_screen.dart';
 import 'package:holyverso/presentation/screens/auth/login_screen.dart';
 import 'package:holyverso/presentation/screens/auth/register_screen.dart';
@@ -33,6 +32,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         sessionStatus: state.sessionStatus,
         isBootstrapping: state.isBootstrapping,
         canAccessProtectedRoutes: state.canAccessProtectedRoutes,
+        userRole: state.user?.role,
         errorMessage: state.errorMessage,
         infoMessage: state.infoMessage,
       ),
@@ -235,8 +235,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           state.matchedLocation == '/forgot-password';
       final location = state.matchedLocation;
       final path = state.uri.path;
-      final canManageUsers = ref.watch(canManageUsersProvider);
       final pathSegments = state.uri.pathSegments;
+      final canManageUsers = authState.userRole?.canManageUsers ?? false;
       final isDevotionalDetailRoute =
           pathSegments.length == 2 &&
           pathSegments.first == 'devotionals' &&

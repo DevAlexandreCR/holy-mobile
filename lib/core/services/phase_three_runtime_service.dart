@@ -2,15 +2,16 @@ import 'dart:async';
 
 import 'package:app_links/app_links.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:holyverso/core/config/app_config.dart';
 import 'package:holyverso/core/services/app_runtime_storage.dart';
+import 'package:holyverso/core/services/push_messaging_client.dart';
 import 'package:holyverso/data/analytics/analytics_api_client.dart';
 import 'package:holyverso/data/notifications/notification_api_client.dart';
 import 'package:holyverso/data/share_attribution/share_attribution_api_client.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 enum PushPermissionRequestResult { granted, denied, unavailable }
 
@@ -18,28 +19,37 @@ class PhaseThreeRuntimeService {
   PhaseThreeRuntimeService({
     required AppConfig appConfig,
     required AppRuntimeStorage storage,
+    required PushMessagingClient pushMessagingClient,
     required AnalyticsApiClient analyticsApiClient,
     required NotificationApiClient notificationApiClient,
     required ShareAttributionApiClient shareAttributionApiClient,
     AppLinks? appLinks,
+    Future<String?> Function()? appVersionResolver,
+    Future<bool> Function(AppConfig appConfig)? firebaseBootstrapper,
   }) : _appConfig = appConfig,
        _storage = storage,
+       _pushMessagingClient = pushMessagingClient,
        _analyticsApiClient = analyticsApiClient,
        _notificationApiClient = notificationApiClient,
        _shareAttributionApiClient = shareAttributionApiClient,
-       _appLinks = appLinks;
+       _appLinks = appLinks,
+       _appVersionResolver = appVersionResolver ?? _defaultAppVersionResolver,
+       _firebaseBootstrapper =
+           firebaseBootstrapper ?? _defaultFirebaseBootstrapper;
 
   final AppConfig _appConfig;
   final AppRuntimeStorage _storage;
+  final PushMessagingClient _pushMessagingClient;
   final AnalyticsApiClient _analyticsApiClient;
   final NotificationApiClient _notificationApiClient;
   final ShareAttributionApiClient _shareAttributionApiClient;
   final AppLinks? _appLinks;
-  FirebaseMessaging? _firebaseMessaging;
+  final Future<String?> Function() _appVersionResolver;
+  final Future<bool> Function(AppConfig appConfig) _firebaseBootstrapper;
 
   StreamSubscription<Uri>? _appLinkSubscription;
   StreamSubscription<String>? _tokenRefreshSubscription;
-  StreamSubscription<RemoteMessage>? _notificationOpenSubscription;
+  StreamSubscription<PushNotificationMessage>? _notificationOpenSubscription;
   GoRouter? _router;
   String? _deviceId;
   String? _currentUserId;
@@ -48,6 +58,7 @@ class PhaseThreeRuntimeService {
   bool _isAuthenticated = false;
   bool _isFirebaseReady = false;
   bool _started = false;
+  bool _hasCheckedAutomaticPermissionPromptThisLaunch = false;
 
   bool get _supportsPush =>
       !kIsWeb &&
@@ -76,15 +87,11 @@ class PhaseThreeRuntimeService {
       return;
     }
 
-    _notificationOpenSubscription = FirebaseMessaging.onMessageOpenedApp.listen(
-      _handleNotificationOpen,
+    _notificationOpenSubscription = _pushMessagingClient.onMessageOpenedApp
+        .listen(_handleNotificationOpen);
+    _tokenRefreshSubscription = _pushMessagingClient.onTokenRefresh.listen(
+      _handleTokenRefresh,
     );
-    final messaging = _resolveMessaging();
-    if (messaging != null) {
-      _tokenRefreshSubscription = messaging.onTokenRefresh.listen(
-        _handleTokenRefresh,
-      );
-    }
     await _consumeInitialNotification();
   }
 
@@ -101,6 +108,7 @@ class PhaseThreeRuntimeService {
     }
 
     await _recordAppSessionIfNeeded(force: forceSessionStart);
+    await _maybePromptForNotificationPermissionOnVersionEntry();
     await _syncPushState();
   }
 
@@ -118,22 +126,14 @@ class PhaseThreeRuntimeService {
       return PushPermissionRequestResult.unavailable;
     }
 
-    final messaging = _resolveMessaging();
-    if (messaging == null) {
-      return PushPermissionRequestResult.unavailable;
-    }
-
-    final currentSettings = await messaging.getNotificationSettings();
+    final currentSettings = await _pushMessagingClient
+        .getNotificationSettings();
     if (_isAuthorized(currentSettings.authorizationStatus)) {
       await _syncPushState();
       return PushPermissionRequestResult.granted;
     }
 
-    final updatedSettings = await messaging.requestPermission(
-      alert: true,
-      badge: true,
-      sound: true,
-    );
+    final updatedSettings = await _pushMessagingClient.requestPermission();
     await _syncPushState();
 
     return _isAuthorized(updatedSettings.authorizationStatus)
@@ -190,26 +190,14 @@ class PhaseThreeRuntimeService {
     }
 
     try {
-      if (Firebase.apps.isEmpty) {
-        try {
-          await Firebase.initializeApp();
-        } catch (_) {
-          final options = _appConfig.firebaseOptions;
-          if (options == null) {
-            return false;
-          }
-          await Firebase.initializeApp(options: options);
-        }
-      }
-
-      final messaging = _resolveMessaging();
-      if (messaging == null) {
+      final bootstrapped = await _firebaseBootstrapper(_appConfig);
+      if (!bootstrapped) {
         return false;
       }
 
-      await messaging.setAutoInitEnabled(true);
+      await _pushMessagingClient.setAutoInitEnabled(true);
       if (defaultTargetPlatform == TargetPlatform.iOS) {
-        await messaging.setForegroundNotificationPresentationOptions(
+        await _pushMessagingClient.setForegroundNotificationPresentationOptions(
           alert: true,
           badge: true,
           sound: true,
@@ -250,20 +238,15 @@ class PhaseThreeRuntimeService {
   }
 
   Future<void> _consumeInitialNotification() async {
-    final messaging = _resolveMessaging();
-    if (messaging == null) {
-      return;
-    }
-
     try {
-      final message = await messaging.getInitialMessage();
+      final message = await _pushMessagingClient.getInitialMessage();
       if (message != null) {
         await _handleNotificationOpen(message);
       }
     } catch (_) {}
   }
 
-  Future<void> _handleNotificationOpen(RemoteMessage message) async {
+  Future<void> _handleNotificationOpen(PushNotificationMessage message) async {
     final devotionalId = message.data['devotional_id'];
     final type = message.data['type'];
 
@@ -312,13 +295,8 @@ class PhaseThreeRuntimeService {
       return;
     }
 
-    final messaging = _resolveMessaging();
-    if (messaging == null) {
-      return;
-    }
-
-    final settings = await messaging.getNotificationSettings();
-    final token = await messaging.getToken();
+    final settings = await _pushMessagingClient.getNotificationSettings();
+    final token = await _pushMessagingClient.getToken();
     final storedToken = await _storage.readPushToken();
 
     if (token == null || token.isEmpty) {
@@ -348,12 +326,7 @@ class PhaseThreeRuntimeService {
   }
 
   Future<void> _registerPushToken(String token) async {
-    final messaging = _resolveMessaging();
-    if (messaging == null) {
-      return;
-    }
-
-    final settings = await messaging.getNotificationSettings();
+    final settings = await _pushMessagingClient.getNotificationSettings();
     try {
       await _notificationApiClient.registerDeviceToken(
         token: token,
@@ -382,6 +355,54 @@ class PhaseThreeRuntimeService {
       );
       _lastAppSessionAt = now;
     } catch (_) {}
+  }
+
+  Future<void> _maybePromptForNotificationPermissionOnVersionEntry() async {
+    if (_hasCheckedAutomaticPermissionPromptThisLaunch) {
+      return;
+    }
+
+    _hasCheckedAutomaticPermissionPromptThisLaunch = true;
+
+    if (!await _ensureFirebaseReady()) {
+      return;
+    }
+
+    final currentVersion = await _appVersionResolver();
+    if (currentVersion == null || currentVersion.isEmpty) {
+      return;
+    }
+
+    final previousSeenVersion = await _storage.readLastSeenAppVersion();
+    final promptAttemptVersion = await _storage
+        .readNotificationPromptAttemptVersion();
+
+    await _storage.saveLastSeenAppVersion(currentVersion);
+
+    final settings = await _pushMessagingClient.getNotificationSettings();
+    if (_isAuthorized(settings.authorizationStatus)) {
+      return;
+    }
+
+    final isNewVersionEntry =
+        previousSeenVersion == null || previousSeenVersion != currentVersion;
+    if (!isNewVersionEntry || promptAttemptVersion == currentVersion) {
+      return;
+    }
+
+    var attempted = false;
+    try {
+      attempted = true;
+      await _pushMessagingClient.requestPermission();
+    } catch (_) {
+      if (!attempted) {
+        return;
+      }
+    } finally {
+      if (attempted) {
+        await _storage.saveNotificationPromptAttemptVersion(currentVersion);
+      }
+    }
   }
 
   Future<void> _handleIncomingUri(Uri uri) async {
@@ -480,17 +501,17 @@ class PhaseThreeRuntimeService {
     return value;
   }
 
-  bool _isAuthorized(AuthorizationStatus status) {
-    return status == AuthorizationStatus.authorized ||
-        status == AuthorizationStatus.provisional;
+  bool _isAuthorized(PushAuthorizationStatus status) {
+    return status == PushAuthorizationStatus.authorized ||
+        status == PushAuthorizationStatus.provisional;
   }
 
-  String _mapPermissionStatus(AuthorizationStatus status) {
+  String _mapPermissionStatus(PushAuthorizationStatus status) {
     return switch (status) {
-      AuthorizationStatus.authorized => 'AUTHORIZED',
-      AuthorizationStatus.provisional => 'PROVISIONAL',
-      AuthorizationStatus.denied => 'DENIED',
-      AuthorizationStatus.notDetermined => 'NOT_DETERMINED',
+      PushAuthorizationStatus.authorized => 'AUTHORIZED',
+      PushAuthorizationStatus.provisional => 'PROVISIONAL',
+      PushAuthorizationStatus.denied => 'DENIED',
+      PushAuthorizationStatus.notDetermined => 'NOT_DETERMINED',
     };
   }
 
@@ -501,18 +522,35 @@ class PhaseThreeRuntimeService {
       'Push notifications are only supported on mobile',
     ),
   };
+}
 
-  FirebaseMessaging? _resolveMessaging() {
-    if (!_supportsPush) {
-      return null;
+Future<String?> _defaultAppVersionResolver() async {
+  final info = await PackageInfo.fromPlatform();
+  final version = info.version.trim();
+  if (version.isEmpty) {
+    return null;
+  }
+
+  final buildNumber = info.buildNumber.trim();
+  return buildNumber.isEmpty ? version : '$version+$buildNumber';
+}
+
+Future<bool> _defaultFirebaseBootstrapper(AppConfig appConfig) async {
+  if (Firebase.apps.isNotEmpty) {
+    return true;
+  }
+
+  try {
+    await Firebase.initializeApp();
+    return true;
+  } catch (_) {
+    final options = appConfig.firebaseOptions;
+    if (options == null) {
+      return false;
     }
 
-    try {
-      _firebaseMessaging ??= FirebaseMessaging.instance;
-      return _firebaseMessaging;
-    } catch (_) {
-      return null;
-    }
+    await Firebase.initializeApp(options: options);
+    return true;
   }
 }
 
@@ -529,6 +567,7 @@ final phaseThreeRuntimeServiceProvider = Provider<PhaseThreeRuntimeService>((
   return PhaseThreeRuntimeService(
     appConfig: ref.watch(appConfigProvider),
     storage: ref.watch(appRuntimeStorageProvider),
+    pushMessagingClient: ref.watch(pushMessagingClientProvider),
     analyticsApiClient: ref.watch(analyticsApiClientProvider),
     notificationApiClient: ref.watch(notificationApiClientProvider),
     shareAttributionApiClient: ref.watch(shareAttributionApiClientProvider),
