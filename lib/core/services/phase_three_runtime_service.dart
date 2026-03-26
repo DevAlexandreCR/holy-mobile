@@ -535,7 +535,7 @@ Future<String?> _defaultAppVersionResolver() async {
   return buildNumber.isEmpty ? version : '$version+$buildNumber';
 }
 
-Future<bool> _defaultFirebaseBootstrapper(AppConfig appConfig) async {
+Future<bool> bootstrapFirebaseApp(AppConfig appConfig) async {
   if (Firebase.apps.isNotEmpty) {
     return true;
   }
@@ -552,6 +552,10 @@ Future<bool> _defaultFirebaseBootstrapper(AppConfig appConfig) async {
     await Firebase.initializeApp(options: options);
     return true;
   }
+}
+
+Future<bool> _defaultFirebaseBootstrapper(AppConfig appConfig) async {
+  return bootstrapFirebaseApp(appConfig);
 }
 
 class _DeepLinkTarget {

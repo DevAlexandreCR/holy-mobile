@@ -1,9 +1,11 @@
 import 'dart:async';
 
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:holyverso/core/config/app_config.dart';
 import 'package:holyverso/core/l10n/app_localizations.dart';
 import 'package:holyverso/core/router/app_router.dart';
 import 'package:holyverso/core/services/phase_three_runtime_service.dart';
@@ -13,17 +15,30 @@ import 'package:holyverso/data/widget/widget_verse_storage.dart';
 import 'package:holyverso/presentation/state/auth/auth_controller.dart';
 import 'package:holyverso/presentation/state/auth/auth_state.dart';
 
-Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-
-  // Load .env file before app starts
+Future<void> _loadAppEnv() async {
   final envFile = kReleaseMode ? '.env.production' : '.env.development';
   await dotenv.load(fileName: envFile);
+}
 
-  // Initialize native configuration with the API_URL from the .env file
+Future<void> _configureNativeApiUrl() async {
   final apiUrl = dotenv.get('API_URL', fallback: 'https://api.holyverso.com');
   final authTokenService = AuthTokenService();
   await authTokenService.initializeNativeConfig(apiUrl);
+}
+
+@pragma('vm:entry-point')
+Future<void> firebaseMessagingBackgroundHandler(RemoteMessage _) async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await _loadAppEnv();
+  await bootstrapFirebaseApp(AppConfig.load());
+}
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await _loadAppEnv();
+  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+  await _configureNativeApiUrl();
 
   runApp(const ProviderScope(child: HolyVersoApp()));
 }
