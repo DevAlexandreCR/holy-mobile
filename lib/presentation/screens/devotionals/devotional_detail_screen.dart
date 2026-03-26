@@ -67,6 +67,13 @@ class _DevotionalDetailScreenState
     if (!_scrollController.hasClients) return;
     final maxExtent = _scrollController.position.maxScrollExtent;
     if (maxExtent <= 0) return;
+    final detailState = ref.read(devotionalDetailControllerProvider);
+    final devotional = detailState.devotional;
+    if (detailState.status != DevotionalDetailStatus.success ||
+        devotional == null ||
+        !devotional.isPubliclyVisible) {
+      return;
+    }
     final progress = _scrollController.position.pixels / maxExtent;
     if (progress >= 0.75) {
       ref
@@ -808,9 +815,7 @@ class _ReviewActionBar extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppColors.midnightFaithDark,
           border: Border(
-            top: BorderSide(
-              color: AppColors.pureWhite.withValues(alpha: 0.08),
-            ),
+            top: BorderSide(color: AppColors.pureWhite.withValues(alpha: 0.08)),
           ),
         ),
         child: Row(

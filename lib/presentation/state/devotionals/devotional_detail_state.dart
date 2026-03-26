@@ -3,6 +3,8 @@ import 'package:holyverso/domain/devotionals/devotional.dart';
 enum DevotionalDetailStatus { idle, loading, success, error }
 
 class DevotionalDetailState {
+  static const _unset = Object();
+
   const DevotionalDetailState({
     this.devotional,
     this.status = DevotionalDetailStatus.idle,
@@ -36,9 +38,9 @@ class DevotionalDetailState {
   DevotionalDetailState copyWith({
     Devotional? devotional,
     DevotionalDetailStatus? status,
-    String? deliveryToken,
-    String? shareToken,
-    String? deviceId,
+    Object? deliveryToken = _unset,
+    Object? shareToken = _unset,
+    Object? deviceId = _unset,
     String? errorMessage,
     bool? isTogglingLike,
     bool? isTogglingSave,
@@ -53,9 +55,15 @@ class DevotionalDetailState {
     return DevotionalDetailState(
       devotional: clearDevotional ? null : devotional ?? this.devotional,
       status: status ?? this.status,
-      deliveryToken: deliveryToken ?? this.deliveryToken,
-      shareToken: shareToken ?? this.shareToken,
-      deviceId: deviceId ?? this.deviceId,
+      deliveryToken: identical(deliveryToken, _unset)
+          ? this.deliveryToken
+          : deliveryToken as String?,
+      shareToken: identical(shareToken, _unset)
+          ? this.shareToken
+          : shareToken as String?,
+      deviceId: identical(deviceId, _unset)
+          ? this.deviceId
+          : deviceId as String?,
       errorMessage: clearError ? null : errorMessage ?? this.errorMessage,
       isTogglingLike: isTogglingLike ?? this.isTogglingLike,
       isTogglingSave: isTogglingSave ?? this.isTogglingSave,

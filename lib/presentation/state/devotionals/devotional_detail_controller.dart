@@ -125,11 +125,17 @@ class DevotionalDetailController extends Notifier<DevotionalDetailState> {
 
   Future<void> reportReadComplete() async {
     final devotional = state.devotional;
-    if (
-      devotional == null ||
-      state.hasReportedReadComplete ||
-      state.isReportingReadComplete
-    ) {
+    if (devotional == null ||
+        state.hasReportedReadComplete ||
+        state.isReportingReadComplete) {
+      return;
+    }
+
+    if (!devotional.isPubliclyVisible) {
+      state = state.copyWith(
+        isReportingReadComplete: false,
+        hasReportedReadComplete: true,
+      );
       return;
     }
 
@@ -147,8 +153,15 @@ class DevotionalDetailController extends Notifier<DevotionalDetailState> {
         isReportingReadComplete: false,
         hasReportedReadComplete: true,
       );
-    } catch (_) {
-      state = state.copyWith(isReportingReadComplete: false);
+    } catch (error) {
+      final shouldStopRetrying =
+          AppErrorMapper.backendCode(error) == 'DEVOTIONAL_NOT_PUBLIC';
+      state = state.copyWith(
+        isReportingReadComplete: false,
+        hasReportedReadComplete: shouldStopRetrying
+            ? true
+            : state.hasReportedReadComplete,
+      );
     }
   }
 
