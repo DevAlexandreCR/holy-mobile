@@ -27,6 +27,7 @@ class DevotionalDetailController extends Notifier<DevotionalDetailState> {
       status: DevotionalDetailStatus.loading,
       clearError: true,
       clearDevotional: state.devotional?.id != devotionalId,
+      isReportingReadComplete: false,
       hasReportedReadComplete: false,
       deliveryToken: deliveryToken,
       shareToken: shareToken,
@@ -122,7 +123,15 @@ class DevotionalDetailController extends Notifier<DevotionalDetailState> {
 
   Future<void> reportReadComplete() async {
     final devotional = state.devotional;
-    if (devotional == null || state.hasReportedReadComplete) return;
+    if (
+      devotional == null ||
+      state.hasReportedReadComplete ||
+      state.isReportingReadComplete
+    ) {
+      return;
+    }
+
+    state = state.copyWith(isReportingReadComplete: true);
 
     try {
       final count = await _repository.markReadComplete(
@@ -133,9 +142,12 @@ class DevotionalDetailController extends Notifier<DevotionalDetailState> {
       );
       state = state.copyWith(
         devotional: devotional.copyWith(readCompleteCount: count),
+        isReportingReadComplete: false,
         hasReportedReadComplete: true,
       );
-    } catch (_) {}
+    } catch (_) {
+      state = state.copyWith(isReportingReadComplete: false);
+    }
   }
 
   Future<bool> report({required String reason, String? details}) async {

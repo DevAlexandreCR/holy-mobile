@@ -13,6 +13,7 @@ class DevotionalDetailState {
     this.isTogglingLike = false,
     this.isTogglingSave = false,
     this.isReporting = false,
+    this.isReportingReadComplete = false,
     this.hasReportedReadComplete = false,
   });
 
@@ -25,6 +26,7 @@ class DevotionalDetailState {
   final bool isTogglingLike;
   final bool isTogglingSave;
   final bool isReporting;
+  final bool isReportingReadComplete;
   final bool hasReportedReadComplete;
 
   DevotionalDetailState copyWith({
@@ -37,6 +39,7 @@ class DevotionalDetailState {
     bool? isTogglingLike,
     bool? isTogglingSave,
     bool? isReporting,
+    bool? isReportingReadComplete,
     bool? hasReportedReadComplete,
     bool clearError = false,
     bool clearDevotional = false,
@@ -51,6 +54,8 @@ class DevotionalDetailState {
       isTogglingLike: isTogglingLike ?? this.isTogglingLike,
       isTogglingSave: isTogglingSave ?? this.isTogglingSave,
       isReporting: isReporting ?? this.isReporting,
+      isReportingReadComplete:
+          isReportingReadComplete ?? this.isReportingReadComplete,
       hasReportedReadComplete:
           hasReportedReadComplete ?? this.hasReportedReadComplete,
     );
