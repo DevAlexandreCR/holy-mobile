@@ -128,13 +128,24 @@ abstract class BaseDevotionalsFeedController
     }
   }
 
-  Future<void> toggleSave(String devotionalId) async {
-    if (state.savingDevotionalId == devotionalId) return;
+  Future<bool> toggleSave(String devotionalId) async {
+    if (state.savingDevotionalId == devotionalId) return false;
     final index = state.items.indexWhere((item) => item.id == devotionalId);
-    if (index == -1) return;
+    if (index == -1) return false;
 
     final devotional = state.items[index];
+    final optimisticSaved = !devotional.saved;
+    final optimisticSaveCount = max(
+      devotional.saveCount + (optimisticSaved ? 1 : -1),
+      0,
+    );
+    final items = [...state.items];
+    items[index] = devotional.copyWith(
+      saved: optimisticSaved,
+      saveCount: optimisticSaveCount,
+    );
     state = state.copyWith(savingDevotionalId: devotionalId, clearError: true);
+    state = state.copyWith(items: items);
     try {
       final result = devotional.saved
           ? await _repository.unsaveDevotional(devotionalId)
@@ -142,14 +153,19 @@ abstract class BaseDevotionalsFeedController
               devotionalId,
               deliveryToken: devotional.deliveryToken,
             );
-      final items = [...state.items];
-      items[index] = items[index].copyWith(
+      final updatedItems = [...state.items];
+      updatedItems[index] = updatedItems[index].copyWith(
         saved: result.saved,
         saveCount: result.saveCount,
       );
-      state = state.copyWith(items: items);
+      state = state.copyWith(items: updatedItems);
+      return true;
     } catch (error) {
+      final revertedItems = [...state.items];
+      revertedItems[index] = devotional;
       state = state.copyWith(errorMessage: _mapError(error));
+      state = state.copyWith(items: revertedItems);
+      return false;
     } finally {
       if (state.savingDevotionalId == devotionalId) {
         state = state.copyWith(clearSavingDevotionalId: true);

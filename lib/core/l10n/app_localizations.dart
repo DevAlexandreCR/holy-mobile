@@ -238,6 +238,8 @@ class AppLocalizations {
       _string('devotionalPublishedMovedMessage');
   String get devotionalArchivedMovedMessage =>
       _string('devotionalArchivedMovedMessage');
+  String get devotionalFeedSavedToast => _string('devotionalFeedSavedToast');
+  String get devotionalFeedOpenCta => _string('devotionalFeedOpenCta');
   String get devotionalPublishModerationInProgress =>
       _string('devotionalPublishModerationInProgress');
   String get devotionalPublishModerationHelper =>
@@ -286,6 +288,7 @@ class AppLocalizations {
   String get writeComment => _string('writeComment');
   String get cancelAction => _string('cancelAction');
   String get saveAction => _string('saveAction');
+  String get savedAction => _string('savedAction');
   String get creatorProfileTitle => _string('creatorProfileTitle');
   String get creatorProfileEdit => _string('creatorProfileEdit');
   String get creatorProfileFollowers => _string('creatorProfileFollowers');
@@ -555,6 +558,8 @@ class AppLocalizations {
           'Devocional publicado. Ahora lo encuentras en Publicados.',
       'devotionalArchivedMovedMessage':
           'Devocional archivado. Ahora lo encuentras en Archivados.',
+      'devotionalFeedSavedToast': 'Guardado para volver luego',
+      'devotionalFeedOpenCta': 'Recibe este mensaje →',
       'devotionalPublishModerationInProgress':
           'Revisando tu devocional antes de publicarlo...',
       'devotionalPublishModerationHelper':
@@ -597,6 +602,7 @@ class AppLocalizations {
       'writeComment': 'Escribe un comentario...',
       'cancelAction': 'Cancelar',
       'saveAction': 'Guardar',
+      'savedAction': 'Guardado',
       'creatorProfileTitle': 'Perfil',
       'creatorProfileEdit': 'Editar perfil',
       'creatorProfileFollowers': 'Seguidores',
@@ -844,6 +850,8 @@ class AppLocalizations {
           'Devotional published. You can now find it in Published.',
       'devotionalArchivedMovedMessage':
           'Devotional archived. You can now find it in Archived.',
+      'devotionalFeedSavedToast': 'Saved for later',
+      'devotionalFeedOpenCta': 'Receive this message →',
       'devotionalPublishModerationInProgress':
           'Reviewing your devotional before publishing...',
       'devotionalPublishModerationHelper':
@@ -887,6 +895,7 @@ class AppLocalizations {
       'writeComment': 'Write a comment...',
       'cancelAction': 'Cancel',
       'saveAction': 'Save',
+      'savedAction': 'Saved',
       'creatorProfileTitle': 'Profile',
       'creatorProfileEdit': 'Edit profile',
       'creatorProfileFollowers': 'Followers',

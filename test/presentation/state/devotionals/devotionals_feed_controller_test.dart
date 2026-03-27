@@ -250,6 +250,9 @@ Devotional _buildDevotional({required String id, required String token}) {
     coverImageUrl: null,
     previewImageUrl: null,
     previewText: 'Preview',
+    computedHook: 'Cuando vuelves a Dios, tu alma encuentra aire.',
+    optimizedPreviewText: 'El descanso tambien puede empezar con una oracion.',
+    hookSource: 'CONTENT_OPENING',
     coverImageFocusY: 0,
     viewCount: 0,
     estimatedReadTime: 1,
@@ -288,6 +291,7 @@ Devotional _buildDevotional({required String id, required String token}) {
     canModerate: false,
     deliveryToken: token,
     recommendationReason: DevotionalFeedMode.forYou.name,
+    feedContextReason: 'FEATURED',
     content: const [],
   );
 }

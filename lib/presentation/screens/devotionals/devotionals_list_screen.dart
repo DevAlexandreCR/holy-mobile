@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -12,6 +13,7 @@ import 'package:holyverso/core/theme/app_text_styles.dart';
 import 'package:holyverso/data/devotionals/devotionals_repository.dart';
 import 'package:holyverso/domain/devotionals/devotional.dart';
 import 'package:holyverso/domain/devotionals/devotional_feed_mode.dart';
+import 'package:holyverso/domain/devotionals/devotional_publication_state.dart';
 import 'package:holyverso/domain/devotionals/devotional_status.dart';
 import 'package:holyverso/domain/devotionals/devotional_verse_reference.dart';
 import 'package:holyverso/presentation/screens/devotionals/devotional_editor_screen.dart';
@@ -322,8 +324,8 @@ class _PublicFeedModeViewState extends ConsumerState<_PublicFeedModeView> {
     if (!mounted) return;
 
     final shareText = [
-      devotional.title.trim(),
-      if (devotional.previewText.isNotEmpty) devotional.previewText,
+      devotional.primaryHook,
+      if (devotional.feedPreview.isNotEmpty) devotional.feedPreview,
       result.shareUrl,
     ].join('\n\n');
 
@@ -342,6 +344,24 @@ class _PublicFeedModeViewState extends ConsumerState<_PublicFeedModeView> {
     await ref
         .read(widget.provider.notifier)
         .registerShare(devotional, shareCount: result.shareCount);
+  }
+
+  Future<void> _toggleSave(Devotional devotional) async {
+    final willSave = !devotional.saved;
+    final success = await ref
+        .read(widget.provider.notifier)
+        .toggleSave(devotional.id);
+
+    if (!mounted || !success || !willSave) return;
+
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.hideCurrentSnackBar();
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(context.l10n.devotionalFeedSavedToast),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   Future<void> _openDetail(Devotional devotional) async {
@@ -435,17 +455,16 @@ class _PublicFeedModeViewState extends ConsumerState<_PublicFeedModeView> {
             onQualified: () => ref
                 .read(widget.provider.notifier)
                 .registerImpression(devotional),
-            child: _PublicDevotionalCard(
-              devotional: devotional,
-              isLiking: state.likingDevotionalId == devotional.id,
-              isSaving: state.savingDevotionalId == devotional.id,
-              onOpen: () => _openDetail(devotional),
-              onOpenAuthor: () => _openAuthor(devotional),
-              onLike: () =>
-                  ref.read(widget.provider.notifier).toggleLike(devotional.id),
-              onSave: () =>
-                  ref.read(widget.provider.notifier).toggleSave(devotional.id),
-              onShare: () => _share(devotional),
+            child: _FeedCardEntrance(
+              index: listIndex,
+              child: _PublicDevotionalCard(
+                devotional: devotional,
+                isSaving: state.savingDevotionalId == devotional.id,
+                onOpen: () => _openDetail(devotional),
+                onOpenAuthor: () => _openAuthor(devotional),
+                onSave: () => _toggleSave(devotional),
+                onShare: () => _share(devotional),
+              ),
             ),
           );
         },
@@ -539,9 +558,9 @@ class _MyDevotionalsTabState extends ConsumerState<_MyDevotionalsTab> {
       messenger.showSnackBar(
         SnackBar(
           content: Text(
-            AppErrorMapper.toMessage(
+            _resolveOwnerActionErrorMessage(
               error,
-              l10n: context.l10n,
+              context: context,
               fallbackMessage: fallbackMessage,
               businessCodeMessages: businessCodeMessages,
             ),
@@ -927,151 +946,176 @@ class _FeedImpressionTrackerState extends State<_FeedImpressionTracker> {
 class _PublicDevotionalCard extends StatelessWidget {
   const _PublicDevotionalCard({
     required this.devotional,
-    required this.isLiking,
     required this.isSaving,
     required this.onOpen,
     required this.onOpenAuthor,
-    required this.onLike,
     required this.onSave,
     required this.onShare,
   });
 
   final Devotional devotional;
-  final bool isLiking;
   final bool isSaving;
   final VoidCallback onOpen;
   final VoidCallback onOpenAuthor;
-  final VoidCallback onLike;
   final VoidCallback onSave;
   final VoidCallback onShare;
 
   @override
   Widget build(BuildContext context) {
     final referenceLabel = _referenceLabel(devotional);
+    final proofLabel = _feedContextLabel(devotional.feedContextReason);
+    final badgeLabel = _publicationBadgeLabel(devotional.publicationState);
+    final secondaryTitleVisible = _shouldShowSecondaryTitle(devotional);
+    final previewText = devotional.feedPreview;
+    final hasImage =
+        (devotional.previewImageUrl ?? devotional.coverImageUrl)?.isNotEmpty ==
+        true;
 
     return _DevotionalSurfaceCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _DevotionalCoverImage(
-            imageUrl: devotional.previewImageUrl ?? devotional.coverImageUrl,
-            focusY: devotional.coverImageFocusY,
-            onTap: onOpen,
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.md,
-              AppSpacing.md,
-              AppSpacing.md,
-              AppSpacing.md,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _AuthorHeader(
-                  authorName: devotional.author.name,
-                  handle: devotional.author.handle,
-                  avatarUrl: devotional.author.avatarUrl,
-                  following: devotional.author.following,
-                  onTap: onOpenAuthor,
-                ),
-                if (referenceLabel != null) ...[
-                  const SizedBox(height: AppSpacing.md),
-                  Text(
-                    referenceLabel,
-                    style: AppTextStyles.referenceSmall.copyWith(
-                      color: AppColors.holyGold,
-                      fontWeight: FontWeight.w700,
+      featured:
+          devotional.publicationState == DevotionalPublicationState.featured,
+      child: _FeedOpenSurface(
+        onTap: onOpen,
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _AuthorHeader(
+                authorName: devotional.author.name,
+                handle: devotional.author.handle,
+                avatarUrl: devotional.author.avatarUrl,
+                following: devotional.author.following,
+                onTap: onOpenAuthor,
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Wrap(
+                      spacing: AppSpacing.sm,
+                      runSpacing: AppSpacing.xs,
+                      children: [
+                        if (proofLabel != null)
+                          _ContextPill(
+                            label: proofLabel,
+                            tonal:
+                                devotional.publicationState ==
+                                DevotionalPublicationState.featured,
+                          ),
+                      ],
                     ),
                   ),
+                  if (badgeLabel != null) ...[
+                    const SizedBox(width: AppSpacing.sm),
+                    _PublicationBadge(
+                      label: badgeLabel,
+                      highlighted:
+                          devotional.publicationState ==
+                          DevotionalPublicationState.featured,
+                    ),
+                  ],
                 ],
-                const SizedBox(height: AppSpacing.sm),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                devotional.primaryHook,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: AppTextStyles.headline3.copyWith(
+                  color: AppColors.pureWhite,
+                  fontWeight: FontWeight.w700,
+                  height: 1.2,
+                ),
+              ),
+              if (referenceLabel != null) ...[
+                const SizedBox(height: 6),
                 Text(
-                  devotional.title,
-                  maxLines: 2,
+                  referenceLabel,
+                  maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: AppTextStyles.headline2.copyWith(
-                    color: AppColors.pureWhite,
+                  style: AppTextStyles.referenceSmall.copyWith(
+                    color: AppColors.holyGold,
                     fontWeight: FontWeight.w700,
-                    height: 1.2,
                   ),
-                ),
-                if (devotional.previewText.isNotEmpty) ...[
-                  const SizedBox(height: AppSpacing.sm),
-                  Text(
-                    devotional.previewText,
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: AppColors.softMist.withValues(alpha: 0.84),
-                      height: 1.55,
-                    ),
-                  ),
-                ],
-                const SizedBox(height: AppSpacing.md),
-                Wrap(
-                  spacing: AppSpacing.sm,
-                  runSpacing: AppSpacing.sm,
-                  children: [
-                    _MetaChip(
-                      icon: Icons.schedule_rounded,
-                      label:
-                          '${devotional.estimatedReadTime} ${context.l10n.devotionalMinutesShort}',
-                    ),
-                    _MetaChip(
-                      icon: Icons.favorite_rounded,
-                      label: devotional.likesCount.toString(),
-                    ),
-                    _MetaChip(
-                      icon: Icons.chat_bubble_outline_rounded,
-                      label: devotional.commentsCount.toString(),
-                    ),
-                    _MetaChip(
-                      icon: Icons.share_outlined,
-                      label: devotional.shareCount.toString(),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.md),
-                Row(
-                  children: [
-                    Expanded(child: _ReadMoreAction(onTap: onOpen)),
-                    const SizedBox(width: AppSpacing.sm),
-                    _CardIconButton(
-                      key: Key('public-devotional-like-${devotional.id}'),
-                      onPressed: isLiking ? null : onLike,
-                      icon: devotional.liked
-                          ? Icons.favorite_rounded
-                          : Icons.favorite_border_rounded,
-                      active: devotional.liked,
-                      activeColor: Colors.redAccent,
-                      tooltip: context.l10n.likesLabel,
-                      isLoading: isLiking,
-                    ),
-                    const SizedBox(width: AppSpacing.sm),
-                    _CardIconButton(
-                      key: Key('public-devotional-save-${devotional.id}'),
-                      onPressed: isSaving ? null : onSave,
-                      icon: devotional.saved
-                          ? Icons.bookmark_rounded
-                          : Icons.bookmark_border_rounded,
-                      active: devotional.saved,
-                      tooltip: context.l10n.saveAction,
-                      isLoading: isSaving,
-                    ),
-                    const SizedBox(width: AppSpacing.sm),
-                    _CardIconButton(
-                      key: Key('public-devotional-share-${devotional.id}'),
-                      onPressed: onShare,
-                      icon: Icons.share_outlined,
-                      tooltip: context.l10n.shareAction,
-                    ),
-                  ],
                 ),
               ],
-            ),
+              if (secondaryTitleVisible) ...[
+                const SizedBox(height: 6),
+                Text(
+                  devotional.title.trim(),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: AppColors.pureWhite.withValues(alpha: 0.82),
+                    fontWeight: FontWeight.w600,
+                    height: 1.35,
+                  ),
+                ),
+              ],
+              if (previewText.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Text(
+                  previewText,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: AppColors.softMist.withValues(alpha: 0.82),
+                    height: 1.55,
+                  ),
+                ),
+              ],
+              if (hasImage) ...[
+                const SizedBox(height: AppSpacing.md),
+                _FeedImageStrip(
+                  imageUrl:
+                      devotional.previewImageUrl ?? devotional.coverImageUrl,
+                  focusY: devotional.coverImageFocusY,
+                ),
+              ],
+              const SizedBox(height: 12),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Expanded(
+                    child: Text(
+                      _footerMetaText(context, devotional, proofLabel),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: AppColors.softMist.withValues(alpha: 0.82),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  _SavePillButton(
+                    key: Key('public-devotional-save-${devotional.id}'),
+                    isSaved: devotional.saved,
+                    isLoading: isSaving,
+                    onPressed: isSaving ? null : onSave,
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  _GhostActionButton(
+                    key: Key('public-devotional-share-${devotional.id}'),
+                    onPressed: onShare,
+                    tooltip: context.l10n.shareAction,
+                    icon: Icons.share_outlined,
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                context.l10n.devotionalFeedOpenCta,
+                style: AppTextStyles.labelMedium.copyWith(
+                  color: AppColors.holyGold,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -1499,10 +1543,57 @@ class _FilterChip extends StatelessWidget {
   }
 }
 
+class _FeedCardEntrance extends StatefulWidget {
+  const _FeedCardEntrance({required this.index, required this.child});
+
+  final int index;
+  final Widget child;
+
+  @override
+  State<_FeedCardEntrance> createState() => _FeedCardEntranceState();
+}
+
+class _FeedCardEntranceState extends State<_FeedCardEntrance> {
+  bool _visible = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final delayMs = ((widget.index * 32).clamp(0, 180) as num).toInt();
+    Future<void>.delayed(Duration(milliseconds: delayMs), () {
+      if (!mounted) return;
+      setState(() {
+        _visible = true;
+      });
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedSlide(
+      duration: const Duration(milliseconds: 220),
+      curve: Curves.easeOutCubic,
+      offset: _visible ? Offset.zero : const Offset(0, 0.03),
+      child: AnimatedScale(
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOutCubic,
+        scale: _visible ? 1 : 0.98,
+        child: AnimatedOpacity(
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOutCubic,
+          opacity: _visible ? 1 : 0,
+          child: widget.child,
+        ),
+      ),
+    );
+  }
+}
+
 class _DevotionalSurfaceCard extends StatelessWidget {
-  const _DevotionalSurfaceCard({required this.child});
+  const _DevotionalSurfaceCard({required this.child, this.featured = false});
 
   final Widget child;
+  final bool featured;
 
   @override
   Widget build(BuildContext context) {
@@ -1511,10 +1602,311 @@ class _DevotionalSurfaceCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.midnightFaith.withValues(alpha: 0.92),
         borderRadius: AppBorderRadius.card,
-        boxShadow: AppShadows.cardShadow,
-        border: Border.all(color: AppColors.pureWhite.withValues(alpha: 0.08)),
+        boxShadow: [
+          ...AppShadows.cardShadow,
+          if (featured)
+            BoxShadow(
+              color: AppColors.holyGold.withValues(alpha: 0.12),
+              blurRadius: 24,
+              spreadRadius: 0,
+            ),
+        ],
+        border: Border.all(
+          color: featured
+              ? AppColors.holyGold.withValues(alpha: 0.24)
+              : AppColors.pureWhite.withValues(alpha: 0.08),
+        ),
       ),
       child: child,
+    );
+  }
+}
+
+class _FeedOpenSurface extends StatefulWidget {
+  const _FeedOpenSurface({required this.child, required this.onTap});
+
+  final Widget child;
+  final VoidCallback onTap;
+
+  @override
+  State<_FeedOpenSurface> createState() => _FeedOpenSurfaceState();
+}
+
+class _FeedOpenSurfaceState extends State<_FeedOpenSurface> {
+  bool _pressed = false;
+  bool _opening = false;
+
+  void _setPressed(bool value) {
+    if (_pressed == value || !mounted) return;
+    setState(() {
+      _pressed = value;
+    });
+  }
+
+  Future<void> _handleTap() async {
+    if (_opening) return;
+    _opening = true;
+    _setPressed(true);
+    await Future<void>.delayed(const Duration(milliseconds: 40));
+    if (mounted) {
+      _setPressed(false);
+      widget.onTap();
+    }
+    _opening = false;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedScale(
+      duration: const Duration(milliseconds: 90),
+      curve: Curves.easeOutCubic,
+      scale: _pressed ? 0.985 : 1,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 90),
+        curve: Curves.easeOutCubic,
+        decoration: BoxDecoration(
+          borderRadius: AppBorderRadius.card,
+          boxShadow: _pressed
+              ? [
+                  BoxShadow(
+                    color: AppColors.holyGold.withValues(alpha: 0.16),
+                    blurRadius: 18,
+                    spreadRadius: 0,
+                  ),
+                ]
+              : const [],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          borderRadius: AppBorderRadius.card,
+          child: InkWell(
+            borderRadius: AppBorderRadius.card,
+            splashColor: AppColors.holyGold.withValues(alpha: 0.08),
+            highlightColor: Colors.transparent,
+            onTapDown: (_) => _setPressed(true),
+            onTapCancel: () => _setPressed(false),
+            onTapUp: (_) => _setPressed(false),
+            onTap: _handleTap,
+            child: widget.child,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ContextPill extends StatelessWidget {
+  const _ContextPill({required this.label, this.tonal = false});
+
+  final String label;
+  final bool tonal;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: tonal
+            ? AppColors.holyGold.withValues(alpha: 0.14)
+            : AppColors.pureWhite.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(AppBorderRadius.full),
+        border: Border.all(
+          color: tonal
+              ? AppColors.holyGold.withValues(alpha: 0.28)
+              : AppColors.pureWhite.withValues(alpha: 0.08),
+        ),
+      ),
+      child: Text(
+        label,
+        style: AppTextStyles.labelSmall.copyWith(
+          color: tonal ? AppColors.holyGold : AppColors.softMist,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+}
+
+class _PublicationBadge extends StatelessWidget {
+  const _PublicationBadge({required this.label, required this.highlighted});
+
+  final String label;
+  final bool highlighted;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: highlighted
+            ? AppColors.holyGold.withValues(alpha: 0.16)
+            : AppColors.warning.withValues(alpha: 0.16),
+        borderRadius: BorderRadius.circular(AppBorderRadius.full),
+        border: Border.all(
+          color: highlighted
+              ? AppColors.holyGold.withValues(alpha: 0.32)
+              : AppColors.warning.withValues(alpha: 0.28),
+        ),
+      ),
+      child: Text(
+        label,
+        style: AppTextStyles.labelSmall.copyWith(
+          color: highlighted ? AppColors.holyGold : AppColors.warning,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+}
+
+class _FeedImageStrip extends StatelessWidget {
+  const _FeedImageStrip({required this.imageUrl, required this.focusY});
+
+  final String? imageUrl;
+  final double focusY;
+
+  @override
+  Widget build(BuildContext context) {
+    final effectiveUrl = imageUrl;
+    if (effectiveUrl == null || effectiveUrl.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(AppBorderRadius.md),
+      child: SizedBox(
+        height: 128,
+        width: double.infinity,
+        child: CachedNetworkImage(
+          imageUrl: effectiveUrl,
+          fit: BoxFit.cover,
+          alignment: Alignment(0, focusY),
+          errorWidget: (context, url, error) => Container(
+            color: AppColors.midnightFaithDark,
+            alignment: Alignment.center,
+            child: const Icon(
+              Icons.image_not_supported_outlined,
+              color: AppColors.softMist,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SavePillButton extends StatelessWidget {
+  const _SavePillButton({
+    super.key,
+    required this.isSaved,
+    required this.isLoading,
+    required this.onPressed,
+  });
+
+  final bool isSaved;
+  final bool isLoading;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 170),
+      curve: Curves.easeOutCubic,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(AppBorderRadius.full),
+        gradient: LinearGradient(
+          colors: isSaved
+              ? [
+                  AppColors.holyGold.withValues(alpha: 0.94),
+                  const Color(0xFFE7C565),
+                ]
+              : [
+                  AppColors.holyGold.withValues(alpha: 0.22),
+                  AppColors.holyGold.withValues(alpha: 0.14),
+                ],
+        ),
+        border: Border.all(
+          color: AppColors.holyGold.withValues(alpha: isSaved ? 0.24 : 0.18),
+        ),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(AppBorderRadius.full),
+          onTap: onPressed,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (isLoading)
+                  SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        isSaved
+                            ? AppColors.midnightFaithDark
+                            : AppColors.holyGold,
+                      ),
+                    ),
+                  )
+                else
+                  Icon(
+                    isSaved
+                        ? Icons.bookmark_rounded
+                        : Icons.bookmark_border_rounded,
+                    size: 18,
+                    color: isSaved
+                        ? AppColors.midnightFaithDark
+                        : AppColors.holyGold,
+                  ),
+                const SizedBox(width: 8),
+                Text(
+                  isSaved ? context.l10n.savedAction : context.l10n.saveAction,
+                  style: AppTextStyles.labelMedium.copyWith(
+                    color: isSaved
+                        ? AppColors.midnightFaithDark
+                        : AppColors.holyGold,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _GhostActionButton extends StatelessWidget {
+  const _GhostActionButton({
+    super.key,
+    required this.onPressed,
+    required this.tooltip,
+    required this.icon,
+  });
+
+  final VoidCallback onPressed;
+  final String tooltip;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppColors.pureWhite.withValues(alpha: 0.04),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppBorderRadius.full),
+        side: BorderSide(color: AppColors.pureWhite.withValues(alpha: 0.08)),
+      ),
+      child: IconButton(
+        onPressed: onPressed,
+        tooltip: tooltip,
+        visualDensity: VisualDensity.compact,
+        icon: Icon(icon, color: AppColors.softMist),
+      ),
     );
   }
 }
@@ -1953,4 +2345,145 @@ String? _referenceLabel(Devotional devotional) {
     return devotional.verseReferences.first.referenceLabel;
   }
   return null;
+}
+
+String? _feedContextLabel(String? reason) {
+  switch (reason) {
+    case 'FEATURED':
+      return 'Destacado en HolyVerso';
+    case 'TRENDING':
+      return 'Está impactando a otros';
+    case 'SAVED_BY_OTHERS':
+      return 'Muchos lo están guardando';
+    case 'HIGH_COMPLETION':
+      return 'Se está leyendo hasta el final';
+    case 'HIGH_SHARE':
+      return 'Se está compartiendo';
+    case 'FOLLOWED_AUTHOR':
+      return 'Viene de alguien que sigues';
+    default:
+      return null;
+  }
+}
+
+String? _publicationBadgeLabel(DevotionalPublicationState state) {
+  switch (state) {
+    case DevotionalPublicationState.trending:
+      return 'En tendencia';
+    case DevotionalPublicationState.featured:
+      return 'Destacado';
+    default:
+      return null;
+  }
+}
+
+bool _shouldShowSecondaryTitle(Devotional devotional) {
+  final title = devotional.title.trim();
+  if (title.isEmpty) return false;
+  return !_textsNearDuplicate(title, devotional.primaryHook);
+}
+
+String _footerMetaText(
+  BuildContext context,
+  Devotional devotional,
+  String? proofLabel,
+) {
+  final segments = <String>[
+    '${devotional.estimatedReadTime} ${context.l10n.devotionalMinutesShort}',
+    if (proofLabel != null) proofLabel,
+  ];
+  return segments.join(' · ');
+}
+
+bool _textsNearDuplicate(String left, String right) {
+  final normalizedLeft = _normalizeForComparison(left);
+  final normalizedRight = _normalizeForComparison(right);
+
+  if (normalizedLeft.isEmpty || normalizedRight.isEmpty) {
+    return false;
+  }
+
+  if (normalizedLeft == normalizedRight ||
+      normalizedLeft.contains(normalizedRight) ||
+      normalizedRight.contains(normalizedLeft)) {
+    return true;
+  }
+
+  final leftTokens = normalizedLeft
+      .split(' ')
+      .where((token) => token.isNotEmpty);
+  final rightTokens = normalizedRight
+      .split(' ')
+      .where((token) => token.isNotEmpty)
+      .toSet();
+
+  if (rightTokens.isEmpty) return false;
+
+  var overlap = 0;
+  var leftCount = 0;
+  for (final token in leftTokens) {
+    leftCount += 1;
+    if (rightTokens.contains(token)) {
+      overlap += 1;
+    }
+  }
+
+  if (leftCount == 0) return false;
+  return overlap /
+          (leftCount > rightTokens.length ? leftCount : rightTokens.length) >=
+      0.8;
+}
+
+String _normalizeForComparison(String value) {
+  const accents = {
+    'á': 'a',
+    'é': 'e',
+    'í': 'i',
+    'ó': 'o',
+    'ú': 'u',
+    'Á': 'a',
+    'É': 'e',
+    'Í': 'i',
+    'Ó': 'o',
+    'Ú': 'u',
+    'ñ': 'n',
+    'Ñ': 'n',
+  };
+
+  final buffer = StringBuffer();
+  for (final char in value.characters) {
+    buffer.write(accents[char] ?? char.toLowerCase());
+  }
+
+  return buffer
+      .toString()
+      .replaceAll(RegExp(r'[^a-z0-9\s]'), ' ')
+      .replaceAll(RegExp(r'\s+'), ' ')
+      .trim();
+}
+
+String _resolveOwnerActionErrorMessage(
+  Object error, {
+  required BuildContext context,
+  required String fallbackMessage,
+  required Map<String, String> businessCodeMessages,
+}) {
+  final backendCode = AppErrorMapper.backendCode(error);
+  if (backendCode == 'DEVOTIONAL_QUALITY_GATE_FAILED' &&
+      error is DioException) {
+    final data = error.response?.data;
+    if (data is Map && data['error'] is Map) {
+      final message = data['error']['message']?.toString().trim();
+      if (message != null && message.isNotEmpty) {
+        return message;
+      }
+    }
+  }
+
+  return AppErrorMapper.toMessage(
+    error,
+    l10n: context.l10n,
+    fallbackMessage: fallbackMessage,
+    businessCodeMessages: businessCodeMessages,
+  );
 }

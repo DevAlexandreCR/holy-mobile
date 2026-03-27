@@ -16,6 +16,9 @@ class Devotional {
     required this.coverImageUrl,
     required this.previewImageUrl,
     required this.previewText,
+    required this.computedHook,
+    required this.optimizedPreviewText,
+    required this.hookSource,
     required this.coverImageFocusY,
     required this.viewCount,
     required this.estimatedReadTime,
@@ -40,6 +43,7 @@ class Devotional {
     required this.canModerate,
     required this.deliveryToken,
     required this.recommendationReason,
+    required this.feedContextReason,
     this.content,
   });
 
@@ -53,6 +57,9 @@ class Devotional {
   final String? coverImageUrl;
   final String? previewImageUrl;
   final String previewText;
+  final String computedHook;
+  final String optimizedPreviewText;
+  final String? hookSource;
   final double coverImageFocusY;
   final int viewCount;
   final int estimatedReadTime;
@@ -77,6 +84,7 @@ class Devotional {
   final bool canModerate;
   final String? deliveryToken;
   final String? recommendationReason;
+  final String? feedContextReason;
   final List<dynamic>? content;
 
   List<DevotionalVerseReference> get primaryReferences =>
@@ -86,6 +94,18 @@ class Devotional {
       moderationStatus == DevotionalModerationStatus.clear &&
       publicationState != DevotionalPublicationState.draft &&
       publicationState != DevotionalPublicationState.archived;
+
+  String get primaryHook {
+    final hook = computedHook.trim();
+    if (hook.isNotEmpty) return hook;
+    return title.trim();
+  }
+
+  String get feedPreview {
+    final preview = optimizedPreviewText.trim();
+    if (preview.isNotEmpty) return preview;
+    return previewText.trim();
+  }
 
   factory Devotional.fromMap(Map<String, dynamic> map) {
     final rawReferences =
@@ -128,6 +148,9 @@ class Devotional {
           map['preview_image_url']?.toString() ??
           map['cover_image_url']?.toString(),
       previewText: map['preview_text']?.toString() ?? '',
+      computedHook: map['computed_hook']?.toString() ?? '',
+      optimizedPreviewText: map['optimized_preview_text']?.toString() ?? '',
+      hookSource: map['hook_source']?.toString(),
       coverImageFocusY: _parseCoverImageFocusY(map['cover_image_focus_y']),
       viewCount: (map['view_count'] as num?)?.toInt() ?? 0,
       estimatedReadTime: (map['estimated_read_time'] as num?)?.toInt() ?? 1,
@@ -178,6 +201,7 @@ class Devotional {
       canModerate: map['can_moderate'] == true,
       deliveryToken: map['delivery_token']?.toString(),
       recommendationReason: map['recommendation_reason']?.toString(),
+      feedContextReason: map['feed_context_reason']?.toString(),
       content: content,
     );
   }
@@ -204,6 +228,9 @@ class Devotional {
       coverImageUrl: coverImageUrl,
       previewImageUrl: previewImageUrl,
       previewText: previewText,
+      computedHook: computedHook,
+      optimizedPreviewText: optimizedPreviewText,
+      hookSource: hookSource,
       coverImageFocusY: coverImageFocusY,
       viewCount: viewCount,
       estimatedReadTime: estimatedReadTime,
@@ -228,6 +255,7 @@ class Devotional {
       canModerate: canModerate,
       deliveryToken: deliveryToken,
       recommendationReason: recommendationReason,
+      feedContextReason: feedContextReason,
       content: content ?? this.content,
     );
   }

@@ -136,7 +136,11 @@ void main() {
           return 'shared';
         });
 
-    final devotional = _buildDevotional(id: 'share-card', title: 'Compartible');
+    final devotional = _buildDevotional(
+      id: 'share-card',
+      title: 'Compartible',
+      computedHook: 'No cargues solo con lo que Dios quiere sostener contigo.',
+    );
 
     await tester.pumpWidget(
       _TestApp(
@@ -154,11 +158,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Leer completo ->'), findsOneWidget);
-    expect(
-      find.byKey(const Key('public-devotional-like-share-card')),
-      findsOneWidget,
-    );
+    expect(find.text('Recibe este mensaje →'), findsOneWidget);
     expect(
       find.byKey(const Key('public-devotional-save-share-card')),
       findsOneWidget,
@@ -179,6 +179,10 @@ void main() {
 
     expect(capturedCall?.method, 'share');
     expect((capturedCall?.arguments as Map)['subject'], 'Compartir');
+    expect(
+      (capturedCall?.arguments as Map)['text'],
+      startsWith('No cargues solo con lo que Dios quiere sostener contigo.'),
+    );
     expect(
       (capturedCall?.arguments as Map)['text'],
       contains('https://holyverso.com/devotionals/share-card'),
@@ -227,9 +231,9 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.ensureVisible(find.text('Leer completo ->'));
+    await tester.ensureVisible(find.text('Recibe este mensaje →'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Leer completo ->'));
+    await tester.tap(find.text('Recibe este mensaje →'));
     await tester.pumpAndSettle();
 
     expect(find.text('detail-screen'), findsOneWidget);
@@ -360,7 +364,7 @@ class _StaticForYouFeedController extends ForYouFeedController {
   Future<void> toggleLike(String devotionalId) async {}
 
   @override
-  Future<void> toggleSave(String devotionalId) async {}
+  Future<bool> toggleSave(String devotionalId) async => true;
 
   @override
   Future<void> registerImpression(Devotional devotional) async {}
@@ -396,7 +400,7 @@ class _StaticFollowingFeedController extends FollowingFeedController {
   Future<void> toggleLike(String devotionalId) async {}
 
   @override
-  Future<void> toggleSave(String devotionalId) async {}
+  Future<bool> toggleSave(String devotionalId) async => true;
 
   @override
   Future<void> registerImpression(Devotional devotional) async {}
@@ -474,6 +478,7 @@ Devotional _buildDevotional({
   required String id,
   required String title,
   DevotionalStatus status = DevotionalStatus.published,
+  String? computedHook,
 }) {
   return Devotional(
     id: id,
@@ -490,6 +495,11 @@ Devotional _buildDevotional({
     coverImageUrl: '',
     previewImageUrl: '',
     previewText: 'Texto breve para validar la jerarquía del card.',
+    computedHook:
+        computedHook ?? 'Hay dias en los que volver a Dios es respirar.',
+    optimizedPreviewText:
+        'Su gracia no te exige fingir fuerza; te invita a seguir desde la verdad.',
+    hookSource: 'CONTENT_OPENING',
     coverImageFocusY: 0,
     viewCount: 12,
     estimatedReadTime: 5,
@@ -528,6 +538,7 @@ Devotional _buildDevotional({
     canModerate: false,
     deliveryToken: 'delivery-$id',
     recommendationReason: DevotionalFeedMode.forYou.name,
+    feedContextReason: 'SAVED_BY_OTHERS',
     content: const [],
   );
 }
