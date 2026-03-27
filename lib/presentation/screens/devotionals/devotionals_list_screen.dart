@@ -965,6 +965,13 @@ class _PublicDevotionalCard extends StatelessWidget {
     final referenceLabel = _referenceLabel(devotional);
     final secondaryTitleVisible = _shouldShowSecondaryTitle(devotional);
     final previewText = devotional.feedPreview;
+    final feedInterpretation = _feedInterpretationLabel(
+      context,
+      devotional.feedContextReason,
+    );
+    final stateMarker = _feedStateMarkerLabel(context, devotional);
+    final showSocialStats =
+        devotional.likesCount > 0 || devotional.commentsCount > 0;
     final hasImage =
         (devotional.previewImageUrl ?? devotional.coverImageUrl)?.isNotEmpty ==
         true;
@@ -1029,6 +1036,23 @@ class _PublicDevotionalCard extends StatelessWidget {
                 ),
                 const SizedBox(height: AppSpacing.md),
               ],
+              if (feedInterpretation != null || stateMarker != null) ...[
+                Wrap(
+                  spacing: AppSpacing.sm,
+                  runSpacing: AppSpacing.xs,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    if (feedInterpretation != null)
+                      _PublicFeedInterpretation(label: feedInterpretation),
+                    if (stateMarker != null)
+                      _PublicFeedStateMarker(
+                        label: stateMarker.label,
+                        highlighted: stateMarker.highlighted,
+                      ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.md),
+              ],
               Text(
                 context.l10n.devotionalFeedOpenCta,
                 style: AppTextStyles.labelMedium.copyWith(
@@ -1038,8 +1062,16 @@ class _PublicDevotionalCard extends StatelessWidget {
               ),
               const SizedBox(height: AppSpacing.md),
               Row(
-                mainAxisSize: MainAxisSize.min,
                 children: [
+                  if (showSocialStats)
+                    Expanded(
+                      child: _PublicFeedStats(
+                        likesCount: devotional.likesCount,
+                        commentsCount: devotional.commentsCount,
+                      ),
+                    )
+                  else
+                    const Spacer(),
                   _SavePillButton(
                     key: Key('public-devotional-save-${devotional.id}'),
                     isSaved: devotional.saved,
@@ -1066,6 +1098,143 @@ class _PublicDevotionalCard extends StatelessWidget {
               ],
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _FeedStateMarkerData {
+  const _FeedStateMarkerData({required this.label, required this.highlighted});
+
+  final String label;
+  final bool highlighted;
+}
+
+class _PublicFeedInterpretation extends StatelessWidget {
+  const _PublicFeedInterpretation({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      label,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: AppTextStyles.bodySmall.copyWith(
+        color: AppColors.softMist.withValues(alpha: 0.68),
+        fontWeight: FontWeight.w600,
+      ),
+    );
+  }
+}
+
+class _PublicFeedStateMarker extends StatelessWidget {
+  const _PublicFeedStateMarker({
+    required this.label,
+    required this.highlighted,
+  });
+
+  final String label;
+  final bool highlighted;
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = highlighted ? AppColors.holyGold : AppColors.warning;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: accent.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(AppBorderRadius.full),
+        border: Border.all(color: accent.withValues(alpha: 0.14)),
+      ),
+      child: Text(
+        label,
+        style: AppTextStyles.labelSmall.copyWith(
+          color: accent.withValues(alpha: 0.82),
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+}
+
+class _PublicFeedStats extends StatelessWidget {
+  const _PublicFeedStats({
+    required this.likesCount,
+    required this.commentsCount,
+  });
+
+  final int likesCount;
+  final int commentsCount;
+
+  @override
+  Widget build(BuildContext context) {
+    final stats = <Widget>[
+      if (likesCount > 0)
+        _PublicFeedStat(
+          key: const Key('public-devotional-likes'),
+          icon: Icons.favorite_border,
+          value: likesCount,
+          semanticsLabel: context.l10n.likesLabel,
+        ),
+      if (commentsCount > 0)
+        _PublicFeedStat(
+          key: const Key('public-devotional-comments'),
+          icon: Icons.chat_bubble_outline,
+          value: commentsCount,
+          semanticsLabel: context.l10n.commentsLabel,
+        ),
+    ];
+
+    if (stats.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Wrap(
+      spacing: AppSpacing.sm,
+      runSpacing: AppSpacing.xs,
+      children: stats,
+    );
+  }
+}
+
+class _PublicFeedStat extends StatelessWidget {
+  const _PublicFeedStat({
+    super.key,
+    required this.icon,
+    required this.value,
+    required this.semanticsLabel,
+  });
+
+  final IconData icon;
+  final int value;
+  final String semanticsLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: semanticsLabel,
+      value: value.toString(),
+      child: ExcludeSemantics(
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 14,
+              color: AppColors.softMist.withValues(alpha: 0.64),
+            ),
+            const SizedBox(width: 4),
+            Text(
+              value.toString(),
+              style: AppTextStyles.bodySmall.copyWith(
+                color: AppColors.softMist.withValues(alpha: 0.66),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -2243,6 +2412,46 @@ class _MetaChip extends StatelessWidget {
       ),
     );
   }
+}
+
+String? _feedInterpretationLabel(BuildContext context, String? reason) {
+  final l10n = context.l10n;
+  switch (reason) {
+    case 'SAVED_BY_OTHERS':
+      return l10n.devotionalFeedSignalSavedByOthers;
+    case 'HIGH_COMPLETION':
+      return l10n.devotionalFeedSignalHighCompletion;
+    case 'HIGH_SHARE':
+      return l10n.devotionalFeedSignalHighShare;
+    case 'FOLLOWED_AUTHOR':
+      return l10n.devotionalFeedSignalFollowedAuthor;
+    case 'FEATURED':
+      return l10n.devotionalFeedSignalFeatured;
+    default:
+      return null;
+  }
+}
+
+_FeedStateMarkerData? _feedStateMarkerLabel(
+  BuildContext context,
+  Devotional devotional,
+) {
+  if (devotional.publicationState == DevotionalPublicationState.trending) {
+    return _FeedStateMarkerData(
+      label: context.l10n.devotionalFeedBadgeTrending,
+      highlighted: false,
+    );
+  }
+
+  if (devotional.publicationState == DevotionalPublicationState.featured ||
+      devotional.feedContextReason == 'FEATURED') {
+    return _FeedStateMarkerData(
+      label: context.l10n.devotionalFeedBadgeRecommended,
+      highlighted: true,
+    );
+  }
+
+  return null;
 }
 
 class _StatusPill extends StatelessWidget {

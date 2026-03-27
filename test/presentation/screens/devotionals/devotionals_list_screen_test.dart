@@ -160,6 +160,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Esto es para ti →'), findsOneWidget);
+    expect(find.text('Muchos lo están guardando'), findsOneWidget);
+    expect(find.text('Recomendado'), findsOneWidget);
+    expect(find.text('12'), findsOneWidget);
+    expect(find.text('4'), findsOneWidget);
     expect(find.text('Guardar'), findsOneWidget);
     expect(
       find.byKey(const Key('public-devotional-save-share-card')),
@@ -307,6 +311,36 @@ void main() {
     ]);
   });
 
+  testWidgets('hides stats cluster when likes and comments are zero', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _TestApp(
+        forYouState: DevotionalsFeedState(
+          status: DevotionalsFeedStatus.success,
+          items: [
+            _buildDevotional(
+              id: 'no-stats',
+              title: 'Sin estadisticas',
+              likesCount: 0,
+              commentsCount: 0,
+            ),
+          ],
+        ),
+        followingState: const DevotionalsFeedState(
+          status: DevotionalsFeedStatus.success,
+        ),
+        mineState: const DevotionalsListState(
+          status: DevotionalsListStatus.success,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('public-devotional-likes')), findsNothing);
+    expect(find.byKey(const Key('public-devotional-comments')), findsNothing);
+  });
+
   testWidgets('fab opens devotional create route', (tester) async {
     await tester.pumpWidget(
       _TestApp(
@@ -391,9 +425,7 @@ void main() {
     expect(find.text('Juan 3:16'), findsOneWidget);
   });
 
-  testWidgets('shows following inline and removes public-feed noise', (
-    tester,
-  ) async {
+  testWidgets('shows subtle interpretation and trend marker', (tester) async {
     await tester.pumpWidget(
       _TestApp(
         forYouState: DevotionalsFeedState(
@@ -419,10 +451,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.textContaining('Lo sigues'), findsOneWidget);
-    expect(find.text('Viene de alguien que sigues'), findsNothing);
-    expect(find.text('Muchos lo están guardando'), findsNothing);
-    expect(find.text('Destacado'), findsNothing);
-    expect(find.text('En tendencia'), findsNothing);
+    expect(find.text('Viene de alguien que sigues'), findsOneWidget);
+    expect(find.text('Tendencia'), findsOneWidget);
+    expect(find.byKey(const Key('public-devotional-likes')), findsOneWidget);
+    expect(find.byKey(const Key('public-devotional-comments')), findsOneWidget);
   });
 
   testWidgets('renders reduced image height below actions', (tester) async {
@@ -772,6 +804,8 @@ Devotional _buildDevotional({
   String? computedHook,
   bool saved = false,
   bool following = true,
+  int likesCount = 12,
+  int commentsCount = 4,
   String feedContextReason = 'SAVED_BY_OTHERS',
   DevotionalPublicationState? publicationState,
   String coverImageUrl = '',
@@ -825,8 +859,8 @@ Devotional _buildDevotional({
         isPrimary: true,
       ),
     ],
-    likesCount: 12,
-    commentsCount: 4,
+    likesCount: likesCount,
+    commentsCount: commentsCount,
     shareCount: 2,
     saveCount: 3,
     readCompleteCount: 0,

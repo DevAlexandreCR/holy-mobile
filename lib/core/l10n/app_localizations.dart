@@ -246,6 +246,20 @@ class AppLocalizations {
   String get devotionalFeedSavedToast => _string('devotionalFeedSavedToast');
   String get devotionalFeedFollowingInline =>
       _string('devotionalFeedFollowingInline');
+  String get devotionalFeedSignalSavedByOthers =>
+      _string('devotionalFeedSignalSavedByOthers');
+  String get devotionalFeedSignalHighCompletion =>
+      _string('devotionalFeedSignalHighCompletion');
+  String get devotionalFeedSignalHighShare =>
+      _string('devotionalFeedSignalHighShare');
+  String get devotionalFeedSignalFollowedAuthor =>
+      _string('devotionalFeedSignalFollowedAuthor');
+  String get devotionalFeedSignalFeatured =>
+      _string('devotionalFeedSignalFeatured');
+  String get devotionalFeedBadgeTrending =>
+      _string('devotionalFeedBadgeTrending');
+  String get devotionalFeedBadgeRecommended =>
+      _string('devotionalFeedBadgeRecommended');
   String get devotionalFeedOpenCta => _string('devotionalFeedOpenCta');
   String get devotionalPublishModerationInProgress =>
       _string('devotionalPublishModerationInProgress');
@@ -572,6 +586,13 @@ class AppLocalizations {
       'devotionalPublishError': 'No pudimos publicar el devocional.',
       'devotionalFeedSavedToast': 'Guardado para volver luego',
       'devotionalFeedFollowingInline': 'Lo sigues',
+      'devotionalFeedSignalSavedByOthers': 'Muchos lo están guardando',
+      'devotionalFeedSignalHighCompletion': 'Se está leyendo hasta el final',
+      'devotionalFeedSignalHighShare': 'Se está compartiendo',
+      'devotionalFeedSignalFollowedAuthor': 'Viene de alguien que sigues',
+      'devotionalFeedSignalFeatured': 'Destacado en HolyVerso',
+      'devotionalFeedBadgeTrending': 'Tendencia',
+      'devotionalFeedBadgeRecommended': 'Recomendado',
       'devotionalFeedOpenCta': 'Esto es para ti →',
       'devotionalPublishModerationInProgress':
           'Revisando tu devocional antes de publicarlo...',
@@ -870,6 +891,13 @@ class AppLocalizations {
       'devotionalPublishError': 'We could not publish the devotional.',
       'devotionalFeedSavedToast': 'Saved for later',
       'devotionalFeedFollowingInline': 'You follow them',
+      'devotionalFeedSignalSavedByOthers': 'Many people are saving it',
+      'devotionalFeedSignalHighCompletion': 'People are reading it to the end',
+      'devotionalFeedSignalHighShare': 'People are sharing it',
+      'devotionalFeedSignalFollowedAuthor': 'It comes from someone you follow',
+      'devotionalFeedSignalFeatured': 'Featured in HolyVerso',
+      'devotionalFeedBadgeTrending': 'Trending',
+      'devotionalFeedBadgeRecommended': 'Recommended',
       'devotionalFeedOpenCta': 'This is for you →',
       'devotionalPublishModerationInProgress':
           'Reviewing your devotional before publishing...',
