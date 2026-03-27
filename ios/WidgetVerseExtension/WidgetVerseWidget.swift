@@ -8,6 +8,23 @@ private enum SharedConfig {
     static let widgetVerseKey = "widgetVerse" // Must match Flutter channel.
 }
 
+private enum WidgetRoute {
+    static let devotionalsForYou = "holyverso://app/devotionals?tab=for_you"
+}
+
+enum WidgetDisplayVariant: String {
+    case verseOnly = "verse_only"
+    case continuation = "continuation"
+    case presenceHint = "presence_hint"
+}
+
+struct WidgetDisplaySelection {
+    let variant: WidgetDisplayVariant
+    let secondaryLine: String?
+}
+
+private let widgetFallbackSecondaryLine = "Descubre el mensaje de hoy"
+
 private enum HolyVersoColors {
     // Holy Gold
     static let holyGold = Color(red: 244/255, green: 210/255, blue: 122/255)
@@ -40,6 +57,8 @@ struct WidgetVerseModel: Codable {
     let reference: String
     let text: String
     let fontSize: Double
+    let displayVariant: WidgetDisplayVariant
+    let secondaryLine: String?
 
     enum CodingKeys: String, CodingKey {
         case date
@@ -48,8 +67,12 @@ struct WidgetVerseModel: Codable {
         case reference
         case text
         case fontSize = "font_size"
+        case displayVariant = "display_variant"
+        case secondaryLine = "secondary_line"
         case camelVersionCode = "versionCode"
         case camelVersionName = "versionName"
+        case camelDisplayVariant = "displayVariant"
+        case camelSecondaryLine = "secondaryLine"
     }
 
     init(
@@ -58,7 +81,9 @@ struct WidgetVerseModel: Codable {
         versionName: String,
         reference: String,
         text: String,
-        fontSize: Double = 16.0
+        fontSize: Double = 16.0,
+        displayVariant: WidgetDisplayVariant = .verseOnly,
+        secondaryLine: String? = nil
     ) {
         self.date = date
         self.versionCode = versionCode
@@ -66,6 +91,8 @@ struct WidgetVerseModel: Codable {
         self.reference = reference
         self.text = text
         self.fontSize = fontSize
+        self.displayVariant = displayVariant
+        self.secondaryLine = secondaryLine
     }
 
     init(from decoder: Decoder) throws {
@@ -80,6 +107,13 @@ struct WidgetVerseModel: Codable {
         reference = try container.decodeIfPresent(String.self, forKey: .reference) ?? ""
         text = try container.decodeIfPresent(String.self, forKey: .text) ?? ""
         fontSize = try container.decodeIfPresent(Double.self, forKey: .fontSize) ?? 16.0
+        displayVariant = WidgetDisplayVariant(
+            rawValue: try container.decodeIfPresent(String.self, forKey: .displayVariant)
+                ?? container.decodeIfPresent(String.self, forKey: .camelDisplayVariant)
+                ?? WidgetDisplayVariant.verseOnly.rawValue
+        ) ?? .verseOnly
+        secondaryLine = try container.decodeIfPresent(String.self, forKey: .secondaryLine)
+            ?? container.decodeIfPresent(String.self, forKey: .camelSecondaryLine)
     }
 
     func encode(to encoder: Encoder) throws {
@@ -90,6 +124,8 @@ struct WidgetVerseModel: Codable {
         try container.encode(reference, forKey: .reference)
         try container.encode(text, forKey: .text)
         try container.encode(fontSize, forKey: .fontSize)
+        try container.encode(displayVariant.rawValue, forKey: .displayVariant)
+        try container.encodeIfPresent(secondaryLine, forKey: .secondaryLine)
     }
 }
 
@@ -202,6 +238,7 @@ struct WidgetVerseProvider: TimelineProvider {
             dateFormatter.dateFormat = "yyyy-MM-dd"
             let today = dateFormatter.string(from: Date())
             let fontSize = currentVerse?.fontSize ?? 16.0
+            let displaySelection = pickDisplaySelection()
 
             let verse = WidgetVerseModel(
                 date: today,
@@ -213,7 +250,9 @@ struct WidgetVerseProvider: TimelineProvider {
                     ?? "",
                 reference: verseData["reference"] as? String ?? "",
                 text: verseData["text"] as? String ?? "",
-                fontSize: fontSize
+                fontSize: fontSize,
+                displayVariant: displaySelection.variant,
+                secondaryLine: displaySelection.secondaryLine
             )
 
             saveVerseToSharedDefaults(verse, defaults: defaults)
@@ -263,14 +302,46 @@ struct WidgetVerseProvider: TimelineProvider {
         print("[Widget] Comparing dates - Today: \(today), Verse: \(verseDateString)")
         return today == verseDateString
     }
+
+    private func pickDisplaySelection() -> WidgetDisplaySelection {
+        let roll = Int.random(in: 0..<100)
+
+        if roll < 65 {
+            return WidgetDisplaySelection(
+                variant: .continuation,
+                secondaryLine: [
+                    "Descubre el mensaje de hoy",
+                    "Hoy hay más para ti"
+                ].randomElement()
+            )
+        }
+
+        return WidgetDisplaySelection(
+            variant: .presenceHint,
+            secondaryLine: [
+                "Nuevos devocionales hoy",
+                "Otros están leyendo hoy"
+            ].randomElement()
+        )
+    }
 }
 
 struct WidgetVerseView: View {
-    @Environment(\.widgetFamily) private var family
-
     let entry: WidgetVerseEntry
 
-    private var isMedium: Bool { family == .systemMedium }
+    private var shouldShowSecondaryLine: Bool {
+        entry.verse != nil
+    }
+
+    private var resolvedSecondaryLine: String {
+        guard
+            let secondaryLine = entry.verse?.secondaryLine,
+            !secondaryLine.isEmpty
+        else {
+            return widgetFallbackSecondaryLine
+        }
+        return secondaryLine
+    }
 
     var body: some View {
         ZStack(alignment: .leading) {
@@ -285,9 +356,9 @@ struct WidgetVerseView: View {
                     Spacer()
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-                .padding(.vertical, isMedium ? 4 : 2)
+                .padding(.vertical, 2)
             } else if let verse = entry.verse {
-                VStack(alignment: .leading, spacing: isMedium ? 4 : 2) {
+                VStack(alignment: .leading, spacing: 2) {
                     Text(verse.text)
                         .font(.system(size: CGFloat(verse.fontSize), weight: .medium))
                         .foregroundColor(HolyVersoColors.pureWhite.opacity(0.85))
@@ -300,7 +371,7 @@ struct WidgetVerseView: View {
 
                     HStack(alignment: .bottom, spacing: nil) {
                         Text(verse.reference)
-                            .font(.system(size: isMedium ? 12 : 10, weight: .regular))
+                            .font(.system(size: 10, weight: .regular))
                             .foregroundColor(HolyVersoColors.holyGold)
                             .lineLimit(1)
                             .minimumScaleFactor(0.8)
@@ -308,15 +379,19 @@ struct WidgetVerseView: View {
 
                         Spacer()
 
-                        Text(verse.versionName)
-                            .font(.system(size: isMedium ? 11 : 9, weight: .regular))
-                            .foregroundColor(HolyVersoColors.pureWhite.opacity(0.6))
+                        Text(shouldShowSecondaryLine ? resolvedSecondaryLine : verse.versionName)
+                            .font(.system(size: 9, weight: .regular))
+                            .foregroundColor(
+                                shouldShowSecondaryLine
+                                    ? HolyVersoColors.pureWhite.opacity(0.5)
+                                    : HolyVersoColors.pureWhite.opacity(0.6)
+                            )
                             .lineLimit(1)
                             .minimumScaleFactor(0.8)
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-                .padding(.vertical, isMedium ? 4 : 2)
+                .padding(.vertical, 2)
             }
         }
         .containerBackground(for: .widget) {
@@ -330,6 +405,7 @@ struct WidgetVerseView: View {
                 endPoint: .bottomTrailing
             )
         }
+        .widgetURL(URL(string: WidgetRoute.devotionalsForYou))
     }
 }
 

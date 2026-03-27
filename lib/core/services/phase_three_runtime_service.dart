@@ -450,6 +450,18 @@ class PhaseThreeRuntimeService {
     final segments = uri.pathSegments.where((segment) => segment.isNotEmpty);
     final pathSegments = segments.toList(growable: false);
 
+    if (pathSegments.length == 1 && pathSegments.first == 'devotionals') {
+      final tab = uri.queryParameters['tab'];
+      final normalizedTab = switch (tab) {
+        'following' => 'following',
+        'mine' => 'mine',
+        'review' => 'review',
+        _ => 'for_you',
+      };
+      final query = Uri(queryParameters: {'tab': normalizedTab}).query;
+      return _DeepLinkTarget(location: '/devotionals?$query');
+    }
+
     if (pathSegments.length >= 2 && pathSegments.first == 'devotionals') {
       final devotionalId = pathSegments[1];
       final shareToken = uri.queryParameters['share_token'];

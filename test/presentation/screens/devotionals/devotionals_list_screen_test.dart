@@ -93,6 +93,52 @@ void main() {
     expect(find.text('Publicar'), findsOneWidget);
   });
 
+  testWidgets('honors tab query parameter and falls back to Para ti', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _TestApp(
+        initialLocation: '/devotionals?tab=following',
+        forYouState: DevotionalsFeedState(
+          status: DevotionalsFeedStatus.success,
+          items: [_buildDevotional(id: 'for-you', title: 'Para ti visible')],
+        ),
+        followingState: DevotionalsFeedState(
+          status: DevotionalsFeedStatus.success,
+          items: [
+            _buildDevotional(id: 'following', title: 'Siguiendo visible'),
+          ],
+        ),
+        mineState: const DevotionalsListState(
+          status: DevotionalsListStatus.success,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Siguiendo visible'), findsOneWidget);
+    expect(find.text('Para ti visible'), findsNothing);
+
+    await tester.pumpWidget(
+      _TestApp(
+        initialLocation: '/devotionals?tab=nope',
+        forYouState: DevotionalsFeedState(
+          status: DevotionalsFeedStatus.success,
+          items: [_buildDevotional(id: 'for-you', title: 'Para ti visible')],
+        ),
+        followingState: const DevotionalsFeedState(
+          status: DevotionalsFeedStatus.success,
+        ),
+        mineState: const DevotionalsListState(
+          status: DevotionalsListStatus.success,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Para ti visible'), findsOneWidget);
+  });
+
   testWidgets('keeps full tab labels visible on narrow layouts', (
     tester,
   ) async {
@@ -108,6 +154,9 @@ void main() {
           status: DevotionalsFeedStatus.success,
         ),
         mineState: const DevotionalsListState(
+          status: DevotionalsListStatus.success,
+        ),
+        reviewState: const DevotionalsListState(
           status: DevotionalsListStatus.success,
         ),
         authState: AuthState(
@@ -632,6 +681,7 @@ class _TestApp extends StatelessWidget {
     required this.forYouState,
     required this.followingState,
     required this.mineState,
+    this.initialLocation = '/devotionals',
     this.reviewState = const DevotionalsListState(
       status: DevotionalsListStatus.success,
     ),
@@ -642,6 +692,7 @@ class _TestApp extends StatelessWidget {
   final DevotionalsFeedState forYouState;
   final DevotionalsFeedState followingState;
   final DevotionalsListState mineState;
+  final String initialLocation;
   final DevotionalsListState reviewState;
   final AuthState authState;
   final DevotionalsApiClient? apiClient;
@@ -649,11 +700,15 @@ class _TestApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final router = GoRouter(
-      initialLocation: '/devotionals',
+      initialLocation: initialLocation,
       routes: [
         GoRoute(
           path: '/devotionals',
-          builder: (context, state) => const DevotionalsListScreen(),
+          builder: (context, state) => DevotionalsListScreen(
+            initialTab: DevotionalsTopTab.fromQueryValue(
+              state.uri.queryParameters['tab'],
+            ),
+          ),
         ),
         GoRoute(
           path: '/devotionals/create',

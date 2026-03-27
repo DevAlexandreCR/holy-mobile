@@ -29,17 +29,54 @@ import 'package:share_plus/share_plus.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
 class DevotionalsListScreen extends ConsumerStatefulWidget {
-  const DevotionalsListScreen({super.key});
+  const DevotionalsListScreen({
+    super.key,
+    this.initialTab = DevotionalsTopTab.forYou,
+  });
+
+  final DevotionalsTopTab initialTab;
 
   @override
   ConsumerState<DevotionalsListScreen> createState() =>
       _DevotionalsListScreenState();
 }
 
-enum _DevotionalsTopTab { forYou, following, mine, review }
+enum DevotionalsTopTab {
+  forYou('for_you'),
+  following('following'),
+  mine('mine'),
+  review('review');
+
+  const DevotionalsTopTab(this.queryValue);
+
+  final String queryValue;
+
+  static DevotionalsTopTab fromQueryValue(String? value) {
+    return switch (value) {
+      'following' => DevotionalsTopTab.following,
+      'mine' => DevotionalsTopTab.mine,
+      'review' => DevotionalsTopTab.review,
+      _ => DevotionalsTopTab.forYou,
+    };
+  }
+}
 
 class _DevotionalsListScreenState extends ConsumerState<DevotionalsListScreen> {
-  int _selectedTabIndex = 0;
+  late DevotionalsTopTab _selectedTab;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedTab = widget.initialTab;
+  }
+
+  @override
+  void didUpdateWidget(covariant DevotionalsListScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.initialTab != widget.initialTab) {
+      _selectedTab = widget.initialTab;
+    }
+  }
 
   Future<void> _openEditor([String? devotionalId]) async {
     if (devotionalId == null) {
@@ -64,23 +101,23 @@ class _DevotionalsListScreenState extends ConsumerState<DevotionalsListScreen> {
       authControllerProvider.select((state) => state.user?.role),
     );
     final canModerate = role?.canEditContent ?? false;
-    final tabs = <(_DevotionalsTopTab, _TopLevelTabData)>[
+    final tabs = <(DevotionalsTopTab, _TopLevelTabData)>[
       (
-        _DevotionalsTopTab.forYou,
+        DevotionalsTopTab.forYou,
         _TopLevelTabData(
           key: const Key('devotionals-tab-for-you'),
           label: l10n.devotionalsForYou,
         ),
       ),
       (
-        _DevotionalsTopTab.following,
+        DevotionalsTopTab.following,
         _TopLevelTabData(
           key: const Key('devotionals-tab-following'),
           label: l10n.devotionalsFollowing,
         ),
       ),
       (
-        _DevotionalsTopTab.mine,
+        DevotionalsTopTab.mine,
         _TopLevelTabData(
           key: const Key('devotionals-tab-mine'),
           label: l10n.devotionalsMine,
@@ -88,17 +125,17 @@ class _DevotionalsListScreenState extends ConsumerState<DevotionalsListScreen> {
       ),
       if (canModerate)
         (
-          _DevotionalsTopTab.review,
+          DevotionalsTopTab.review,
           const _TopLevelTabData(
             key: Key('devotionals-tab-review'),
             label: 'En revisión',
           ),
         ),
     ];
-
-    if (_selectedTabIndex >= tabs.length) {
-      _selectedTabIndex = tabs.length - 1;
-    }
+    final selectedTab = tabs.any((entry) => entry.$1 == _selectedTab)
+        ? _selectedTab
+        : tabs.first.$1;
+    final selectedIndex = tabs.indexWhere((entry) => entry.$1 == selectedTab);
 
     return Scaffold(
       backgroundColor: AppColors.midnightFaithDark,
@@ -106,11 +143,12 @@ class _DevotionalsListScreenState extends ConsumerState<DevotionalsListScreen> {
         title: l10n.navDevotionalsLabel,
         showBackButton: false,
         bottom: _DevotionalsTopTabsBar(
-          selectedIndex: _selectedTabIndex,
+          selectedIndex: selectedIndex,
           onSelected: (index) {
-            if (_selectedTabIndex == index) return;
+            final nextTab = tabs[index].$1;
+            if (selectedTab == nextTab) return;
             setState(() {
-              _selectedTabIndex = index;
+              _selectedTab = nextTab;
             });
           },
           tabs: tabs.map((entry) => entry.$2).toList(),
@@ -138,22 +176,22 @@ class _DevotionalsListScreenState extends ConsumerState<DevotionalsListScreen> {
           top: false,
           bottom: false,
           child: IndexedStack(
-            index: _selectedTabIndex,
+            index: selectedIndex,
             children: tabs.map((entry) {
               switch (entry.$1) {
-                case _DevotionalsTopTab.forYou:
+                case DevotionalsTopTab.forYou:
                   return _PublicFeedModeView(
                     mode: DevotionalFeedMode.forYou,
                     provider: forYouFeedControllerProvider,
                   );
-                case _DevotionalsTopTab.following:
+                case DevotionalsTopTab.following:
                   return _PublicFeedModeView(
                     mode: DevotionalFeedMode.following,
                     provider: followingFeedControllerProvider,
                   );
-                case _DevotionalsTopTab.mine:
+                case DevotionalsTopTab.mine:
                   return _MyDevotionalsTab(onOpenEditor: _openEditor);
-                case _DevotionalsTopTab.review:
+                case DevotionalsTopTab.review:
                   return const _ReviewQueueTab();
               }
             }).toList(),
@@ -2327,67 +2365,6 @@ class _ReadMoreAction extends StatelessWidget {
           style: AppTextStyles.labelMedium.copyWith(
             color: AppColors.holyGold,
             fontWeight: FontWeight.w700,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _CardIconButton extends StatelessWidget {
-  const _CardIconButton({
-    super.key,
-    required this.onPressed,
-    required this.icon,
-    required this.tooltip,
-    this.active = false,
-    this.isLoading = false,
-    this.activeColor = AppColors.holyGold,
-  });
-
-  final VoidCallback? onPressed;
-  final IconData icon;
-  final String tooltip;
-  final bool active;
-  final bool isLoading;
-  final Color activeColor;
-
-  @override
-  Widget build(BuildContext context) {
-    final foregroundColor = active ? activeColor : AppColors.pureWhite;
-
-    return Tooltip(
-      message: tooltip,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(AppBorderRadius.md),
-        onTap: onPressed,
-        child: Ink(
-          width: 48,
-          height: 48,
-          decoration: BoxDecoration(
-            color: active
-                ? activeColor.withValues(alpha: 0.14)
-                : AppColors.pureWhite.withValues(alpha: 0.04),
-            borderRadius: BorderRadius.circular(AppBorderRadius.md),
-            border: Border.all(
-              color: active
-                  ? activeColor.withValues(alpha: 0.24)
-                  : AppColors.pureWhite.withValues(alpha: 0.08),
-            ),
-          ),
-          child: Center(
-            child: isLoading
-                ? SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        foregroundColor,
-                      ),
-                    ),
-                  )
-                : Icon(icon, size: 20, color: foregroundColor),
           ),
         ),
       ),

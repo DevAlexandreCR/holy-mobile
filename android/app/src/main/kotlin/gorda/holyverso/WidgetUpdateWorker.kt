@@ -158,6 +158,7 @@ class WidgetUpdateWorker(
             
             // Crear el objeto WidgetVerse
             val today = LocalDate.now().toString()
+            val displayContent = pickWidgetDisplayContent()
             val verseJson = JSONObject().apply {
                 put("date", today)
                 put("version_code", data.optString("version_code", ""))
@@ -165,6 +166,10 @@ class WidgetUpdateWorker(
                 put("reference", data.optString("reference", ""))
                 put("text", data.optString("text", ""))
                 put("font_size", 16.0)
+                put("display_variant", displayContent.displayVariant)
+                if (displayContent.secondaryLine != null) {
+                    put("secondary_line", displayContent.secondaryLine)
+                }
             }
 
             // Guardar en SharedPreferences

@@ -2,6 +2,17 @@ import Foundation
 import BackgroundTasks
 import WidgetKit
 
+private enum DailyWidgetDisplayVariant: String {
+    case verseOnly = "verse_only"
+    case continuation = "continuation"
+    case presenceHint = "presence_hint"
+}
+
+private struct DailyWidgetDisplaySelection {
+    let variant: DailyWidgetDisplayVariant
+    let secondaryLine: String?
+}
+
 @available(iOS 13.0, *)
 class DailyVerseFetchTask {
     static let shared = DailyVerseFetchTask()
@@ -139,15 +150,20 @@ class DailyVerseFetchTask {
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM-dd"
         let today = dateFormatter.string(from: Date())
+        let displaySelection = pickDisplaySelection()
         
-        let widgetVerse: [String: Any] = [
+        var widgetVerse: [String: Any] = [
             "date": today,
             "version_code": verseData["version_code"] as? String ?? "",
             "version_name": verseData["version_name"] as? String ?? "",
             "reference": verseData["reference"] as? String ?? "",
             "text": verseData["text"] as? String ?? "",
-            "font_size": 16.0
+            "font_size": 16.0,
+            "display_variant": displaySelection.variant.rawValue
         ]
+        if let secondaryLine = displaySelection.secondaryLine {
+            widgetVerse["secondary_line"] = secondaryLine
+        }
         
         // Convert to a JSON string
         let jsonData = try JSONSerialization.data(withJSONObject: widgetVerse)
@@ -212,5 +228,27 @@ class DailyVerseFetchTask {
         
         // Fallback to the default API URL
         return "https://api.holyverso.com"
+    }
+
+    private func pickDisplaySelection() -> DailyWidgetDisplaySelection {
+        let roll = Int.random(in: 0..<100)
+
+        if roll < 65 {
+            return DailyWidgetDisplaySelection(
+                variant: .continuation,
+                secondaryLine: [
+                    "Descubre el mensaje de hoy",
+                    "Hoy hay más para ti"
+                ].randomElement()
+            )
+        }
+
+        return DailyWidgetDisplaySelection(
+            variant: .presenceHint,
+            secondaryLine: [
+                "Nuevos devocionales hoy",
+                "Otros están leyendo hoy"
+            ].randomElement()
+        )
     }
 }

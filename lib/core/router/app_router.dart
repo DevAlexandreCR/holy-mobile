@@ -177,7 +177,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: '/devotionals',
-                builder: (context, state) => const DevotionalsListScreen(),
+                builder: (context, state) => DevotionalsListScreen(
+                  initialTab: DevotionalsTopTab.fromQueryValue(
+                    state.uri.queryParameters['tab'],
+                  ),
+                ),
               ),
               GoRoute(
                 path: '/devotionals/create',

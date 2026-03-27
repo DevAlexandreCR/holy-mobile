@@ -14,9 +14,12 @@ class WidgetSyncService {
     double fontSize = 16.0,
     bool requestImmediateUpdate = false,
   }) async {
+    final displaySelection = WidgetVerseDisplaySelection.pick();
     final widgetVerse = WidgetVerse.fromVerseOfTheDay(
       verse,
       fontSize: fontSize,
+      displayVariant: displaySelection.variant,
+      secondaryLine: displaySelection.secondaryLine,
     );
     try {
       debugPrint(

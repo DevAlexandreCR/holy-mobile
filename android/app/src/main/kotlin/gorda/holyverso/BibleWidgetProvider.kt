@@ -5,6 +5,9 @@ import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.Context
 import android.content.Intent
+import android.graphics.Color
+import android.net.Uri
+import android.os.Bundle
 import android.widget.RemoteViews
 import org.json.JSONObject
 
@@ -33,6 +36,16 @@ class BibleWidgetProvider : AppWidgetProvider() {
         // Widget añadido por primera vez - iniciar actualizaciones periódicas
         super.onEnabled(context)
         WidgetUpdateWorker.schedule(context)
+    }
+
+    override fun onAppWidgetOptionsChanged(
+        context: Context,
+        appWidgetManager: AppWidgetManager,
+        appWidgetId: Int,
+        newOptions: Bundle
+    ) {
+        super.onAppWidgetOptionsChanged(context, appWidgetManager, appWidgetId, newOptions)
+        updateAppWidget(context, appWidgetManager, appWidgetId)
     }
 
     override fun onDisabled(context: Context) {
@@ -81,24 +94,34 @@ class BibleWidgetProvider : AppWidgetProvider() {
             android.util.Log.d("BibleWidgetProvider", "Showing verse: ${verse.text}")
             views.setTextViewText(R.id.widget_verse_text, verse.text)
             views.setTextViewText(R.id.widget_reference, verse.reference)
-            views.setTextViewText(R.id.widget_version, verse.versionName)
             
             // Aplicar tamaño de fuente dinámico
             views.setFloat(R.id.widget_verse_text, "setTextSize", verse.fontSize)
+
+            val slotText = verse.secondaryLine ?: WIDGET_FALLBACK_SECONDARY_LINE
+            val slotColor = Color.parseColor("#80D7DCE3")
+            views.setTextViewText(R.id.widget_version, slotText)
+            views.setTextColor(R.id.widget_version, slotColor)
         } else {
             android.util.Log.d("BibleWidgetProvider", "No verse found, showing placeholder")
             views.setTextViewText(R.id.widget_verse_text, "Abre HolyVerso para actualizar el versículo")
             views.setTextViewText(R.id.widget_reference, "")
             views.setTextViewText(R.id.widget_version, "")
+            views.setTextColor(R.id.widget_version, Color.parseColor("#99FFFFFF"))
         }
 
         // Intent para abrir la app al tocar el widget
-        val intent = Intent(context, MainActivity::class.java).apply {
+        val intent = Intent(
+            Intent.ACTION_VIEW,
+            Uri.parse(WIDGET_DEVOTIONALS_DEEP_LINK),
+            context,
+            MainActivity::class.java
+        ).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
         val pendingIntent = PendingIntent.getActivity(
             context,
-            0,
+            appWidgetId,
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
@@ -129,12 +152,20 @@ class BibleWidgetProvider : AppWidgetProvider() {
                 versionName = obj.getString("version_name"),
                 reference = obj.getString("reference"),
                 text = obj.getString("text"),
-                fontSize = obj.optDouble("font_size", 16.0).toFloat()
+                fontSize = obj.optDouble("font_size", 16.0).toFloat(),
+                displayVariant = obj.optString(
+                    "display_variant",
+                    WIDGET_DISPLAY_VARIANT_VERSE_ONLY
+                ),
+                secondaryLine = obj.optString("secondary_line").takeIf {
+                    it.isNotBlank()
+                }
             )
         } catch (e: Exception) {
             null
         }
     }
+
 }
 
 data class WidgetVerse(
@@ -143,5 +174,7 @@ data class WidgetVerse(
     val versionName: String,
     val reference: String,
     val text: String,
-    val fontSize: Float = 16f
+    val fontSize: Float = 16f,
+    val displayVariant: String = WIDGET_DISPLAY_VARIANT_VERSE_ONLY,
+    val secondaryLine: String? = null,
 )
