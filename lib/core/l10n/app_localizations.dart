@@ -129,6 +129,15 @@ class AppLocalizations {
   String get savedVersesEmptyTitle => _string('savedVersesEmptyTitle');
   String get savedVersesEmptySubtitle => _string('savedVersesEmptySubtitle');
   String get savedVersesEmptyCta => _string('savedVersesEmptyCta');
+  String get savedLibraryVersesTab => _string('savedLibraryVersesTab');
+  String get savedLibraryDevotionalsTab =>
+      _string('savedLibraryDevotionalsTab');
+  String get savedDevotionalsEmptyTitle =>
+      _string('savedDevotionalsEmptyTitle');
+  String get savedDevotionalsEmptySubtitle =>
+      _string('savedDevotionalsEmptySubtitle');
+  String get savedDevotionalsEmptyCta => _string('savedDevotionalsEmptyCta');
+  String get savedDevotionalOpenAction => _string('savedDevotionalOpenAction');
   String get verseSearchTitle => _string('verseSearchTitle');
   String get verseSearchTooltip => _string('verseSearchTooltip');
   String get verseSearchPlaceholder => _string('verseSearchPlaceholder');
@@ -472,6 +481,13 @@ class AppLocalizations {
       'savedVersesEmptySubtitle':
           'Guarda tus versículos favoritos para releerlos y compartirlos.',
       'savedVersesEmptyCta': 'Descubrir versículo diario',
+      'savedLibraryVersesTab': 'Versículos',
+      'savedLibraryDevotionalsTab': 'Devocionales',
+      'savedDevotionalsEmptyTitle': 'Aún no tienes devocionales guardados',
+      'savedDevotionalsEmptySubtitle':
+          'Guarda los devocionales que quieras releer con calma más tarde.',
+      'savedDevotionalsEmptyCta': 'Ver devocionales',
+      'savedDevotionalOpenAction': 'Abrir devocional',
       'verseSearchTitle': 'Buscar versículos',
       'verseSearchTooltip': 'Buscar versículos',
       'verseSearchPlaceholder': 'Busca un versículo o pasaje',
@@ -785,6 +801,13 @@ class AppLocalizations {
       'savedVersesEmptySubtitle':
           'Save your favorite verses to read and share later.',
       'savedVersesEmptyCta': 'See verse of the day',
+      'savedLibraryVersesTab': 'Verses',
+      'savedLibraryDevotionalsTab': 'Devotionals',
+      'savedDevotionalsEmptyTitle': 'You have no saved devotionals yet',
+      'savedDevotionalsEmptySubtitle':
+          'Save the devotionals you want to revisit when you need them most.',
+      'savedDevotionalsEmptyCta': 'Browse devotionals',
+      'savedDevotionalOpenAction': 'Open devotional',
       'verseSearchTitle': 'Search verses',
       'verseSearchTooltip': 'Search verses',
       'verseSearchPlaceholder': 'Search a verse or passage',

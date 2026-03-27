@@ -99,7 +99,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               ),
               GoRoute(
                 path: '/verse/saved',
-                redirect: (context, state) => '/saved',
+                redirect: (context, state) => '/saved?tab=verses',
               ),
             ],
           ),
@@ -121,7 +121,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: '/saved',
-                builder: (context, state) => const SavedVersesScreen(),
+                builder: (context, state) => SavedVersesScreen(
+                  initialTab: SavedLibraryTab.fromQueryValue(
+                    state.uri.queryParameters['tab'],
+                  ),
+                ),
               ),
             ],
           ),

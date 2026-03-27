@@ -45,6 +45,13 @@ class DevotionalsRepository {
     return _client.fetchFeed(mode: mode, cursor: cursor, limit: limit);
   }
 
+  Future<CursorPagedResult<Devotional>> fetchSavedDevotionals({
+    String? cursor,
+    int limit = 20,
+  }) {
+    return _client.fetchSavedDevotionals(cursor: cursor, limit: limit);
+  }
+
   Future<void> recordFeedEvents(List<Map<String, dynamic>> events) {
     return _client.recordFeedEvents(events);
   }
@@ -131,10 +138,7 @@ class DevotionalsRepository {
     String devotionalId, {
     String? deliveryToken,
   }) {
-    return _client.saveDevotional(
-      devotionalId,
-      deliveryToken: deliveryToken,
-    );
+    return _client.saveDevotional(devotionalId, deliveryToken: deliveryToken);
   }
 
   Future<({bool saved, int saveCount})> unsaveDevotional(String devotionalId) {
@@ -145,10 +149,7 @@ class DevotionalsRepository {
     String devotionalId, {
     String? deliveryToken,
   }) {
-    return _client.shareDevotional(
-      devotionalId,
-      deliveryToken: deliveryToken,
-    );
+    return _client.shareDevotional(devotionalId, deliveryToken: deliveryToken);
   }
 
   Future<int> markReadComplete(

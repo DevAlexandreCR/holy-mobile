@@ -1693,36 +1693,24 @@ class _StatusSelector extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return Wrap(
+      spacing: AppSpacing.sm,
+      runSpacing: AppSpacing.sm,
       children: [
-        Text(
-          l10n.devotionalsStatusLabel,
-          style: AppTextStyles.bodySmall.copyWith(
-            color: AppColors.softMist.withValues(alpha: 0.82),
-          ),
+        _FilterChip(
+          label: l10n.devotionalsDrafts,
+          selected: current == DevotionalStatus.draft,
+          onTap: () => onSelected(DevotionalStatus.draft),
         ),
-        const SizedBox(height: AppSpacing.sm),
-        Wrap(
-          spacing: AppSpacing.sm,
-          runSpacing: AppSpacing.sm,
-          children: [
-            _FilterChip(
-              label: l10n.devotionalsDrafts,
-              selected: current == DevotionalStatus.draft,
-              onTap: () => onSelected(DevotionalStatus.draft),
-            ),
-            _FilterChip(
-              label: l10n.devotionalsPublished,
-              selected: current == DevotionalStatus.published,
-              onTap: () => onSelected(DevotionalStatus.published),
-            ),
-            _FilterChip(
-              label: l10n.devotionalsArchived,
-              selected: current == DevotionalStatus.archived,
-              onTap: () => onSelected(DevotionalStatus.archived),
-            ),
-          ],
+        _FilterChip(
+          label: l10n.devotionalsPublished,
+          selected: current == DevotionalStatus.published,
+          onTap: () => onSelected(DevotionalStatus.published),
+        ),
+        _FilterChip(
+          label: l10n.devotionalsArchived,
+          selected: current == DevotionalStatus.archived,
+          onTap: () => onSelected(DevotionalStatus.archived),
         ),
       ],
     );

@@ -6,10 +6,14 @@ import 'package:holyverso/core/services/verse_image_service.dart';
 import 'package:holyverso/core/theme/app_colors.dart';
 import 'package:holyverso/core/theme/app_design_tokens.dart';
 import 'package:holyverso/core/theme/app_text_styles.dart';
+import 'package:holyverso/data/devotionals/devotionals_repository.dart';
+import 'package:holyverso/domain/devotionals/devotional.dart';
 import 'package:holyverso/domain/verse/reference_parser.dart';
 import 'package:holyverso/domain/verse/saved_verse.dart';
 import 'package:holyverso/domain/verse/verse_of_the_day.dart';
 import 'package:holyverso/presentation/screens/verse/chapter_reader_screen.dart';
+import 'package:holyverso/presentation/state/devotionals/saved_devotionals_controller.dart';
+import 'package:holyverso/presentation/state/devotionals/saved_devotionals_state.dart';
 import 'package:holyverso/presentation/state/verse/chapter_reader_state.dart';
 import 'package:holyverso/presentation/state/verse/saved_verses_controller.dart';
 import 'package:holyverso/presentation/state/verse/saved_verses_state.dart';
@@ -17,14 +21,216 @@ import 'package:holyverso/presentation/state/verse/verse_controller.dart';
 import 'package:holyverso/presentation/widgets/common/holy_bottom_sheet.dart';
 import 'package:share_plus/share_plus.dart';
 
+enum SavedLibraryTab {
+  verses('verses'),
+  devotionals('devotionals');
+
+  const SavedLibraryTab(this.queryValue);
+
+  final String queryValue;
+
+  static SavedLibraryTab fromQueryValue(String? value) {
+    return switch (value) {
+      'devotionals' => SavedLibraryTab.devotionals,
+      _ => SavedLibraryTab.verses,
+    };
+  }
+}
+
 class SavedVersesScreen extends ConsumerStatefulWidget {
-  const SavedVersesScreen({super.key});
+  const SavedVersesScreen({
+    super.key,
+    this.initialTab = SavedLibraryTab.verses,
+  });
+
+  final SavedLibraryTab initialTab;
 
   @override
   ConsumerState<SavedVersesScreen> createState() => _SavedVersesScreenState();
 }
 
 class _SavedVersesScreenState extends ConsumerState<SavedVersesScreen> {
+  late SavedLibraryTab _selectedTab;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedTab = widget.initialTab;
+  }
+
+  @override
+  void didUpdateWidget(covariant SavedVersesScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.initialTab != widget.initialTab) {
+      _selectedTab = widget.initialTab;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
+    return Scaffold(
+      backgroundColor: AppColors.midnightFaithDark,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        titleSpacing: 0,
+        automaticallyImplyLeading: false,
+        title: Text(
+          l10n.navSavedLabel,
+          style: AppTextStyles.headline3.copyWith(
+            color: AppColors.pureWhite,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ),
+      body: DecoratedBox(
+        decoration: BoxDecoration(gradient: AppColors.midnightGradient),
+        child: SafeArea(
+          top: false,
+          bottom: false,
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.lg,
+                  AppSpacing.sm,
+                  AppSpacing.lg,
+                  AppSpacing.md,
+                ),
+                child: _SavedLibraryTabsBar(
+                  selectedTab: _selectedTab,
+                  onSelected: (tab) {
+                    if (_selectedTab == tab) return;
+                    setState(() {
+                      _selectedTab = tab;
+                    });
+                  },
+                ),
+              ),
+              Expanded(
+                child: IndexedStack(
+                  index: _selectedTab == SavedLibraryTab.verses ? 0 : 1,
+                  children: const [
+                    _SavedVersesTabView(),
+                    _SavedDevotionalsTabView(),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SavedLibraryTabsBar extends StatelessWidget {
+  const _SavedLibraryTabsBar({
+    required this.selectedTab,
+    required this.onSelected,
+  });
+
+  final SavedLibraryTab selectedTab;
+  final ValueChanged<SavedLibraryTab> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.pureWhite.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+        border: Border.all(color: AppColors.pureWhite.withValues(alpha: 0.08)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(4),
+        child: Row(
+          children: [
+            Expanded(
+              child: _SavedLibraryTabButton(
+                label: l10n.savedLibraryVersesTab,
+                selected: selectedTab == SavedLibraryTab.verses,
+                onTap: () => onSelected(SavedLibraryTab.verses),
+              ),
+            ),
+            const SizedBox(width: 6),
+            Expanded(
+              child: _SavedLibraryTabButton(
+                label: l10n.savedLibraryDevotionalsTab,
+                selected: selectedTab == SavedLibraryTab.devotionals,
+                onTap: () => onSelected(SavedLibraryTab.devotionals),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SavedLibraryTabButton extends StatelessWidget {
+  const _SavedLibraryTabButton({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppBorderRadius.md),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeOutCubic,
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.sm,
+          ),
+          decoration: BoxDecoration(
+            color: selected
+                ? AppColors.holyGold.withValues(alpha: 0.16)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(AppBorderRadius.md),
+            border: Border.all(
+              color: selected
+                  ? AppColors.holyGold.withValues(alpha: 0.35)
+                  : Colors.transparent,
+            ),
+          ),
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            style: AppTextStyles.labelLarge.copyWith(
+              color: selected
+                  ? AppColors.holyGold
+                  : AppColors.softMist.withValues(alpha: 0.82),
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SavedVersesTabView extends ConsumerStatefulWidget {
+  const _SavedVersesTabView();
+
+  @override
+  ConsumerState<_SavedVersesTabView> createState() =>
+      _SavedVersesTabViewState();
+}
+
+class _SavedVersesTabViewState extends ConsumerState<_SavedVersesTabView> {
   final ScrollController _scrollController = ScrollController();
   final VerseImageService _verseImageService = VerseImageService();
   bool _isGeneratingImage = false;
@@ -220,30 +426,9 @@ class _SavedVersesScreenState extends ConsumerState<SavedVersesScreen> {
     final l10n = context.l10n;
     final state = ref.watch(savedVersesControllerProvider);
 
-    return Scaffold(
-      backgroundColor: AppColors.midnightFaithDark,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        titleSpacing: 0,
-        automaticallyImplyLeading: false,
-        title: Text(
-          l10n.savedVersesTitle,
-          style: AppTextStyles.headline3.copyWith(
-            color: AppColors.pureWhite,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-      ),
-      body: Container(
-        decoration: BoxDecoration(gradient: AppColors.midnightGradient),
-        child: SafeArea(
-          child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 200),
-            child: _buildBody(state, l10n),
-          ),
-        ),
-      ),
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 200),
+      child: _buildBody(state, l10n),
     );
   }
 
@@ -347,6 +532,186 @@ class _SavedVersesScreenState extends ConsumerState<SavedVersesScreen> {
             separatorBuilder: (context, index) =>
                 const SizedBox(height: AppSpacing.md),
             itemCount: state.items.length + (state.isFetchingMore ? 1 : 0),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SavedDevotionalsTabView extends ConsumerStatefulWidget {
+  const _SavedDevotionalsTabView();
+
+  @override
+  ConsumerState<_SavedDevotionalsTabView> createState() =>
+      _SavedDevotionalsTabViewState();
+}
+
+class _SavedDevotionalsTabViewState
+    extends ConsumerState<_SavedDevotionalsTabView> {
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final state = ref.read(savedDevotionalsControllerProvider);
+      if (state.items.isEmpty && state.status == SavedDevotionalsStatus.idle) {
+        ref.read(savedDevotionalsControllerProvider.notifier).loadInitial();
+      }
+    });
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    final state = ref.read(savedDevotionalsControllerProvider);
+    if (!_scrollController.hasClients ||
+        state.isFetchingMore ||
+        !state.hasMore ||
+        state.nextCursor == null) {
+      return;
+    }
+
+    if (_scrollController.position.pixels >
+        _scrollController.position.maxScrollExtent - 200) {
+      ref.read(savedDevotionalsControllerProvider.notifier).loadMore();
+    }
+  }
+
+  Future<void> _share(Devotional devotional) async {
+    final result = await ref
+        .read(devotionalsRepositoryProvider)
+        .shareDevotional(devotional.id);
+    if (!mounted) return;
+
+    final shareText = [
+      devotional.primaryHook,
+      if (devotional.feedPreview.isNotEmpty) devotional.feedPreview,
+      result.shareUrl,
+    ].join('\n\n');
+
+    final box = context.findRenderObject() as RenderBox?;
+    final origin = box != null
+        ? (box.localToGlobal(Offset.zero) & box.size)
+        : const Rect.fromLTWH(0, 0, 1, 1);
+
+    await Share.share(
+      shareText,
+      subject: context.l10n.shareDevotional,
+      sharePositionOrigin: origin,
+    );
+
+    ref
+        .read(savedDevotionalsControllerProvider.notifier)
+        .syncSavedDevotional(
+          devotional.copyWith(shareCount: result.shareCount),
+        );
+  }
+
+  Future<void> _openDetail(Devotional devotional) async {
+    await context.push('/devotionals/${devotional.id}');
+  }
+
+  Future<void> _unsave(Devotional devotional) async {
+    await ref
+        .read(savedDevotionalsControllerProvider.notifier)
+        .unsaveDevotional(devotional);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final state = ref.watch(savedDevotionalsControllerProvider);
+    final l10n = context.l10n;
+
+    if (state.isLoading) {
+      return const _SavedVersesSkeleton();
+    }
+
+    if (state.status == SavedDevotionalsStatus.error && state.items.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _ErrorBanner(message: state.errorMessage ?? l10n.genericError),
+              const SizedBox(height: AppSpacing.md),
+              FilledButton(
+                onPressed: () => ref
+                    .read(savedDevotionalsControllerProvider.notifier)
+                    .loadInitial(forceRefresh: true),
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.holyGold,
+                  foregroundColor: AppColors.midnightFaithDark,
+                ),
+                child: Text(l10n.errorRetry),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (state.items.isEmpty) {
+      return _EmptySavedDevotionalsState(
+        onDiscover: () => context.go('/devotionals'),
+      );
+    }
+
+    return Column(
+      children: [
+        if (state.errorMessage != null)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.lg,
+              AppSpacing.md,
+              AppSpacing.lg,
+              AppSpacing.sm,
+            ),
+            child: _ErrorBanner(message: state.errorMessage!),
+          ),
+        Expanded(
+          child: RefreshIndicator(
+            onRefresh: () =>
+                ref.read(savedDevotionalsControllerProvider.notifier).refresh(),
+            child: ListView.separated(
+              controller: _scrollController,
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.lg,
+                vertical: AppSpacing.md,
+              ),
+              itemBuilder: (context, index) {
+                if (index >= state.items.length) {
+                  return const Padding(
+                    padding: EdgeInsets.symmetric(vertical: AppSpacing.md),
+                    child: Center(
+                      child: CircularProgressIndicator(
+                        color: AppColors.holyGold,
+                      ),
+                    ),
+                  );
+                }
+
+                final devotional = state.items[index];
+                final isProcessing = state.pendingIds.contains(devotional.id);
+                return _SavedDevotionalCard(
+                  devotional: devotional,
+                  isProcessing: isProcessing,
+                  onOpen: () => _openDetail(devotional),
+                  onShare: () => _share(devotional),
+                  onUnsave: () => _unsave(devotional),
+                );
+              },
+              separatorBuilder: (context, index) =>
+                  const SizedBox(height: AppSpacing.md),
+              itemCount: state.items.length + (state.isFetchingMore ? 1 : 0),
+            ),
           ),
         ),
       ],
@@ -527,6 +892,235 @@ class _SavedVerseCard extends StatelessWidget {
   }
 }
 
+class _SavedDevotionalCard extends StatelessWidget {
+  const _SavedDevotionalCard({
+    required this.devotional,
+    required this.onOpen,
+    required this.onShare,
+    required this.onUnsave,
+    this.isProcessing = false,
+  });
+
+  final Devotional devotional;
+  final VoidCallback onOpen;
+  final VoidCallback onShare;
+  final VoidCallback onUnsave;
+  final bool isProcessing;
+
+  @override
+  Widget build(BuildContext context) {
+    final referenceLabel = devotional.primaryReferences.isNotEmpty
+        ? devotional.primaryReferences
+              .map((reference) => reference.referenceLabel)
+              .join(', ')
+        : null;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.midnightFaith.withValues(alpha: 0.82),
+        borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+        border: Border.all(color: AppColors.pureWhite.withValues(alpha: 0.08)),
+        boxShadow: AppShadows.cardShadow,
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+        child: InkWell(
+          onTap: isProcessing ? null : onOpen,
+          borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (devotional.previewImageUrl != null &&
+                  devotional.previewImageUrl!.isNotEmpty)
+                ClipRRect(
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(AppBorderRadius.lg),
+                  ),
+                  child: Image.network(
+                    devotional.previewImageUrl!,
+                    height: 170,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                    alignment: Alignment(0, devotional.coverImageFocusY),
+                    errorBuilder: (context, error, stackTrace) => Container(
+                      height: 170,
+                      color: AppColors.midnightFaithDark,
+                    ),
+                  ),
+                ),
+              Padding(
+                padding: const EdgeInsets.all(AppSpacing.lg),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            devotional.primaryHook,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTextStyles.headline3.copyWith(
+                              color: AppColors.pureWhite,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.sm),
+                        Icon(
+                          Icons.bookmark_rounded,
+                          color: AppColors.holyGold.withValues(alpha: 0.92),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                    Text(
+                      devotional.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: AppColors.softMist.withValues(alpha: 0.86),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    if (referenceLabel != null &&
+                        referenceLabel.isNotEmpty) ...[
+                      const SizedBox(height: AppSpacing.sm),
+                      Text(
+                        referenceLabel,
+                        style: AppTextStyles.reference.copyWith(
+                          color: AppColors.holyGold,
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: AppSpacing.sm),
+                    Text(
+                      devotional.feedPreview,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: AppColors.pureWhite.withValues(alpha: 0.92),
+                        height: 1.45,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 15,
+                          backgroundColor: AppColors.holyGold.withValues(
+                            alpha: 0.14,
+                          ),
+                          child: Text(
+                            devotional.author.name.isNotEmpty
+                                ? devotional.author.name.characters.first
+                                      .toUpperCase()
+                                : '?',
+                            style: AppTextStyles.bodySmall.copyWith(
+                              color: AppColors.holyGold,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.sm),
+                        Expanded(
+                          child: Text(
+                            devotional.author.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTextStyles.bodyMedium.copyWith(
+                              color: AppColors.softMist.withValues(alpha: 0.86),
+                            ),
+                          ),
+                        ),
+                        _InlineMetric(
+                          icon: Icons.favorite_border_rounded,
+                          value: devotional.likesCount,
+                        ),
+                        const SizedBox(width: AppSpacing.sm),
+                        _InlineMetric(
+                          icon: Icons.chat_bubble_outline_rounded,
+                          value: devotional.commentsCount,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: isProcessing ? null : onOpen,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.holyGold.withValues(
+                                alpha: 0.18,
+                              ),
+                              foregroundColor: AppColors.holyGold,
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: AppBorderRadius.button,
+                                side: BorderSide(
+                                  color: AppColors.holyGold.withValues(
+                                    alpha: 0.35,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            child: Text(
+                              context.l10n.savedDevotionalOpenAction,
+                              style: AppTextStyles.labelLarge.copyWith(
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.sm),
+                        _CircleAction(
+                          icon: Icons.ios_share,
+                          onTap: isProcessing ? null : (_) => onShare(),
+                        ),
+                        const SizedBox(width: AppSpacing.sm),
+                        _CircleAction(
+                          icon: Icons.bookmark_remove_outlined,
+                          onTap: isProcessing ? null : (_) => onUnsave(),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _InlineMetric extends StatelessWidget {
+  const _InlineMetric({required this.icon, required this.value});
+
+  final IconData icon;
+  final int value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 14, color: AppColors.softMist.withValues(alpha: 0.74)),
+        const SizedBox(width: 4),
+        Text(
+          '$value',
+          style: AppTextStyles.bodySmall.copyWith(
+            color: AppColors.softMist.withValues(alpha: 0.78),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _CircleAction extends StatelessWidget {
   const _CircleAction({required this.icon, this.onTap, this.isLoading = false});
 
@@ -637,6 +1231,81 @@ class _EmptySavedState extends StatelessWidget {
               icon: const Icon(Icons.auto_awesome),
               label: Text(
                 l10n.savedVersesEmptyCta,
+                style: AppTextStyles.labelLarge.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _EmptySavedDevotionalsState extends StatelessWidget {
+  const _EmptySavedDevotionalsState({this.onDiscover});
+
+  final VoidCallback? onDiscover;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              decoration: BoxDecoration(
+                color: AppColors.pureWhite.withValues(alpha: 0.06),
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: AppColors.pureWhite.withValues(alpha: 0.1),
+                ),
+              ),
+              child: const Icon(
+                Icons.menu_book_outlined,
+                size: 42,
+                color: AppColors.holyGold,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Text(
+              l10n.savedDevotionalsEmptyTitle,
+              style: AppTextStyles.headline3.copyWith(
+                color: AppColors.pureWhite,
+                fontWeight: FontWeight.w700,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              l10n.savedDevotionalsEmptySubtitle,
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.softMist.withValues(alpha: 0.8),
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            FilledButton.icon(
+              onPressed: onDiscover,
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.holyGold,
+                foregroundColor: AppColors.midnightFaithDark,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.lg,
+                  vertical: AppSpacing.sm,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: AppBorderRadius.button,
+                ),
+              ),
+              icon: const Icon(Icons.auto_awesome),
+              label: Text(
+                l10n.savedDevotionalsEmptyCta,
                 style: AppTextStyles.labelLarge.copyWith(
                   fontWeight: FontWeight.w700,
                 ),

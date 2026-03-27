@@ -4,6 +4,7 @@ import 'package:holyverso/core/errors/app_error_mapper.dart';
 import 'package:holyverso/core/l10n/app_localizations.dart';
 import 'package:holyverso/data/devotionals/devotionals_repository.dart';
 import 'package:holyverso/presentation/state/devotionals/devotional_detail_state.dart';
+import 'package:holyverso/presentation/state/devotionals/saved_devotionals_controller.dart';
 
 class DevotionalDetailController extends Notifier<DevotionalDetailState> {
   late final DevotionalsRepository _repository;
@@ -88,12 +89,14 @@ class DevotionalDetailController extends Notifier<DevotionalDetailState> {
               devotional.id,
               deliveryToken: state.deliveryToken,
             );
-      state = state.copyWith(
-        devotional: devotional.copyWith(
-          saveCount: result.saveCount,
-          saved: result.saved,
-        ),
+      final updatedDevotional = devotional.copyWith(
+        saveCount: result.saveCount,
+        saved: result.saved,
       );
+      state = state.copyWith(devotional: updatedDevotional);
+      ref
+          .read(savedDevotionalsControllerProvider.notifier)
+          .syncSavedDevotional(updatedDevotional);
     } catch (error) {
       state = state.copyWith(errorMessage: _mapError(error));
     } finally {
@@ -106,9 +109,11 @@ class DevotionalDetailController extends Notifier<DevotionalDetailState> {
     if (devotional == null) return;
 
     if (shareCount != null) {
-      state = state.copyWith(
-        devotional: devotional.copyWith(shareCount: shareCount),
-      );
+      final updatedDevotional = devotional.copyWith(shareCount: shareCount);
+      state = state.copyWith(devotional: updatedDevotional);
+      ref
+          .read(savedDevotionalsControllerProvider.notifier)
+          .syncSavedDevotional(updatedDevotional);
       return;
     }
 
@@ -117,9 +122,13 @@ class DevotionalDetailController extends Notifier<DevotionalDetailState> {
         devotional.id,
         deliveryToken: state.deliveryToken,
       );
-      state = state.copyWith(
-        devotional: devotional.copyWith(shareCount: result.shareCount),
+      final updatedDevotional = devotional.copyWith(
+        shareCount: result.shareCount,
       );
+      state = state.copyWith(devotional: updatedDevotional);
+      ref
+          .read(savedDevotionalsControllerProvider.notifier)
+          .syncSavedDevotional(updatedDevotional);
     } catch (_) {}
   }
 

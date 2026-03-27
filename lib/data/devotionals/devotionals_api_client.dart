@@ -97,11 +97,7 @@ class DevotionalsApiClient {
   }) async {
     final response = await _dio.get(
       '/devotionals',
-      queryParameters: {
-        'status': 'UNDER_REVIEW',
-        'page': page,
-        'limit': limit,
-      },
+      queryParameters: {'status': 'UNDER_REVIEW', 'page': page, 'limit': limit},
     );
 
     final data = _unwrapData(response.data);
@@ -131,6 +127,35 @@ class DevotionalsApiClient {
       '/devotionals/feed',
       queryParameters: {
         'mode': mode.apiValue,
+        if (cursor != null && cursor.isNotEmpty) 'cursor': cursor,
+        'limit': limit,
+      },
+    );
+
+    final data = _unwrapData(response.data);
+    final itemsRaw = data['items'] as List? ?? [];
+
+    return CursorPagedResult<Devotional>(
+      items: itemsRaw
+          .whereType<Map>()
+          .map(
+            (item) => Devotional.fromMap(
+              _normalizeDevotional(Map<String, dynamic>.from(item)),
+            ),
+          )
+          .toList(),
+      nextCursor: data['next_cursor']?.toString(),
+      hasMore: data['has_more'] == true,
+    );
+  }
+
+  Future<CursorPagedResult<Devotional>> fetchSavedDevotionals({
+    String? cursor,
+    int limit = 20,
+  }) async {
+    final response = await _dio.get(
+      '/devotionals/saved',
+      queryParameters: {
         if (cursor != null && cursor.isNotEmpty) 'cursor': cursor,
         'limit': limit,
       },
@@ -249,7 +274,9 @@ class DevotionalsApiClient {
   }
 
   Future<Devotional> approveDevotionalReview(String devotionalId) async {
-    final response = await _dio.post('/moderation/devotionals/$devotionalId/approve');
+    final response = await _dio.post(
+      '/moderation/devotionals/$devotionalId/approve',
+    );
     final data = _unwrapData(response.data);
     return Devotional.fromMap(_normalizeDevotional(data));
   }
@@ -260,9 +287,7 @@ class DevotionalsApiClient {
   }) async {
     final response = await _dio.post(
       '/moderation/devotionals/$devotionalId/restrict',
-      data: {
-        'reason': reason,
-      },
+      data: {'reason': reason},
     );
     final data = _unwrapData(response.data);
     return Devotional.fromMap(_normalizeDevotional(data));
@@ -278,9 +303,9 @@ class DevotionalsApiClient {
   }
 
   Future<({bool saved, int saveCount})> saveDevotional(
-    String devotionalId,
-    {String? deliveryToken}
-  ) async {
+    String devotionalId, {
+    String? deliveryToken,
+  }) async {
     final response = await _dio.post(
       '/devotionals/$devotionalId/save',
       data: {
@@ -335,7 +360,8 @@ class DevotionalsApiClient {
       data: {
         if (deliveryToken != null && deliveryToken.isNotEmpty)
           'delivery_token': deliveryToken,
-        if (shareToken != null && shareToken.isNotEmpty) 'share_token': shareToken,
+        if (shareToken != null && shareToken.isNotEmpty)
+          'share_token': shareToken,
         if (deviceId != null && deviceId.isNotEmpty) 'device_id': deviceId,
       },
     );

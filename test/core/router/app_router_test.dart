@@ -22,6 +22,8 @@ import 'package:holyverso/presentation/screens/verse/saved_verses_screen.dart';
 import 'package:holyverso/presentation/screens/verse/verse_of_the_day_screen.dart';
 import 'package:holyverso/presentation/state/auth/auth_controller.dart';
 import 'package:holyverso/presentation/state/auth/auth_state.dart';
+import 'package:holyverso/presentation/state/devotionals/saved_devotionals_controller.dart';
+import 'package:holyverso/presentation/state/devotionals/saved_devotionals_state.dart';
 import 'package:holyverso/presentation/state/verse/saved_verses_controller.dart';
 import 'package:holyverso/presentation/state/verse/saved_verses_state.dart';
 import 'package:holyverso/presentation/state/verse/verse_controller.dart';
@@ -87,6 +89,29 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(SavedVersesScreen), findsOneWidget);
+    expect(find.text('Versículos'), findsWidgets);
+    expect(find.text('Devocionales'), findsWidgets);
+  });
+
+  testWidgets('saved route honors tab query parameter', (tester) async {
+    final container = _buildContainer(
+      const AuthState(
+        user: _user,
+        sessionStatus: AuthSessionStatus.authenticated,
+      ),
+    );
+    addTearDown(container.dispose);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(container: container, child: const _TestApp()),
+    );
+    await tester.pumpAndSettle();
+
+    container.read(appRouterProvider).go('/saved?tab=devotionals');
+    await tester.pumpAndSettle();
+
+    expect(find.byType(SavedVersesScreen), findsOneWidget);
+    expect(find.text('Aún no tienes devocionales guardados'), findsOneWidget);
   });
 
   testWidgets('expired session redirects to login with message', (
@@ -226,6 +251,9 @@ ProviderContainer _buildContainer(
       savedVersesControllerProvider.overrideWith(
         _StaticSavedVersesController.new,
       ),
+      savedDevotionalsControllerProvider.overrideWith(
+        _StaticSavedDevotionalsController.new,
+      ),
       roleRepositoryProvider.overrideWith(
         (ref) => roleRepository ?? _StaticRoleRepository(authState.user?.role),
       ),
@@ -284,6 +312,18 @@ class _StaticSavedVersesController extends SavedVersesController {
 
   @override
   Future<void> loadInitialSaved() async {}
+}
+
+class _StaticSavedDevotionalsController extends SavedDevotionalsController {
+  @override
+  SavedDevotionalsState build() => const SavedDevotionalsState(
+    status: SavedDevotionalsStatus.success,
+    items: [],
+    hasMore: false,
+  );
+
+  @override
+  Future<void> loadInitial({bool forceRefresh = false}) async {}
 }
 
 class _StaticRoleRepository extends RoleRepository {

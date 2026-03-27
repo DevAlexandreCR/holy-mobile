@@ -10,6 +10,7 @@ import 'package:holyverso/domain/devotionals/devotional.dart';
 import 'package:holyverso/domain/devotionals/devotional_feed_mode.dart';
 import 'package:holyverso/presentation/state/auth/auth_controller.dart';
 import 'package:holyverso/presentation/state/devotionals/devotionals_feed_state.dart';
+import 'package:holyverso/presentation/state/devotionals/saved_devotionals_controller.dart';
 
 abstract class BaseDevotionalsFeedController
     extends Notifier<DevotionalsFeedState> {
@@ -159,6 +160,9 @@ abstract class BaseDevotionalsFeedController
         saveCount: result.saveCount,
       );
       state = state.copyWith(items: updatedItems);
+      ref
+          .read(savedDevotionalsControllerProvider.notifier)
+          .syncSavedDevotional(updatedItems[index]);
       return true;
     } catch (error) {
       final revertedItems = [...state.items];
@@ -221,6 +225,9 @@ abstract class BaseDevotionalsFeedController
       final items = [...state.items];
       items[index] = items[index].copyWith(shareCount: shareCount);
       state = state.copyWith(items: items);
+      ref
+          .read(savedDevotionalsControllerProvider.notifier)
+          .syncSavedDevotional(items[index]);
       return;
     }
 
@@ -232,6 +239,9 @@ abstract class BaseDevotionalsFeedController
       final items = [...state.items];
       items[index] = items[index].copyWith(shareCount: result.shareCount);
       state = state.copyWith(items: items);
+      ref
+          .read(savedDevotionalsControllerProvider.notifier)
+          .syncSavedDevotional(items[index]);
     } catch (_) {}
   }
 
@@ -241,6 +251,9 @@ abstract class BaseDevotionalsFeedController
     final items = [...state.items];
     items[index] = devotional;
     state = state.copyWith(items: items);
+    ref
+        .read(savedDevotionalsControllerProvider.notifier)
+        .syncSavedDevotional(devotional);
   }
 
   void syncCreatorProfile({
