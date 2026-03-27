@@ -24,6 +24,7 @@ import 'package:holyverso/presentation/state/devotionals/devotionals_list_contro
 import 'package:holyverso/presentation/state/devotionals/devotionals_list_state.dart';
 import 'package:holyverso/presentation/state/devotionals/devotional_review_queue_controller.dart';
 import 'package:holyverso/presentation/widgets/common/holy_child_app_bar.dart';
+import 'package:holyverso/presentation/widgets/devotionals/devotional_feed_context_copy.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
@@ -969,7 +970,10 @@ class _PublicDevotionalCard extends StatelessWidget {
         (devotional.previewImageUrl ?? devotional.coverImageUrl)?.isNotEmpty ==
         true;
     final feedInterpretation =
-        _feedInterpretationLabel(context, devotional.feedContextReason) ??
+        devotionalFeedInterpretationLabel(
+          context.l10n,
+          devotional.feedContextReason,
+        ) ??
         context.l10n.devotionalFeedOpenCta;
     final stateMarker = _feedStateMarkerLabel(context, devotional);
     final inlineStateMarker = hasImage ? null : stateMarker;
@@ -2484,22 +2488,6 @@ class _MetaChip extends StatelessWidget {
         ],
       ),
     );
-  }
-}
-
-String? _feedInterpretationLabel(BuildContext context, String? reason) {
-  final l10n = context.l10n;
-  switch (reason) {
-    case 'SAVED_BY_OTHERS':
-      return l10n.devotionalFeedSignalSavedByOthers;
-    case 'HIGH_COMPLETION':
-      return l10n.devotionalFeedSignalHighCompletion;
-    case 'HIGH_SHARE':
-      return l10n.devotionalFeedSignalHighShare;
-    case 'FOLLOWED_AUTHOR':
-      return l10n.devotionalFeedSignalFollowedAuthor;
-    default:
-      return null;
   }
 }
 

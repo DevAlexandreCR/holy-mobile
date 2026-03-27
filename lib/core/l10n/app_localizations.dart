@@ -270,6 +270,10 @@ class AppLocalizations {
   String get devotionalOpenDetail => _string('devotionalOpenDetail');
   String get devotionalArchiveAction => _string('devotionalArchiveAction');
   String get devotionalCommentsEmpty => _string('devotionalCommentsEmpty');
+  String get devotionalCommentsEmptyTitle =>
+      _string('devotionalCommentsEmptyTitle');
+  String get devotionalCommentsEmptySubtitle =>
+      _string('devotionalCommentsEmptySubtitle');
   String get devotionalMinutesShort => _string('devotionalMinutesShort');
   String get devotionalModerationClear => _string('devotionalModerationClear');
   String get devotionalModerationUnderReview =>
@@ -291,6 +295,8 @@ class AppLocalizations {
   String get devotionalReportMisleading =>
       _string('devotionalReportMisleading');
   String get devotionalReportOther => _string('devotionalReportOther');
+  String get devotionalReflectionPrompt =>
+      _string('devotionalReflectionPrompt');
   String get devotionalsFeedEmptyTitle => _string('devotionalsFeedEmptyTitle');
   String get devotionalsFeedEmptySubtitle =>
       _string('devotionalsFeedEmptySubtitle');
@@ -603,6 +609,8 @@ class AppLocalizations {
       'devotionalOpenDetail': 'Leer completo',
       'devotionalArchiveAction': 'Archivar',
       'devotionalCommentsEmpty': 'Todavía no hay comentarios.',
+      'devotionalCommentsEmptyTitle': 'Sé el primero en comentar',
+      'devotionalCommentsEmptySubtitle': 'Comparte tu reflexión',
       'devotionalMinutesShort': 'min',
       'devotionalModerationClear': 'Visible',
       'devotionalModerationUnderReview': 'En revisión',
@@ -619,6 +627,7 @@ class AppLocalizations {
       'devotionalReportImage': 'Imagen inapropiada',
       'devotionalReportMisleading': 'Contenido engañoso',
       'devotionalReportOther': 'Otro motivo',
+      'devotionalReflectionPrompt': 'Tómate un momento para reflexionar',
       'devotionalsFeedEmptyTitle': 'Todavía no hay devocionales en el feed',
       'devotionalsFeedEmptySubtitle':
           'Cuando la comunidad publique nuevos devocionales, aparecerán aquí.',
@@ -908,6 +917,8 @@ class AppLocalizations {
       'devotionalOpenDetail': 'Read full',
       'devotionalArchiveAction': 'Archive',
       'devotionalCommentsEmpty': 'There are no comments yet.',
+      'devotionalCommentsEmptyTitle': 'Be the first to comment',
+      'devotionalCommentsEmptySubtitle': 'Share your reflection',
       'devotionalMinutesShort': 'min',
       'devotionalModerationClear': 'Visible',
       'devotionalModerationUnderReview': 'Under review',
@@ -924,6 +935,7 @@ class AppLocalizations {
       'devotionalReportImage': 'Inappropriate image',
       'devotionalReportMisleading': 'Misleading content',
       'devotionalReportOther': 'Other',
+      'devotionalReflectionPrompt': 'Take a moment to reflect',
       'devotionalsFeedEmptyTitle': 'There are no devotionals in the feed yet',
       'devotionalsFeedEmptySubtitle':
           'When the community publishes new devotionals, they will appear here.',

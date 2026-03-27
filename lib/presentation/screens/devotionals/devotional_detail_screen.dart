@@ -20,7 +20,12 @@ import 'package:holyverso/presentation/state/devotionals/devotionals_feed_contro
 import 'package:holyverso/presentation/state/devotionals/devotionals_list_controller.dart';
 import 'package:holyverso/presentation/widgets/common/holy_child_app_bar.dart';
 import 'package:holyverso/presentation/widgets/devotionals/devotional_content_view.dart';
+import 'package:holyverso/presentation/widgets/devotionals/devotional_feed_context_copy.dart';
 import 'package:share_plus/share_plus.dart';
+
+const double _detailCoverImageHeight = 172;
+
+enum _DetailMenuAction { report }
 
 class DevotionalDetailScreen extends ConsumerStatefulWidget {
   const DevotionalDetailScreen({
@@ -456,7 +461,44 @@ class _DevotionalDetailScreenState
 
     return Scaffold(
       backgroundColor: AppColors.midnightFaith,
-      appBar: HolyChildAppBar(title: l10n.devotionalDetailTitle),
+      appBar: HolyChildAppBar(
+        title: l10n.devotionalDetailTitle,
+        actions: state.devotional == null
+            ? null
+            : [
+                PopupMenuButton<_DetailMenuAction>(
+                  icon: const Icon(Icons.more_horiz_rounded),
+                  tooltip: l10n.devotionalReportAction,
+                  color: AppColors.midnightFaithDark,
+                  surfaceTintColor: Colors.transparent,
+                  onSelected: (value) {
+                    if (value == _DetailMenuAction.report) {
+                      _showReportSheet();
+                    }
+                  },
+                  itemBuilder: (context) => [
+                    PopupMenuItem<_DetailMenuAction>(
+                      value: _DetailMenuAction.report,
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.flag_outlined,
+                            color: AppColors.pureWhite,
+                          ),
+                          const SizedBox(width: AppSpacing.sm),
+                          Text(
+                            l10n.devotionalReportAction,
+                            style: AppTextStyles.bodyMedium.copyWith(
+                              color: AppColors.pureWhite,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+      ),
       bottomNavigationBar: _canModerateCurrentDevotional
           ? _ReviewActionBar(
               isApproving: state.isApprovingReview,
@@ -482,6 +524,8 @@ class _DevotionalDetailScreenState
             commentsState: commentsState,
             commentController: _commentController,
             scrollController: _scrollController,
+            isTogglingLike: state.isTogglingLike,
+            isTogglingSave: state.isTogglingSave,
             onRefresh: () async {
               await _loadDetail();
               await ref
@@ -495,7 +539,6 @@ class _DevotionalDetailScreenState
                 .read(devotionalDetailControllerProvider.notifier)
                 .toggleSave(),
             onShare: _share,
-            onReport: _showReportSheet,
             onSubmitComment: _submitComment,
             onOpenAuthor: () async {
               final authorId = state.devotional?.author.id;
@@ -515,11 +558,12 @@ class _DetailContent extends StatelessWidget {
     required this.commentsState,
     required this.commentController,
     required this.scrollController,
+    required this.isTogglingLike,
+    required this.isTogglingSave,
     required this.onRefresh,
     required this.onToggleLike,
     required this.onToggleSave,
     required this.onShare,
-    required this.onReport,
     required this.onSubmitComment,
     required this.onOpenAuthor,
   });
@@ -528,11 +572,12 @@ class _DetailContent extends StatelessWidget {
   final DevotionalCommentsState commentsState;
   final TextEditingController commentController;
   final ScrollController scrollController;
+  final bool isTogglingLike;
+  final bool isTogglingSave;
   final Future<void> Function() onRefresh;
   final VoidCallback onToggleLike;
   final VoidCallback onToggleSave;
   final Future<void> Function(Devotional devotional) onShare;
-  final Future<void> Function() onReport;
   final Future<void> Function() onSubmitComment;
   final Future<void> Function() onOpenAuthor;
 
@@ -542,6 +587,16 @@ class _DetailContent extends StatelessWidget {
     if (devotional == null) {
       return const SizedBox.shrink();
     }
+    final referenceLabel = _referenceLabel(devotional);
+    final continuityLabel = devotionalDetailContinuityLabel(
+      context.l10n,
+      devotional,
+    );
+    final hasContent =
+        devotional.content != null && devotional.content!.isNotEmpty;
+    final commentsHeading = commentsState.total > 0
+        ? '${context.l10n.commentsLabel} (${commentsState.total})'
+        : context.l10n.commentsLabel;
 
     return RefreshIndicator(
       onRefresh: onRefresh,
@@ -560,12 +615,12 @@ class _DetailContent extends StatelessWidget {
               borderRadius: BorderRadius.circular(AppBorderRadius.lg),
               child: CachedNetworkImage(
                 imageUrl: devotional.coverImageUrl!,
-                height: 220,
+                height: _detailCoverImageHeight,
                 width: double.infinity,
                 fit: BoxFit.cover,
                 alignment: Alignment(0, devotional.coverImageFocusY),
                 errorWidget: (context, url, error) => Container(
-                  height: 220,
+                  height: _detailCoverImageHeight,
                   color: AppColors.midnightFaithDark,
                   alignment: Alignment.center,
                   child: const Icon(
@@ -636,6 +691,15 @@ class _DetailContent extends StatelessWidget {
               ],
             ),
           ),
+          if (referenceLabel != null) ...[
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              referenceLabel,
+              style: AppTextStyles.reference.copyWith(
+                color: AppColors.holyGold.withValues(alpha: 0.92),
+              ),
+            ),
+          ],
           if (devotional.moderationReason != null &&
               devotional.moderationReason!.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.md),
@@ -653,49 +717,71 @@ class _DetailContent extends StatelessWidget {
               ),
             ),
           ],
-          const SizedBox(height: AppSpacing.lg),
-          if (devotional.content != null)
-            DevotionalContentView(content: devotional.content!),
-          const SizedBox(height: AppSpacing.lg),
+          if (hasContent) ...[
+            const SizedBox(height: AppSpacing.lg),
+            if (continuityLabel != null) ...[
+              Text(
+                continuityLabel,
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: AppColors.softMist.withValues(alpha: 0.9),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+            ],
+            DevotionalContentView(
+              content: devotional.content!,
+              emphasizeLeadingParagraph: true,
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            Text(
+              context.l10n.devotionalReflectionPrompt,
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.softMist.withValues(alpha: 0.92),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+          ] else ...[
+            const SizedBox(height: AppSpacing.lg),
+          ],
           Wrap(
             spacing: AppSpacing.sm,
             runSpacing: AppSpacing.sm,
             children: [
-              OutlinedButton.icon(
-                onPressed: onToggleLike,
-                icon: Icon(
-                  devotional.liked ? Icons.favorite : Icons.favorite_border,
-                ),
-                label: Text(
-                  '${context.l10n.likesLabel} ${devotional.likesCount}',
-                ),
+              _PrimarySaveActionButton(
+                isSaved: devotional.saved,
+                isLoading: isTogglingSave,
+                onPressed: isTogglingSave ? null : onToggleSave,
+                label: devotional.saved
+                    ? context.l10n.savedAction
+                    : context.l10n.saveAction,
               ),
-              OutlinedButton.icon(
-                onPressed: onToggleSave,
-                icon: Icon(
-                  devotional.saved ? Icons.bookmark : Icons.bookmark_border,
+              _SecondaryActionButton(
+                onPressed: isTogglingLike ? null : onToggleLike,
+                icon: devotional.liked
+                    ? Icons.favorite_rounded
+                    : Icons.favorite_border_rounded,
+                label: _actionLabel(
+                  context.l10n.likesLabel,
+                  devotional.likesCount,
                 ),
-                label: Text(
-                  '${context.l10n.devotionalSave} ${devotional.saveCount}',
-                ),
+                active: devotional.liked,
+                isLoading: isTogglingLike,
               ),
-              OutlinedButton.icon(
+              _SecondaryActionButton(
                 onPressed: () => onShare(devotional),
-                icon: const Icon(Icons.share_outlined),
-                label: Text(
-                  '${context.l10n.shareDevotional} ${devotional.shareCount}',
+                icon: Icons.share_outlined,
+                label: _actionLabel(
+                  context.l10n.shareDevotional,
+                  devotional.shareCount,
                 ),
-              ),
-              OutlinedButton.icon(
-                onPressed: onReport,
-                icon: const Icon(Icons.flag_outlined),
-                label: Text(context.l10n.devotionalReportAction),
               ),
             ],
           ),
           const SizedBox(height: AppSpacing.xl),
           Text(
-            '${context.l10n.commentsLabel} (${commentsState.total})',
+            commentsHeading,
             style: AppTextStyles.headline3.copyWith(
               color: AppColors.pureWhite,
               fontWeight: FontWeight.w700,
@@ -735,14 +821,25 @@ class _DetailContent extends StatelessWidget {
               color: AppColors.pureWhite,
             ),
           ),
-          const SizedBox(height: AppSpacing.md),
-          if (commentsState.items.isEmpty)
+          if (commentsState.items.isEmpty) ...[
+            const SizedBox(height: AppSpacing.md),
             Text(
-              context.l10n.devotionalCommentsEmpty,
+              context.l10n.devotionalCommentsEmptyTitle,
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.pureWhite,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              context.l10n.devotionalCommentsEmptySubtitle,
               style: AppTextStyles.bodyMedium.copyWith(
                 color: AppColors.softMist,
               ),
             ),
+          ] else ...[
+            const SizedBox(height: AppSpacing.md),
+          ],
           ...commentsState.items.map(
             (comment) => _CommentItem(comment: comment),
           ),
@@ -750,6 +847,184 @@ class _DetailContent extends StatelessWidget {
       ),
     );
   }
+}
+
+class _PrimarySaveActionButton extends StatelessWidget {
+  const _PrimarySaveActionButton({
+    required this.isSaved,
+    required this.isLoading,
+    required this.onPressed,
+    required this.label,
+  });
+
+  final bool isSaved;
+  final bool isLoading;
+  final VoidCallback? onPressed;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final inactiveForeground = AppColors.holyGold;
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 170),
+      curve: Curves.easeOutCubic,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(AppBorderRadius.full),
+        gradient: LinearGradient(
+          colors: isSaved
+              ? [
+                  AppColors.holyGold.withValues(alpha: 0.94),
+                  const Color(0xFFE7C565),
+                ]
+              : [
+                  AppColors.holyGold.withValues(alpha: 0.16),
+                  AppColors.holyGold.withValues(alpha: 0.1),
+                ],
+        ),
+        border: Border.all(
+          color: AppColors.holyGold.withValues(alpha: isSaved ? 0.24 : 0.12),
+        ),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(AppBorderRadius.full),
+          onTap: onPressed,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (isLoading)
+                  SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        isSaved
+                            ? AppColors.midnightFaithDark
+                            : inactiveForeground,
+                      ),
+                    ),
+                  )
+                else
+                  Icon(
+                    isSaved
+                        ? Icons.bookmark_rounded
+                        : Icons.bookmark_border_rounded,
+                    size: 17,
+                    color: isSaved
+                        ? AppColors.midnightFaithDark
+                        : inactiveForeground,
+                  ),
+                const SizedBox(width: 6),
+                Text(
+                  label,
+                  style: AppTextStyles.labelMedium.copyWith(
+                    color: isSaved
+                        ? AppColors.midnightFaithDark
+                        : inactiveForeground,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SecondaryActionButton extends StatelessWidget {
+  const _SecondaryActionButton({
+    required this.onPressed,
+    required this.icon,
+    required this.label,
+    this.active = false,
+    this.isLoading = false,
+  });
+
+  final VoidCallback? onPressed;
+  final IconData icon;
+  final String label;
+  final bool active;
+  final bool isLoading;
+
+  @override
+  Widget build(BuildContext context) {
+    final foregroundColor = active
+        ? AppColors.holyGold
+        : AppColors.pureWhite.withValues(alpha: 0.82);
+
+    return Material(
+      color: AppColors.pureWhite.withValues(alpha: active ? 0.08 : 0.04),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppBorderRadius.full),
+        side: BorderSide(
+          color: active
+              ? AppColors.holyGold.withValues(alpha: 0.22)
+              : AppColors.pureWhite.withValues(alpha: 0.08),
+        ),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppBorderRadius.full),
+        onTap: onPressed,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (isLoading)
+                SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(foregroundColor),
+                  ),
+                )
+              else
+                Icon(icon, size: 18, color: foregroundColor),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: AppTextStyles.labelMedium.copyWith(
+                  color: foregroundColor,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+String _actionLabel(String baseLabel, int count) {
+  if (count <= 0) {
+    return baseLabel;
+  }
+
+  return '$baseLabel $count';
+}
+
+String? _referenceLabel(Devotional devotional) {
+  final primaryReferences = devotional.primaryReferences;
+  if (primaryReferences.isNotEmpty) {
+    return primaryReferences
+        .map((reference) => reference.referenceLabel)
+        .join(', ');
+  }
+
+  if (devotional.verseReferences.isNotEmpty) {
+    return devotional.verseReferences.first.referenceLabel;
+  }
+
+  return null;
 }
 
 class _CommentItem extends StatelessWidget {
