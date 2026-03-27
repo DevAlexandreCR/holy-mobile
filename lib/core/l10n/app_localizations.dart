@@ -238,6 +238,11 @@ class AppLocalizations {
       _string('devotionalPublishedMovedMessage');
   String get devotionalArchivedMovedMessage =>
       _string('devotionalArchivedMovedMessage');
+  String get devotionalPublishHelperNeedsMoreReflection =>
+      _string('devotionalPublishHelperNeedsMoreReflection');
+  String get devotionalPublishNeedsMoreReflection =>
+      _string('devotionalPublishNeedsMoreReflection');
+  String get devotionalPublishError => _string('devotionalPublishError');
   String get devotionalFeedSavedToast => _string('devotionalFeedSavedToast');
   String get devotionalFeedOpenCta => _string('devotionalFeedOpenCta');
   String get devotionalPublishModerationInProgress =>
@@ -558,6 +563,11 @@ class AppLocalizations {
           'Devocional publicado. Ahora lo encuentras en Publicados.',
       'devotionalArchivedMovedMessage':
           'Devocional archivado. Ahora lo encuentras en Archivados.',
+      'devotionalPublishHelperNeedsMoreReflection':
+          'Para publicarlo, desarrolla un poco más la reflexión. Necesitas al menos 45 palabras y 3 oraciones o 2 párrafos con contenido.',
+      'devotionalPublishNeedsMoreReflection':
+          'Aún no está listo para publicar. Desarrolla un poco más la reflexión: necesitas al menos 45 palabras y 3 oraciones o 2 párrafos con contenido.',
+      'devotionalPublishError': 'No pudimos publicar el devocional.',
       'devotionalFeedSavedToast': 'Guardado para volver luego',
       'devotionalFeedOpenCta': 'Recibe este mensaje →',
       'devotionalPublishModerationInProgress':
@@ -850,6 +860,11 @@ class AppLocalizations {
           'Devotional published. You can now find it in Published.',
       'devotionalArchivedMovedMessage':
           'Devotional archived. You can now find it in Archived.',
+      'devotionalPublishHelperNeedsMoreReflection':
+          'To publish it, develop the reflection a bit more. You need at least 45 words and 3 sentences or 2 paragraphs with substance.',
+      'devotionalPublishNeedsMoreReflection':
+          'This devotional is not ready to publish yet. Develop the reflection a bit more: you need at least 45 words and 3 sentences or 2 paragraphs with substance.',
+      'devotionalPublishError': 'We could not publish the devotional.',
       'devotionalFeedSavedToast': 'Saved for later',
       'devotionalFeedOpenCta': 'Receive this message →',
       'devotionalPublishModerationInProgress':

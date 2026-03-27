@@ -1,11 +1,11 @@
 import 'dart:async';
 
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:holyverso/core/errors/app_error_mapper.dart';
+import 'package:holyverso/core/errors/devotional_publish_error_resolver.dart';
 import 'package:holyverso/core/l10n/app_localizations.dart';
 import 'package:holyverso/core/theme/app_colors.dart';
 import 'package:holyverso/core/theme/app_design_tokens.dart';
@@ -560,7 +560,7 @@ class _MyDevotionalsTabState extends ConsumerState<_MyDevotionalsTab> {
           content: Text(
             _resolveOwnerActionErrorMessage(
               error,
-              context: context,
+              l10n: context.l10n,
               fallbackMessage: fallbackMessage,
               businessCodeMessages: businessCodeMessages,
             ),
@@ -2464,25 +2464,13 @@ String _normalizeForComparison(String value) {
 
 String _resolveOwnerActionErrorMessage(
   Object error, {
-  required BuildContext context,
+  required AppLocalizations l10n,
   required String fallbackMessage,
   required Map<String, String> businessCodeMessages,
 }) {
-  final backendCode = AppErrorMapper.backendCode(error);
-  if (backendCode == 'DEVOTIONAL_QUALITY_GATE_FAILED' &&
-      error is DioException) {
-    final data = error.response?.data;
-    if (data is Map && data['error'] is Map) {
-      final message = data['error']['message']?.toString().trim();
-      if (message != null && message.isNotEmpty) {
-        return message;
-      }
-    }
-  }
-
-  return AppErrorMapper.toMessage(
+  return resolveDevotionalPublishErrorMessage(
     error,
-    l10n: context.l10n,
+    l10n: l10n,
     fallbackMessage: fallbackMessage,
     businessCodeMessages: businessCodeMessages,
   );

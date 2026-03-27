@@ -10,6 +10,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:holyverso/core/errors/app_error_mapper.dart';
+import 'package:holyverso/core/errors/devotional_publish_error_resolver.dart';
 import 'package:holyverso/core/l10n/app_localizations.dart';
 import 'package:holyverso/core/theme/app_colors.dart';
 import 'package:holyverso/core/theme/app_design_tokens.dart';
@@ -17,6 +18,7 @@ import 'package:holyverso/core/theme/app_text_styles.dart';
 import 'package:holyverso/data/bible/bible_repository.dart';
 import 'package:holyverso/data/devotionals/devotionals_repository.dart';
 import 'package:holyverso/domain/devotionals/devotional.dart';
+import 'package:holyverso/domain/devotionals/devotional_publish_validator.dart';
 import 'package:holyverso/domain/devotionals/devotional_status.dart';
 import 'package:holyverso/domain/devotionals/devotional_verse_reference.dart';
 import 'package:holyverso/domain/verse/bible_book.dart';
@@ -56,6 +58,8 @@ class _DevotionalEditorScreenState
   bool _isUploadingCover = false;
   bool _isEditorFullscreen = false;
   int _wordCount = 0;
+  DevotionalPublishReadiness _publishReadiness =
+      DevotionalPublishValidator.evaluatePlainText('');
   bool _isApplyingWhatsappAutoFormat = false;
 
   @override
@@ -64,7 +68,7 @@ class _DevotionalEditorScreenState
     _effectiveDevotionalId = widget.devotionalId;
     _quillController = QuillController.basic();
     _quillController.addListener(_handleEditorChange);
-    _updateWordCount();
+    _updateEditorMetrics(notify: false);
     if (_effectiveDevotionalId != null) {
       _loadDevotional();
     }
@@ -106,7 +110,7 @@ class _DevotionalEditorScreenState
         document: Document.fromJson(contentOps),
         selection: const TextSelection.collapsed(offset: 0),
       )..addListener(_handleEditorChange);
-      _updateWordCount();
+      _updateEditorMetrics();
       _maybeAutoFormatWhatsappText();
     } catch (_) {
       if (mounted) {
@@ -125,7 +129,7 @@ class _DevotionalEditorScreenState
   }
 
   void _handleEditorChange() {
-    _updateWordCount();
+    _updateEditorMetrics();
     _maybeAutoFormatWhatsappText();
   }
 
@@ -274,12 +278,30 @@ class _DevotionalEditorScreenState
     FocusScope.of(context).unfocus();
   }
 
-  void _updateWordCount() {
-    final text = _quillController.document.toPlainText().trim();
-    final count = text.isEmpty ? 0 : text.split(RegExp(r'\s+')).length;
-    if (count != _wordCount) {
-      setState(() => _wordCount = count);
+  void _updateEditorMetrics({bool notify = true}) {
+    final plainText = _quillController.document.toPlainText();
+    final nextWordCount = plainText.trim().isEmpty
+        ? 0
+        : plainText.trim().split(RegExp(r'\s+')).length;
+    final nextPublishReadiness = DevotionalPublishValidator.evaluatePlainText(
+      plainText,
+    );
+
+    if (!notify) {
+      _wordCount = nextWordCount;
+      _publishReadiness = nextPublishReadiness;
+      return;
     }
+
+    if (nextWordCount == _wordCount &&
+        nextPublishReadiness == _publishReadiness) {
+      return;
+    }
+
+    setState(() {
+      _wordCount = nextWordCount;
+      _publishReadiness = nextPublishReadiness;
+    });
   }
 
   Future<void> _launchExternalUrl(String rawUrl) async {
@@ -455,7 +477,7 @@ class _DevotionalEditorScreenState
     }
   }
 
-  bool _validateForm() {
+  bool _validateForm({bool publish = false}) {
     final l10n = context.l10n;
     if (_titleController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -471,6 +493,16 @@ class _DevotionalEditorScreenState
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(l10n.devotionalPrimaryReferenceRequired),
+          backgroundColor: Colors.red.shade700,
+        ),
+      );
+      return false;
+    }
+
+    if (publish && !_publishReadiness.isReady) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.devotionalPublishNeedsMoreReflection),
           backgroundColor: Colors.red.shade700,
         ),
       );
@@ -534,7 +566,7 @@ class _DevotionalEditorScreenState
 
   Future<void> _save({required bool publish}) async {
     if (_isSaving) return;
-    if (!_validateForm()) return;
+    if (!_validateForm(publish: publish)) return;
 
     setState(() {
       _isSaving = true;
@@ -574,19 +606,29 @@ class _DevotionalEditorScreenState
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              AppErrorMapper.toMessage(
-                error,
-                l10n: context.l10n,
-                fallbackMessage: context.l10n.devotionalsSaveError,
-                businessCodeMessages: {
-                  'DEVOTIONAL_PUBLISH_BLOCKED':
-                      context.l10n.devotionalPublishBlocked,
-                  'OPENAI_MODERATION_UNAVAILABLE':
-                      context.l10n.devotionalsModerationUnavailable,
-                  'IMAGE_ASSET_ALREADY_ATTACHED':
-                      context.l10n.devotionalImageAlreadyAttached,
-                },
-              ),
+              publish
+                  ? resolveDevotionalPublishErrorMessage(
+                      error,
+                      l10n: context.l10n,
+                      fallbackMessage: context.l10n.devotionalPublishError,
+                      businessCodeMessages: {
+                        'DEVOTIONAL_PUBLISH_BLOCKED':
+                            context.l10n.devotionalPublishBlocked,
+                        'OPENAI_MODERATION_UNAVAILABLE':
+                            context.l10n.devotionalsModerationUnavailable,
+                        'IMAGE_ASSET_ALREADY_ATTACHED':
+                            context.l10n.devotionalImageAlreadyAttached,
+                      },
+                    )
+                  : AppErrorMapper.toMessage(
+                      error,
+                      l10n: context.l10n,
+                      fallbackMessage: context.l10n.devotionalsSaveError,
+                      businessCodeMessages: {
+                        'IMAGE_ASSET_ALREADY_ATTACHED':
+                            context.l10n.devotionalImageAlreadyAttached,
+                      },
+                    ),
             ),
             backgroundColor: Colors.red.shade700,
           ),
@@ -1268,6 +1310,42 @@ class _DevotionalEditorScreenState
             ),
           ),
         ),
+        if (!_publishReadiness.isReady) ...[
+          const SizedBox(height: AppSpacing.sm),
+          Container(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            decoration: BoxDecoration(
+              color: AppColors.inputBackground.withValues(alpha: 0.92),
+              borderRadius: BorderRadius.circular(AppBorderRadius.md),
+              border: Border.all(
+                color: AppColors.holyGold.withValues(alpha: 0.35),
+              ),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(top: 2),
+                  child: Icon(
+                    Icons.info_outline,
+                    size: 18,
+                    color: AppColors.holyGold.withValues(alpha: 0.95),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: Text(
+                    l10n.devotionalPublishHelperNeedsMoreReflection,
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: AppColors.softMist.withValues(alpha: 0.92),
+                      height: 1.45,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ],
     );
   }
@@ -1336,157 +1414,160 @@ class _DevotionalEditorScreenState
                 AppSpacing.lg,
               ),
               child: Container(
-              decoration: BoxDecoration(
-                color: AppColors.inputBackground,
-                borderRadius: BorderRadius.circular(AppBorderRadius.md),
-                border: Border.all(
-                  color: AppColors.inputBorder.withValues(alpha: 0.7),
+                decoration: BoxDecoration(
+                  color: AppColors.inputBackground,
+                  borderRadius: BorderRadius.circular(AppBorderRadius.md),
+                  border: Border.all(
+                    color: AppColors.inputBorder.withValues(alpha: 0.7),
+                  ),
                 ),
-              ),
-              child: Column(
-                children: [
-                  ClipRRect(
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(AppBorderRadius.md),
-                    ),
-                    child: Container(
-                      color: AppColors.midnightFaithDark.withValues(
-                        alpha: 0.35,
+                child: Column(
+                  children: [
+                    ClipRRect(
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(AppBorderRadius.md),
                       ),
-                      padding: EdgeInsets.symmetric(
-                        vertical: AppSpacing.xs,
-                        horizontal:
-                            Theme.of(context).platform == TargetPlatform.android
-                            ? AppSpacing.sm
-                            : 0,
-                      ),
-                      child: _buildQuillToolbar(l10n),
-                    ),
-                  ),
-                  Divider(
-                    height: 1,
-                    color: AppColors.inputBorder.withValues(alpha: 0.6),
-                  ),
-                  Expanded(
-                    child: QuillEditor.basic(
-                      focusNode: _editorFocusNode,
-                      scrollController: _editorScrollController,
-                      configurations: QuillEditorConfigurations(
-                        controller: _quillController,
-                        scrollable: true,
-                        autoFocus: false,
-                        readOnly: false,
-                        expands: true,
-                        padding: const EdgeInsets.all(AppSpacing.md),
-                        placeholder: l10n.devotionalContentHint,
-                        keyboardAppearance: Brightness.dark,
-                        scrollBottomInset: bottomInset + AppSpacing.lg,
-                        textSelectionThemeData: TextSelectionThemeData(
-                          cursorColor: AppColors.holyGold,
-                          selectionColor: AppColors.holyGold.withValues(
-                            alpha: 0.25,
-                          ),
-                          selectionHandleColor: AppColors.holyGold,
+                      child: Container(
+                        color: AppColors.midnightFaithDark.withValues(
+                          alpha: 0.35,
                         ),
-                        onLaunchUrl: (url) {
-                          _launchExternalUrl(url);
-                        },
-                        contextMenuBuilder: _buildCustomContextMenu,
-                        customActions: <Type, Action<Intent>>{
-                          PasteTextIntent: CallbackAction<PasteTextIntent>(
-                            onInvoke: (intent) {
-                              _pasteFromClipboard(intent.cause);
-                              return null;
-                            },
+                        padding: EdgeInsets.symmetric(
+                          vertical: AppSpacing.xs,
+                          horizontal:
+                              Theme.of(context).platform ==
+                                  TargetPlatform.android
+                              ? AppSpacing.sm
+                              : 0,
+                        ),
+                        child: _buildQuillToolbar(l10n),
+                      ),
+                    ),
+                    Divider(
+                      height: 1,
+                      color: AppColors.inputBorder.withValues(alpha: 0.6),
+                    ),
+                    Expanded(
+                      child: QuillEditor.basic(
+                        focusNode: _editorFocusNode,
+                        scrollController: _editorScrollController,
+                        configurations: QuillEditorConfigurations(
+                          controller: _quillController,
+                          scrollable: true,
+                          autoFocus: false,
+                          readOnly: false,
+                          expands: true,
+                          padding: const EdgeInsets.all(AppSpacing.md),
+                          placeholder: l10n.devotionalContentHint,
+                          keyboardAppearance: Brightness.dark,
+                          scrollBottomInset: bottomInset + AppSpacing.lg,
+                          textSelectionThemeData: TextSelectionThemeData(
+                            cursorColor: AppColors.holyGold,
+                            selectionColor: AppColors.holyGold.withValues(
+                              alpha: 0.25,
+                            ),
+                            selectionHandleColor: AppColors.holyGold,
                           ),
-                        },
-                        embedBuilders:
-                            FlutterQuillEmbeds.defaultEditorBuilders(),
-                        customStyles: DefaultStyles(
-                          paragraph: DefaultTextBlockStyle(
-                            AppTextStyles.bodyLarge.copyWith(
-                              color: AppColors.pureWhite.withValues(
-                                alpha: 0.95,
+                          onLaunchUrl: (url) {
+                            _launchExternalUrl(url);
+                          },
+                          contextMenuBuilder: _buildCustomContextMenu,
+                          customActions: <Type, Action<Intent>>{
+                            PasteTextIntent: CallbackAction<PasteTextIntent>(
+                              onInvoke: (intent) {
+                                _pasteFromClipboard(intent.cause);
+                                return null;
+                              },
+                            ),
+                          },
+                          embedBuilders:
+                              FlutterQuillEmbeds.defaultEditorBuilders(),
+                          customStyles: DefaultStyles(
+                            paragraph: DefaultTextBlockStyle(
+                              AppTextStyles.bodyLarge.copyWith(
+                                color: AppColors.pureWhite.withValues(
+                                  alpha: 0.95,
+                                ),
+                                height: 1.6,
                               ),
-                              height: 1.6,
+                              const VerticalSpacing(0, 10),
+                              const VerticalSpacing(0, 0),
+                              null,
                             ),
-                            const VerticalSpacing(0, 10),
-                            const VerticalSpacing(0, 0),
-                            null,
-                          ),
-                          placeHolder: DefaultTextBlockStyle(
-                            AppTextStyles.bodyLarge.copyWith(
-                              color: AppColors.inputPlaceholder.withValues(
-                                alpha: 0.9,
+                            placeHolder: DefaultTextBlockStyle(
+                              AppTextStyles.bodyLarge.copyWith(
+                                color: AppColors.inputPlaceholder.withValues(
+                                  alpha: 0.9,
+                                ),
+                                height: 1.6,
                               ),
-                              height: 1.6,
+                              const VerticalSpacing(0, 0),
+                              const VerticalSpacing(0, 0),
+                              null,
                             ),
-                            const VerticalSpacing(0, 0),
-                            const VerticalSpacing(0, 0),
-                            null,
-                          ),
-                          lists: DefaultListBlockStyle(
-                            AppTextStyles.bodyLarge.copyWith(
-                              color: AppColors.pureWhite.withValues(
-                                alpha: 0.95,
+                            lists: DefaultListBlockStyle(
+                              AppTextStyles.bodyLarge.copyWith(
+                                color: AppColors.pureWhite.withValues(
+                                  alpha: 0.95,
+                                ),
+                                height: 1.6,
                               ),
-                              height: 1.6,
+                              const VerticalSpacing(0, 6),
+                              const VerticalSpacing(0, 0),
+                              null,
+                              null,
                             ),
-                            const VerticalSpacing(0, 6),
-                            const VerticalSpacing(0, 0),
-                            null,
-                            null,
-                          ),
-                          quote: DefaultTextBlockStyle(
-                            AppTextStyles.bodyLarge.copyWith(
-                              color: AppColors.softMist.withValues(alpha: 0.9),
-                              height: 1.6,
-                              fontStyle: FontStyle.italic,
-                            ),
-                            const VerticalSpacing(0, 8),
-                            const VerticalSpacing(0, 0),
-                            BoxDecoration(
-                              border: Border(
-                                left: BorderSide(
-                                  color: AppColors.holyGold.withValues(
-                                    alpha: 0.5,
+                            quote: DefaultTextBlockStyle(
+                              AppTextStyles.bodyLarge.copyWith(
+                                color: AppColors.softMist.withValues(
+                                  alpha: 0.9,
+                                ),
+                                height: 1.6,
+                                fontStyle: FontStyle.italic,
+                              ),
+                              const VerticalSpacing(0, 8),
+                              const VerticalSpacing(0, 0),
+                              BoxDecoration(
+                                border: Border(
+                                  left: BorderSide(
+                                    color: AppColors.holyGold.withValues(
+                                      alpha: 0.5,
+                                    ),
+                                    width: 3,
                                   ),
-                                  width: 3,
                                 ),
                               ),
                             ),
+                            link: AppTextStyles.bodyLarge.copyWith(
+                              color: AppColors.holyGold,
+                              decoration: TextDecoration.underline,
+                            ),
                           ),
-                          link: AppTextStyles.bodyLarge.copyWith(
-                            color: AppColors.holyGold,
-                            decoration: TextDecoration.underline,
-                          ),
-                        ),
-                        dialogTheme: QuillDialogTheme(
-                          dialogBackgroundColor: AppColors.midnightFaithDark,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          labelTextStyle: AppTextStyles.bodySmall.copyWith(
-                            color: AppColors.softMist,
-                          ),
-                          inputTextStyle: AppTextStyles.bodyMedium.copyWith(
-                            color: AppColors.pureWhite,
-                          ),
-                          buttonTextStyle: AppTextStyles.labelMedium.copyWith(
-                            color: AppColors.holyGold,
-                          ),
-                          buttonStyle: TextButton.styleFrom(
-                            foregroundColor: AppColors.holyGold,
-                          ),
-                          linkDialogConstraints: const BoxConstraints(
-                            maxWidth: 360,
+                          dialogTheme: QuillDialogTheme(
+                            dialogBackgroundColor: AppColors.midnightFaithDark,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            labelTextStyle: AppTextStyles.bodySmall.copyWith(
+                              color: AppColors.softMist,
+                            ),
+                            inputTextStyle: AppTextStyles.bodyMedium.copyWith(
+                              color: AppColors.pureWhite,
+                            ),
+                            buttonTextStyle: AppTextStyles.labelMedium.copyWith(
+                              color: AppColors.holyGold,
+                            ),
+                            buttonStyle: TextButton.styleFrom(
+                              foregroundColor: AppColors.holyGold,
+                            ),
+                            linkDialogConstraints: const BoxConstraints(
+                              maxWidth: 360,
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                ],
-              ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -1963,16 +2044,10 @@ class _ReferencePickerSheetState extends ConsumerState<_ReferencePickerSheet> {
     final viewInsets = MediaQuery.of(context).viewInsets.bottom;
     final screenHeight = MediaQuery.sizeOf(context).height;
     final safeBottom = MediaQuery.viewPaddingOf(context).bottom;
-    final sheetChromeHeight =
-        AppSpacing.md +
-        AppSpacing.lg +
-        AppSpacing.md +
-        4;
+    final sheetChromeHeight = AppSpacing.md + AppSpacing.lg + AppSpacing.md + 4;
     final maxHeight = (screenHeight * 0.82 - safeBottom - sheetChromeHeight)
-        .clamp(
-      320.0,
-      screenHeight * 0.82,
-    ).toDouble();
+        .clamp(320.0, screenHeight * 0.82)
+        .toDouble();
 
     return AnimatedPadding(
       duration: const Duration(milliseconds: 180),

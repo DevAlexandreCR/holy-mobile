@@ -239,6 +239,63 @@ void main() {
     expect(find.text('detail-screen'), findsOneWidget);
     expect(find.byType(BackButton), findsOneWidget);
   });
+
+  testWidgets('publish from mine tab preserves backend quality gate message', (
+    tester,
+  ) async {
+    final apiClient = _FakeDevotionalsApiClient(
+      publishError: DioException(
+        requestOptions: RequestOptions(path: '/devotionals/mine/publish'),
+        response: Response(
+          requestOptions: RequestOptions(path: '/devotionals/mine/publish'),
+          statusCode: 400,
+          data: {
+            'error': {
+              'code': 'DEVOTIONAL_QUALITY_GATE_FAILED',
+              'message': 'Agrega un poco más de reflexión antes de publicarlo.',
+            },
+          },
+        ),
+      ),
+    );
+
+    await tester.pumpWidget(
+      _TestApp(
+        apiClient: apiClient,
+        forYouState: const DevotionalsFeedState(
+          status: DevotionalsFeedStatus.success,
+        ),
+        followingState: const DevotionalsFeedState(
+          status: DevotionalsFeedStatus.success,
+        ),
+        mineState: DevotionalsListState(
+          status: DevotionalsListStatus.success,
+          items: [
+            _buildDevotional(
+              id: 'mine',
+              title: 'Mi devocional',
+              status: DevotionalStatus.draft,
+            ),
+          ],
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('devotionals-tab-mine')));
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.text('Publicar'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Publicar'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Agrega un poco más de reflexión antes de publicarlo.'),
+      findsOneWidget,
+    );
+    expect(apiClient.publishCalls, 1);
+  });
 }
 
 class _TestApp extends StatelessWidget {
@@ -250,6 +307,7 @@ class _TestApp extends StatelessWidget {
       status: DevotionalsListStatus.success,
     ),
     this.authState = const AuthState(sessionStatus: AuthSessionStatus.guest),
+    this.apiClient,
   });
 
   final DevotionalsFeedState forYouState;
@@ -257,6 +315,7 @@ class _TestApp extends StatelessWidget {
   final DevotionalsListState mineState;
   final DevotionalsListState reviewState;
   final AuthState authState;
+  final DevotionalsApiClient? apiClient;
 
   @override
   Widget build(BuildContext context) {
@@ -298,7 +357,8 @@ class _TestApp extends StatelessWidget {
     return ProviderScope(
       overrides: [
         devotionalsRepositoryProvider.overrideWith(
-          (ref) => DevotionalsRepository(_FakeDevotionalsApiClient()),
+          (ref) =>
+              DevotionalsRepository(apiClient ?? _FakeDevotionalsApiClient()),
         ),
         forYouFeedControllerProvider.overrideWith(
           () => _StaticForYouFeedController(forYouState),
@@ -329,7 +389,10 @@ class _TestApp extends StatelessWidget {
 }
 
 class _FakeDevotionalsApiClient extends DevotionalsApiClient {
-  _FakeDevotionalsApiClient() : super(Dio());
+  _FakeDevotionalsApiClient({this.publishError}) : super(Dio());
+
+  final Object? publishError;
+  int publishCalls = 0;
 
   @override
   Future<({int shareCount, String shareUrl})> shareDevotional(
@@ -339,6 +402,20 @@ class _FakeDevotionalsApiClient extends DevotionalsApiClient {
     return (
       shareCount: 1,
       shareUrl: 'https://holyverso.com/devotionals/$devotionalId',
+    );
+  }
+
+  @override
+  Future<Devotional> publishDevotional(String devotionalId) async {
+    publishCalls += 1;
+    if (publishError != null) {
+      throw publishError!;
+    }
+
+    return _buildDevotional(
+      id: devotionalId,
+      title: 'Publicado',
+      status: DevotionalStatus.published,
     );
   }
 }
