@@ -293,11 +293,7 @@ class _PublicFeedModeViewState extends ConsumerState<_PublicFeedModeView> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final feedState = ref.read(widget.provider);
-      if (feedState.items.isEmpty &&
-          feedState.status == DevotionalsFeedStatus.idle) {
-        ref.read(widget.provider.notifier).loadInitial();
-      }
+      ref.read(widget.provider.notifier).loadInitial();
     });
     _scrollController.addListener(_onScroll);
   }

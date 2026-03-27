@@ -8,6 +8,7 @@ import 'package:holyverso/core/l10n/app_localizations.dart';
 import 'package:holyverso/data/devotionals/devotionals_repository.dart';
 import 'package:holyverso/domain/devotionals/devotional.dart';
 import 'package:holyverso/domain/devotionals/devotional_feed_mode.dart';
+import 'package:holyverso/presentation/state/auth/auth_controller.dart';
 import 'package:holyverso/presentation/state/devotionals/devotionals_feed_state.dart';
 
 abstract class BaseDevotionalsFeedController
@@ -15,6 +16,7 @@ abstract class BaseDevotionalsFeedController
   late final DevotionalsRepository _repository;
   final Set<String> _trackedImpressions = <String>{};
   final Set<String> _trackedOpens = <String>{};
+  bool _isRecoveringInvalidFeedState = false;
   static const _l10n = AppLocalizations(Locale('es'));
 
   DevotionalFeedMode get feedMode;
@@ -26,11 +28,12 @@ abstract class BaseDevotionalsFeedController
   }
 
   Future<void> loadInitial({bool forceRefresh = false}) async {
+    final ownerChanged = _syncFeedOwner();
     if (state.status == DevotionalsFeedStatus.loading && !forceRefresh) {
       return;
     }
 
-    if (!forceRefresh && state.items.isNotEmpty) {
+    if (!forceRefresh && !ownerChanged && state.items.isNotEmpty) {
       return;
     }
 
@@ -54,6 +57,11 @@ abstract class BaseDevotionalsFeedController
   Future<void> refresh() => loadInitial(forceRefresh: true);
 
   Future<void> loadMore() async {
+    if (_syncFeedOwner()) {
+      await loadInitial(forceRefresh: true);
+      return;
+    }
+
     if (state.isFetchingMore ||
         !state.hasMore ||
         state.status == DevotionalsFeedStatus.loading) {
@@ -68,6 +76,7 @@ abstract class BaseDevotionalsFeedController
     bool clearTracking = false,
   }) async {
     try {
+      final ownerUserId = _currentUserId;
       final result = await _repository.fetchFeed(
         mode: feedMode,
         cursor: append ? state.nextCursor : null,
@@ -81,6 +90,7 @@ abstract class BaseDevotionalsFeedController
         status: DevotionalsFeedStatus.success,
         items: items,
         nextCursor: result.nextCursor,
+        ownerUserId: ownerUserId,
         hasMore: result.hasMore,
       );
     } catch (error) {
@@ -148,40 +158,42 @@ abstract class BaseDevotionalsFeedController
   }
 
   Future<void> registerImpression(Devotional devotional) async {
+    if (_syncFeedOwner()) {
+      await loadInitial(forceRefresh: true);
+      return;
+    }
+
     final deliveryToken = devotional.deliveryToken;
     if (deliveryToken == null || deliveryToken.isEmpty) return;
     if (_trackedImpressions.contains(deliveryToken)) return;
 
     _trackedImpressions.add(deliveryToken);
     try {
-      await _repository.recordFeedEvents([
-        {
-          'event_id': _generateUuid(),
-          'type': 'IMPRESSION',
-          'devotional_id': devotional.id,
-          'delivery_token': deliveryToken,
-          'occurred_at': DateTime.now().toUtc().toIso8601String(),
-        },
-      ]);
+      await _recordFeedEvent(
+        devotional: devotional,
+        type: 'IMPRESSION',
+        trackedTokens: _trackedImpressions,
+      );
     } catch (_) {}
   }
 
   Future<void> registerOpen(Devotional devotional) async {
+    if (_syncFeedOwner()) {
+      await loadInitial(forceRefresh: true);
+      return;
+    }
+
     final deliveryToken = devotional.deliveryToken;
     if (deliveryToken == null || deliveryToken.isEmpty) return;
     if (_trackedOpens.contains(deliveryToken)) return;
 
     _trackedOpens.add(deliveryToken);
     try {
-      await _repository.recordFeedEvents([
-        {
-          'event_id': _generateUuid(),
-          'type': 'OPEN',
-          'devotional_id': devotional.id,
-          'delivery_token': deliveryToken,
-          'occurred_at': DateTime.now().toUtc().toIso8601String(),
-        },
-      ]);
+      await _recordFeedEvent(
+        devotional: devotional,
+        type: 'OPEN',
+        trackedTokens: _trackedOpens,
+      );
     } catch (_) {}
   }
 
@@ -244,6 +256,84 @@ abstract class BaseDevotionalsFeedController
         .toList();
 
     state = state.copyWith(items: items);
+  }
+
+  String? get _currentUserId => ref.read(authControllerProvider).user?.id;
+
+  bool _syncFeedOwner() {
+    final currentUserId = _currentUserId;
+    if (state.ownerUserId == currentUserId) {
+      return false;
+    }
+
+    _trackedImpressions.clear();
+    _trackedOpens.clear();
+    state = state.copyWith(
+      items: const [],
+      status: DevotionalsFeedStatus.idle,
+      ownerUserId: currentUserId,
+      hasMore: true,
+      isFetchingMore: false,
+      clearError: true,
+      clearNextCursor: true,
+      clearLikingDevotionalId: true,
+      clearSavingDevotionalId: true,
+    );
+    return true;
+  }
+
+  Future<void> _recordFeedEvent({
+    required Devotional devotional,
+    required String type,
+    required Set<String> trackedTokens,
+  }) async {
+    final deliveryToken = devotional.deliveryToken;
+    if (deliveryToken == null || deliveryToken.isEmpty) {
+      return;
+    }
+
+    try {
+      await _repository.recordFeedEvents([
+        {
+          'event_id': _generateUuid(),
+          'type': type,
+          'devotional_id': devotional.id,
+          'delivery_token': deliveryToken,
+          'occurred_at': DateTime.now().toUtc().toIso8601String(),
+        },
+      ]);
+    } catch (error) {
+      trackedTokens.remove(deliveryToken);
+      if (AppErrorMapper.backendCode(error) == 'INVALID_DELIVERY_TOKEN') {
+        await _recoverFromInvalidFeedDelivery();
+      }
+      rethrow;
+    }
+  }
+
+  Future<void> _recoverFromInvalidFeedDelivery() async {
+    if (_isRecoveringInvalidFeedState) {
+      return;
+    }
+
+    _isRecoveringInvalidFeedState = true;
+    try {
+      _trackedImpressions.clear();
+      _trackedOpens.clear();
+      state = state.copyWith(
+        items: const [],
+        status: DevotionalsFeedStatus.idle,
+        hasMore: true,
+        isFetchingMore: false,
+        clearError: true,
+        clearNextCursor: true,
+        clearLikingDevotionalId: true,
+        clearSavingDevotionalId: true,
+      );
+      await loadInitial(forceRefresh: true);
+    } finally {
+      _isRecoveringInvalidFeedState = false;
+    }
   }
 
   String _mapError(Object error) {

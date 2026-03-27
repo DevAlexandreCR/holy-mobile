@@ -3,11 +3,14 @@ import 'package:holyverso/domain/devotionals/devotional.dart';
 enum DevotionalsFeedStatus { idle, loading, success, error }
 
 class DevotionalsFeedState {
+  static const _unset = Object();
+
   const DevotionalsFeedState({
     this.items = const [],
     this.status = DevotionalsFeedStatus.idle,
     this.errorMessage,
     this.nextCursor,
+    this.ownerUserId,
     this.hasMore = true,
     this.isFetchingMore = false,
     this.likingDevotionalId,
@@ -18,6 +21,7 @@ class DevotionalsFeedState {
   final DevotionalsFeedStatus status;
   final String? errorMessage;
   final String? nextCursor;
+  final String? ownerUserId;
   final bool hasMore;
   final bool isFetchingMore;
   final String? likingDevotionalId;
@@ -28,6 +32,7 @@ class DevotionalsFeedState {
     DevotionalsFeedStatus? status,
     String? errorMessage,
     String? nextCursor,
+    Object? ownerUserId = _unset,
     bool? hasMore,
     bool? isFetchingMore,
     String? likingDevotionalId,
@@ -42,6 +47,9 @@ class DevotionalsFeedState {
       status: status ?? this.status,
       errorMessage: clearError ? null : errorMessage ?? this.errorMessage,
       nextCursor: clearNextCursor ? null : nextCursor ?? this.nextCursor,
+      ownerUserId: identical(ownerUserId, _unset)
+          ? this.ownerUserId
+          : ownerUserId as String?,
       hasMore: hasMore ?? this.hasMore,
       isFetchingMore: isFetchingMore ?? this.isFetchingMore,
       likingDevotionalId: clearLikingDevotionalId
