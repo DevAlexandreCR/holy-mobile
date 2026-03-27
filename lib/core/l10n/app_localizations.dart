@@ -591,9 +591,9 @@ class AppLocalizations {
       'devotionalFeedSignalHighShare': 'Se está compartiendo',
       'devotionalFeedSignalFollowedAuthor': 'Viene de alguien que sigues',
       'devotionalFeedSignalFeatured': 'Destacado en HolyVerso',
-      'devotionalFeedBadgeTrending': 'Tendencia',
+      'devotionalFeedBadgeTrending': 'En tendencia',
       'devotionalFeedBadgeRecommended': 'Recomendado',
-      'devotionalFeedOpenCta': 'Esto es para ti →',
+      'devotionalFeedOpenCta': 'Esto es para ti',
       'devotionalPublishModerationInProgress':
           'Revisando tu devocional antes de publicarlo...',
       'devotionalPublishModerationHelper':
@@ -898,7 +898,7 @@ class AppLocalizations {
       'devotionalFeedSignalFeatured': 'Featured in HolyVerso',
       'devotionalFeedBadgeTrending': 'Trending',
       'devotionalFeedBadgeRecommended': 'Recommended',
-      'devotionalFeedOpenCta': 'This is for you →',
+      'devotionalFeedOpenCta': 'This is for you',
       'devotionalPublishModerationInProgress':
           'Reviewing your devotional before publishing...',
       'devotionalPublishModerationHelper':

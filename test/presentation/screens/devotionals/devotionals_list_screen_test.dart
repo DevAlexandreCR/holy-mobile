@@ -141,6 +141,7 @@ void main() {
       id: 'share-card',
       title: 'Compartible',
       computedHook: 'No cargues solo con lo que Dios quiere sostener contigo.',
+      previewImageUrl: 'https://example.com/share-card.jpg',
     );
 
     await tester.pumpWidget(
@@ -159,9 +160,9 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Esto es para ti →'), findsOneWidget);
-    expect(find.text('Muchos lo están guardando'), findsOneWidget);
+    expect(find.text('Muchos lo están guardando ->'), findsOneWidget);
     expect(find.text('Recomendado'), findsOneWidget);
+    expect(find.text('Destacado en HolyVerso'), findsNothing);
     expect(find.text('12'), findsOneWidget);
     expect(find.text('4'), findsOneWidget);
     expect(find.text('Guardar'), findsOneWidget);
@@ -194,6 +195,7 @@ void main() {
       (capturedCall?.arguments as Map)['text'],
       contains('https://holyverso.com/devotionals/share-card'),
     );
+    expect(find.text('Esto es para ti ->'), findsNothing);
   });
 
   testWidgets('save button uses the softened inactive footprint and styling', (
@@ -371,7 +373,13 @@ void main() {
       _TestApp(
         forYouState: DevotionalsFeedState(
           status: DevotionalsFeedStatus.success,
-          items: [_buildDevotional(id: 'detail-card', title: 'Detalle')],
+          items: [
+            _buildDevotional(
+              id: 'detail-card',
+              title: 'Detalle',
+              feedContextReason: '',
+            ),
+          ],
         ),
         followingState: const DevotionalsFeedState(
           status: DevotionalsFeedStatus.success,
@@ -383,9 +391,9 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.ensureVisible(find.text('Esto es para ti →'));
+    await tester.ensureVisible(find.text('Esto es para ti ->'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Esto es para ti →'));
+    await tester.tap(find.text('Esto es para ti ->'));
     await tester.pumpAndSettle();
 
     expect(find.text('detail-screen'), findsOneWidget);
@@ -425,7 +433,9 @@ void main() {
     expect(find.text('Juan 3:16'), findsOneWidget);
   });
 
-  testWidgets('shows subtle interpretation and trend marker', (tester) async {
+  testWidgets('shows subtle interpretation and inline fallback trend marker', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       _TestApp(
         forYouState: DevotionalsFeedState(
@@ -451,10 +461,55 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.textContaining('Lo sigues'), findsOneWidget);
-    expect(find.text('Viene de alguien que sigues'), findsOneWidget);
-    expect(find.text('Tendencia'), findsOneWidget);
+    expect(find.text('Viene de alguien que sigues ->'), findsOneWidget);
+    expect(find.text('En tendencia'), findsOneWidget);
     expect(find.byKey(const Key('public-devotional-likes')), findsOneWidget);
     expect(find.byKey(const Key('public-devotional-comments')), findsOneWidget);
+  });
+
+  testWidgets('renders recommended badge over the image when available', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _TestApp(
+        forYouState: DevotionalsFeedState(
+          status: DevotionalsFeedStatus.success,
+          items: [
+            _buildDevotional(
+              id: 'overlay-card',
+              title: 'Con overlay',
+              previewImageUrl: 'https://example.com/overlay-card.jpg',
+              publicationState: DevotionalPublicationState.featured,
+              feedContextReason: 'FEATURED',
+            ),
+          ],
+        ),
+        followingState: const DevotionalsFeedState(
+          status: DevotionalsFeedStatus.success,
+        ),
+        mineState: const DevotionalsListState(
+          status: DevotionalsListStatus.success,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Recomendado'), findsOneWidget);
+    expect(find.text('Destacado en HolyVerso'), findsNothing);
+
+    final badgeY = tester.getTopLeft(find.text('Recomendado')).dy;
+    final imageTop = tester
+        .getTopLeft(
+          find.byKey(const Key('public-devotional-image-overlay-card')),
+        )
+        .dy;
+    final imageBottom = tester
+        .getBottomLeft(
+          find.byKey(const Key('public-devotional-image-overlay-card')),
+        )
+        .dy;
+    expect(badgeY, greaterThan(imageTop));
+    expect(badgeY, lessThan(imageBottom));
   });
 
   testWidgets('renders reduced image height below actions', (tester) async {
@@ -484,6 +539,34 @@ void main() {
       find.byKey(const Key('public-devotional-image-image-card')),
     );
     expect(imageSize.height, 112);
+  });
+
+  testWidgets('uses fallback contextual text when there is no interpretation', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _TestApp(
+        forYouState: DevotionalsFeedState(
+          status: DevotionalsFeedStatus.success,
+          items: [
+            _buildDevotional(
+              id: 'fallback-copy',
+              title: 'Fallback',
+              feedContextReason: '',
+            ),
+          ],
+        ),
+        followingState: const DevotionalsFeedState(
+          status: DevotionalsFeedStatus.success,
+        ),
+        mineState: const DevotionalsListState(
+          status: DevotionalsListStatus.success,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Esto es para ti ->'), findsOneWidget);
   });
 
   testWidgets('publish from mine tab preserves backend quality gate message', (

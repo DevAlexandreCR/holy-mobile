@@ -422,9 +422,9 @@ class _PublicFeedModeViewState extends ConsumerState<_PublicFeedModeView> {
         controller: _scrollController,
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(
-          AppSpacing.lg,
+          12,
           AppSpacing.sm,
-          AppSpacing.lg,
+          12,
           AppSpacing.xxl,
         ),
         itemCount:
@@ -965,139 +965,135 @@ class _PublicDevotionalCard extends StatelessWidget {
     final referenceLabel = _referenceLabel(devotional);
     final secondaryTitleVisible = _shouldShowSecondaryTitle(devotional);
     final previewText = devotional.feedPreview;
-    final feedInterpretation = _feedInterpretationLabel(
-      context,
-      devotional.feedContextReason,
-    );
-    final stateMarker = _feedStateMarkerLabel(context, devotional);
-    final showSocialStats =
-        devotional.likesCount > 0 || devotional.commentsCount > 0;
     final hasImage =
         (devotional.previewImageUrl ?? devotional.coverImageUrl)?.isNotEmpty ==
         true;
+    final feedInterpretation =
+        _feedInterpretationLabel(context, devotional.feedContextReason) ??
+        context.l10n.devotionalFeedOpenCta;
+    final stateMarker = _feedStateMarkerLabel(context, devotional);
+    final inlineStateMarker = hasImage ? null : stateMarker;
+    final showSocialStats =
+        devotional.likesCount > 0 || devotional.commentsCount > 0;
 
     return _DevotionalSurfaceCard(
       featured:
           devotional.publicationState == DevotionalPublicationState.featured,
       child: _FeedOpenSurface(
         onTap: onOpen,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.md,
-            AppSpacing.lg,
-            AppSpacing.md,
-            AppSpacing.md,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                devotional.primaryHook,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: AppTextStyles.headline2.copyWith(
-                  color: AppColors.pureWhite,
-                  fontWeight: FontWeight.w700,
-                  height: 1.22,
-                ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                AppSpacing.md,
+                AppSpacing.lg,
+                AppSpacing.md,
+                hasImage ? 0 : AppSpacing.md,
               ),
-              const SizedBox(height: AppSpacing.md),
-              _PublicAuthorContext(
-                authorName: devotional.author.name,
-                handle: devotional.author.handle,
-                avatarUrl: devotional.author.avatarUrl,
-                following: devotional.author.following,
-                referenceLabel: referenceLabel,
-                onTap: onOpenAuthor,
-              ),
-              const SizedBox(height: AppSpacing.md),
-              if (secondaryTitleVisible) ...[
-                Text(
-                  devotional.title.trim(),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: AppColors.pureWhite.withValues(alpha: 0.72),
-                    fontWeight: FontWeight.w600,
-                    height: 1.35,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.sm),
-              ],
-              if (previewText.isNotEmpty) ...[
-                Text(
-                  previewText,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    color: AppColors.softMist.withValues(alpha: 0.82),
-                    height: 1.55,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.md),
-              ],
-              if (feedInterpretation != null || stateMarker != null) ...[
-                Wrap(
-                  spacing: AppSpacing.sm,
-                  runSpacing: AppSpacing.xs,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    if (feedInterpretation != null)
-                      _PublicFeedInterpretation(label: feedInterpretation),
-                    if (stateMarker != null)
-                      _PublicFeedStateMarker(
-                        label: stateMarker.label,
-                        highlighted: stateMarker.highlighted,
-                      ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.md),
-              ],
-              Text(
-                context.l10n.devotionalFeedOpenCta,
-                style: AppTextStyles.labelMedium.copyWith(
-                  color: AppColors.holyGold,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.md),
-              Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (showSocialStats)
-                    Expanded(
-                      child: _PublicFeedStats(
-                        likesCount: devotional.likesCount,
-                        commentsCount: devotional.commentsCount,
-                      ),
-                    )
-                  else
-                    const Spacer(),
-                  _SavePillButton(
-                    key: Key('public-devotional-save-${devotional.id}'),
-                    isSaved: devotional.saved,
-                    isLoading: isSaving,
-                    onPressed: isSaving ? null : onSave,
+                  Text(
+                    devotional.primaryHook,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.headline2.copyWith(
+                      color: AppColors.pureWhite,
+                      fontWeight: FontWeight.w700,
+                      height: 1.22,
+                    ),
                   ),
-                  const SizedBox(width: AppSpacing.sm),
-                  _GhostActionButton(
-                    key: Key('public-devotional-share-${devotional.id}'),
-                    onPressed: onShare,
-                    tooltip: context.l10n.shareAction,
-                    icon: Icons.share_outlined,
+                  const SizedBox(height: AppSpacing.md),
+                  _PublicAuthorContext(
+                    authorName: devotional.author.name,
+                    handle: devotional.author.handle,
+                    avatarUrl: devotional.author.avatarUrl,
+                    following: devotional.author.following,
+                    referenceLabel: referenceLabel,
+                    onTap: onOpenAuthor,
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  if (secondaryTitleVisible) ...[
+                    Text(
+                      devotional.title.trim(),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: AppColors.pureWhite.withValues(alpha: 0.72),
+                        fontWeight: FontWeight.w600,
+                        height: 1.35,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                  ],
+                  if (previewText.isNotEmpty) ...[
+                    Text(
+                      previewText,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: AppColors.softMist.withValues(alpha: 0.82),
+                        height: 1.55,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                  ],
+                  Wrap(
+                    spacing: AppSpacing.sm,
+                    runSpacing: AppSpacing.xs,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      _PublicFeedInterpretation(label: feedInterpretation),
+                      if (inlineStateMarker != null)
+                        _PublicFeedStateMarker(
+                          label: inlineStateMarker.label,
+                          highlighted: inlineStateMarker.highlighted,
+                          icon: inlineStateMarker.icon,
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  Row(
+                    children: [
+                      if (showSocialStats)
+                        Expanded(
+                          child: _PublicFeedStats(
+                            likesCount: devotional.likesCount,
+                            commentsCount: devotional.commentsCount,
+                          ),
+                        )
+                      else
+                        const Spacer(),
+                      _SavePillButton(
+                        key: Key('public-devotional-save-${devotional.id}'),
+                        isSaved: devotional.saved,
+                        isLoading: isSaving,
+                        onPressed: isSaving ? null : onSave,
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      _GhostActionButton(
+                        key: Key('public-devotional-share-${devotional.id}'),
+                        onPressed: onShare,
+                        tooltip: context.l10n.shareAction,
+                        icon: Icons.share_outlined,
+                      ),
+                    ],
                   ),
                 ],
               ),
-              if (hasImage) ...[
-                const SizedBox(height: AppSpacing.lg),
-                _FeedImageStrip(
-                  key: Key('public-devotional-image-${devotional.id}'),
-                  imageUrl:
-                      devotional.previewImageUrl ?? devotional.coverImageUrl,
-                  focusY: devotional.coverImageFocusY,
-                ),
-              ],
+            ),
+            if (hasImage) ...[
+              const SizedBox(height: AppSpacing.lg),
+              _FeedImageStrip(
+                key: Key('public-devotional-image-${devotional.id}'),
+                imageUrl:
+                    devotional.previewImageUrl ?? devotional.coverImageUrl,
+                focusY: devotional.coverImageFocusY,
+                stateMarker: stateMarker,
+              ),
             ],
-          ),
+          ],
         ),
       ),
     );
@@ -1105,10 +1101,15 @@ class _PublicDevotionalCard extends StatelessWidget {
 }
 
 class _FeedStateMarkerData {
-  const _FeedStateMarkerData({required this.label, required this.highlighted});
+  const _FeedStateMarkerData({
+    required this.label,
+    required this.highlighted,
+    required this.icon,
+  });
 
   final String label;
   final bool highlighted;
+  final IconData icon;
 }
 
 class _PublicFeedInterpretation extends StatelessWidget {
@@ -1119,12 +1120,12 @@ class _PublicFeedInterpretation extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Text(
-      label,
+      '$label ->',
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
-      style: AppTextStyles.bodySmall.copyWith(
-        color: AppColors.softMist.withValues(alpha: 0.68),
-        fontWeight: FontWeight.w600,
+      style: AppTextStyles.labelSmall.copyWith(
+        color: AppColors.holyGold.withValues(alpha: 0.82),
+        fontWeight: FontWeight.w700,
       ),
     );
   }
@@ -1134,10 +1135,12 @@ class _PublicFeedStateMarker extends StatelessWidget {
   const _PublicFeedStateMarker({
     required this.label,
     required this.highlighted,
+    required this.icon,
   });
 
   final String label;
   final bool highlighted;
+  final IconData icon;
 
   @override
   Widget build(BuildContext context) {
@@ -1149,11 +1152,67 @@ class _PublicFeedStateMarker extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppBorderRadius.full),
         border: Border.all(color: accent.withValues(alpha: 0.14)),
       ),
-      child: Text(
-        label,
-        style: AppTextStyles.labelSmall.copyWith(
-          color: accent.withValues(alpha: 0.82),
-          fontWeight: FontWeight.w700,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: accent.withValues(alpha: 0.82)),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: AppTextStyles.labelSmall.copyWith(
+              color: accent.withValues(alpha: 0.82),
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ImageFeedStateBadge extends StatelessWidget {
+  const _ImageFeedStateBadge({
+    required this.label,
+    required this.highlighted,
+    required this.icon,
+  });
+
+  final String label;
+  final bool highlighted;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = highlighted ? AppColors.holyGold : AppColors.warning;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.midnightFaithDark.withValues(alpha: 0.72),
+        borderRadius: BorderRadius.circular(AppBorderRadius.full),
+        border: Border.all(color: accent.withValues(alpha: 0.28)),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.shadowDark.withValues(alpha: 0.18),
+            blurRadius: 12,
+            spreadRadius: 0,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 13, color: accent.withValues(alpha: 0.92)),
+            const SizedBox(width: 5),
+            Text(
+              label,
+              style: AppTextStyles.labelSmall.copyWith(
+                color: accent.withValues(alpha: 0.94),
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -1809,10 +1868,12 @@ class _FeedImageStrip extends StatelessWidget {
     super.key,
     required this.imageUrl,
     required this.focusY,
+    this.stateMarker,
   });
 
   final String? imageUrl;
   final double focusY;
+  final _FeedStateMarkerData? stateMarker;
 
   @override
   Widget build(BuildContext context) {
@@ -1822,7 +1883,9 @@ class _FeedImageStrip extends StatelessWidget {
     }
 
     return ClipRRect(
-      borderRadius: BorderRadius.circular(AppBorderRadius.md),
+      borderRadius: const BorderRadius.vertical(
+        bottom: Radius.circular(AppBorderRadius.lg),
+      ),
       child: SizedBox(
         height: 112,
         width: double.infinity,
@@ -1854,6 +1917,16 @@ class _FeedImageStrip extends StatelessWidget {
                 ),
               ),
             ),
+            if (stateMarker != null)
+              Positioned(
+                top: 12,
+                left: 12,
+                child: _ImageFeedStateBadge(
+                  label: stateMarker!.label,
+                  highlighted: stateMarker!.highlighted,
+                  icon: stateMarker!.icon,
+                ),
+              ),
           ],
         ),
       ),
@@ -2425,8 +2498,6 @@ String? _feedInterpretationLabel(BuildContext context, String? reason) {
       return l10n.devotionalFeedSignalHighShare;
     case 'FOLLOWED_AUTHOR':
       return l10n.devotionalFeedSignalFollowedAuthor;
-    case 'FEATURED':
-      return l10n.devotionalFeedSignalFeatured;
     default:
       return null;
   }
@@ -2440,6 +2511,7 @@ _FeedStateMarkerData? _feedStateMarkerLabel(
     return _FeedStateMarkerData(
       label: context.l10n.devotionalFeedBadgeTrending,
       highlighted: false,
+      icon: Icons.local_fire_department_rounded,
     );
   }
 
@@ -2448,6 +2520,7 @@ _FeedStateMarkerData? _feedStateMarkerLabel(
     return _FeedStateMarkerData(
       label: context.l10n.devotionalFeedBadgeRecommended,
       highlighted: true,
+      icon: Icons.star_rounded,
     );
   }
 
