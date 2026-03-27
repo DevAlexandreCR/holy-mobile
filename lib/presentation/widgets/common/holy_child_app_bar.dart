@@ -7,17 +7,20 @@ class HolyChildAppBar extends StatelessWidget implements PreferredSizeWidget {
     super.key,
     required this.title,
     this.actions,
+    this.bottom,
     this.centerTitle = true,
     this.showBackButton = true,
   });
 
   final String title;
   final List<Widget>? actions;
+  final PreferredSizeWidget? bottom;
   final bool centerTitle;
   final bool showBackButton;
 
   @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+  Size get preferredSize =>
+      Size.fromHeight(kToolbarHeight + (bottom?.preferredSize.height ?? 0));
 
   @override
   Widget build(BuildContext context) {
@@ -38,6 +41,7 @@ class HolyChildAppBar extends StatelessWidget implements PreferredSizeWidget {
         ),
       ),
       actions: actions,
+      bottom: bottom,
     );
   }
 }

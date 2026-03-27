@@ -21,6 +21,7 @@ import 'package:holyverso/presentation/state/devotionals/devotionals_feed_state.
 import 'package:holyverso/presentation/state/devotionals/devotionals_list_controller.dart';
 import 'package:holyverso/presentation/state/devotionals/devotionals_list_state.dart';
 import 'package:holyverso/presentation/state/devotionals/devotional_review_queue_controller.dart';
+import 'package:holyverso/presentation/widgets/common/holy_child_app_bar.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
@@ -48,7 +49,9 @@ class _DevotionalsListScreenState extends ConsumerState<DevotionalsListScreen> {
     unawaited(ref.read(forYouFeedControllerProvider.notifier).refresh());
     unawaited(ref.read(followingFeedControllerProvider.notifier).refresh());
     unawaited(ref.read(devotionalsListControllerProvider.notifier).refresh());
-    unawaited(ref.read(devotionalReviewQueueControllerProvider.notifier).refresh());
+    unawaited(
+      ref.read(devotionalReviewQueueControllerProvider.notifier).refresh(),
+    );
   }
 
   @override
@@ -96,6 +99,20 @@ class _DevotionalsListScreenState extends ConsumerState<DevotionalsListScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.midnightFaithDark,
+      appBar: HolyChildAppBar(
+        title: l10n.navDevotionalsLabel,
+        showBackButton: false,
+        bottom: _DevotionalsTopTabsBar(
+          selectedIndex: _selectedTabIndex,
+          onSelected: (index) {
+            if (_selectedTabIndex == index) return;
+            setState(() {
+              _selectedTabIndex = index;
+            });
+          },
+          tabs: tabs.map((entry) => entry.$2).toList(),
+        ),
+      ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       floatingActionButton: FloatingActionButton(
         key: const Key('devotionals-create-fab'),
@@ -115,52 +132,28 @@ class _DevotionalsListScreenState extends ConsumerState<DevotionalsListScreen> {
           ),
         ),
         child: SafeArea(
+          top: false,
           bottom: false,
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.lg,
-                  AppSpacing.md,
-                  AppSpacing.lg,
-                  0,
-                ),
-                child: _TopLevelDevotionalsTabs(
-                  selectedIndex: _selectedTabIndex,
-                  onSelected: (index) {
-                    if (_selectedTabIndex == index) return;
-                    setState(() {
-                      _selectedTabIndex = index;
-                    });
-                  },
-                  tabs: tabs.map((entry) => entry.$2).toList(),
-                ),
-              ),
-              const SizedBox(height: AppSpacing.md),
-              Expanded(
-                child: IndexedStack(
-                  index: _selectedTabIndex,
-                  children: tabs.map((entry) {
-                    switch (entry.$1) {
-                      case _DevotionalsTopTab.forYou:
-                        return _PublicFeedModeView(
-                          mode: DevotionalFeedMode.forYou,
-                          provider: forYouFeedControllerProvider,
-                        );
-                      case _DevotionalsTopTab.following:
-                        return _PublicFeedModeView(
-                          mode: DevotionalFeedMode.following,
-                          provider: followingFeedControllerProvider,
-                        );
-                      case _DevotionalsTopTab.mine:
-                        return _MyDevotionalsTab(onOpenEditor: _openEditor);
-                      case _DevotionalsTopTab.review:
-                        return const _ReviewQueueTab();
-                    }
-                  }).toList(),
-                ),
-              ),
-            ],
+          child: IndexedStack(
+            index: _selectedTabIndex,
+            children: tabs.map((entry) {
+              switch (entry.$1) {
+                case _DevotionalsTopTab.forYou:
+                  return _PublicFeedModeView(
+                    mode: DevotionalFeedMode.forYou,
+                    provider: forYouFeedControllerProvider,
+                  );
+                case _DevotionalsTopTab.following:
+                  return _PublicFeedModeView(
+                    mode: DevotionalFeedMode.following,
+                    provider: followingFeedControllerProvider,
+                  );
+                case _DevotionalsTopTab.mine:
+                  return _MyDevotionalsTab(onOpenEditor: _openEditor);
+                case _DevotionalsTopTab.review:
+                  return const _ReviewQueueTab();
+              }
+            }).toList(),
           ),
         ),
       ),
@@ -175,8 +168,9 @@ class _TopLevelTabData {
   final String label;
 }
 
-class _TopLevelDevotionalsTabs extends StatelessWidget {
-  const _TopLevelDevotionalsTabs({
+class _DevotionalsTopTabsBar extends StatelessWidget
+    implements PreferredSizeWidget {
+  const _DevotionalsTopTabsBar({
     required this.selectedIndex,
     required this.onSelected,
     required this.tabs,
@@ -187,19 +181,39 @@ class _TopLevelDevotionalsTabs extends StatelessWidget {
   final List<_TopLevelTabData> tabs;
 
   @override
+  Size get preferredSize => const Size.fromHeight(56);
+
+  @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        for (final entry in tabs.asMap().entries)
-          Expanded(
-            child: _TopLevelTabButton(
-              key: entry.value.key,
-              label: entry.value.label,
-              selected: selectedIndex == entry.key,
-              onTap: () => onSelected(entry.key),
-            ),
+    return SizedBox(
+      height: preferredSize.height,
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: SingleChildScrollView(
+          key: const Key('devotionals-top-tabs-scroll'),
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            AppSpacing.xs,
+            AppSpacing.lg,
+            0,
           ),
-      ],
+          child: Row(
+            children: [
+              for (final entry in tabs.asMap().entries) ...[
+                _TopLevelTabButton(
+                  key: entry.value.key,
+                  label: entry.value.label,
+                  selected: selectedIndex == entry.key,
+                  onTap: () => onSelected(entry.key),
+                ),
+                if (entry.key != tabs.length - 1)
+                  const SizedBox(width: AppSpacing.sm),
+              ],
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -224,15 +238,16 @@ class _TopLevelTabButton extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(AppBorderRadius.md),
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.sm,
+            vertical: AppSpacing.sm,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.center,
                 style: AppTextStyles.labelMedium.copyWith(
                   color: selected
                       ? AppColors.holyGold
@@ -739,7 +754,9 @@ class _ReviewQueueTabState extends ConsumerState<_ReviewQueueTab> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final state = ref.read(devotionalReviewQueueControllerProvider);
       if (state.items.isEmpty && state.status == DevotionalsListStatus.idle) {
-        ref.read(devotionalReviewQueueControllerProvider.notifier).loadInitial();
+        ref
+            .read(devotionalReviewQueueControllerProvider.notifier)
+            .loadInitial();
       }
     });
     _scrollController.addListener(_onScroll);
@@ -778,45 +795,48 @@ class _ReviewQueueTabState extends ConsumerState<_ReviewQueueTab> {
             .read(devotionalReviewQueueControllerProvider.notifier)
             .loadInitial(forceRefresh: true),
       ),
-      _ => state.items.isEmpty
-          ? const _EmptyState(
-              title: 'No hay devocionales pendientes',
-              subtitle:
-                  'Cuando un devocional entre en revisión aparecerá en esta bandeja.',
-            )
-          : RefreshIndicator(
-              onRefresh: () =>
-                  ref.read(devotionalReviewQueueControllerProvider.notifier).refresh(),
-              child: ListView.builder(
-                controller: _scrollController,
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.lg,
-                  0,
-                  AppSpacing.lg,
-                  AppSpacing.xxl,
-                ),
-                itemCount: state.items.length + (state.isFetchingMore ? 1 : 0),
-                itemBuilder: (context, index) {
-                  if (index >= state.items.length) {
-                    return const Padding(
-                      padding: EdgeInsets.symmetric(vertical: AppSpacing.md),
-                      child: Center(
-                        child: CircularProgressIndicator(
-                          color: AppColors.holyGold,
+      _ =>
+        state.items.isEmpty
+            ? const _EmptyState(
+                title: 'No hay devocionales pendientes',
+                subtitle:
+                    'Cuando un devocional entre en revisión aparecerá en esta bandeja.',
+              )
+            : RefreshIndicator(
+                onRefresh: () => ref
+                    .read(devotionalReviewQueueControllerProvider.notifier)
+                    .refresh(),
+                child: ListView.builder(
+                  controller: _scrollController,
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.lg,
+                    0,
+                    AppSpacing.lg,
+                    AppSpacing.xxl,
+                  ),
+                  itemCount:
+                      state.items.length + (state.isFetchingMore ? 1 : 0),
+                  itemBuilder: (context, index) {
+                    if (index >= state.items.length) {
+                      return const Padding(
+                        padding: EdgeInsets.symmetric(vertical: AppSpacing.md),
+                        child: Center(
+                          child: CircularProgressIndicator(
+                            color: AppColors.holyGold,
+                          ),
                         ),
-                      ),
-                    );
-                  }
+                      );
+                    }
 
-                  final devotional = state.items[index];
-                  return _ReviewDevotionalCard(
-                    devotional: devotional,
-                    onOpen: () => _openReview(devotional),
-                  );
-                },
+                    final devotional = state.items[index];
+                    return _ReviewDevotionalCard(
+                      devotional: devotional,
+                      onOpen: () => _openReview(devotional),
+                    );
+                  },
+                ),
               ),
-            ),
     };
   }
 }
@@ -1247,10 +1267,7 @@ class _OwnerDevotionalCard extends StatelessWidget {
 }
 
 class _ReviewDevotionalCard extends StatelessWidget {
-  const _ReviewDevotionalCard({
-    required this.devotional,
-    required this.onOpen,
-  });
+  const _ReviewDevotionalCard({required this.devotional, required this.onOpen});
 
   final Devotional devotional;
   final VoidCallback onOpen;

@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:holyverso/core/l10n/app_localizations.dart';
 import 'package:holyverso/core/theme/app_theme.dart';
+import 'package:holyverso/data/auth/models/user.dart';
 import 'package:holyverso/data/devotionals/devotionals_api_client.dart';
 import 'package:holyverso/data/devotionals/devotionals_repository.dart';
 import 'package:holyverso/domain/devotionals/devotional.dart';
@@ -15,11 +16,16 @@ import 'package:holyverso/domain/devotionals/devotional_moderation_status.dart';
 import 'package:holyverso/domain/devotionals/devotional_publication_state.dart';
 import 'package:holyverso/domain/devotionals/devotional_status.dart';
 import 'package:holyverso/domain/devotionals/devotional_verse_reference.dart';
+import 'package:holyverso/domain/roles/user_role.dart';
 import 'package:holyverso/presentation/screens/devotionals/devotionals_list_screen.dart';
+import 'package:holyverso/presentation/state/auth/auth_controller.dart';
+import 'package:holyverso/presentation/state/auth/auth_state.dart';
 import 'package:holyverso/presentation/state/devotionals/devotionals_feed_controller.dart';
 import 'package:holyverso/presentation/state/devotionals/devotionals_feed_state.dart';
+import 'package:holyverso/presentation/state/devotionals/devotional_review_queue_controller.dart';
 import 'package:holyverso/presentation/state/devotionals/devotionals_list_controller.dart';
 import 'package:holyverso/presentation/state/devotionals/devotionals_list_state.dart';
+import 'package:holyverso/presentation/widgets/common/holy_child_app_bar.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
 void main() {
@@ -65,10 +71,12 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    expect(find.text('Devocionales'), findsOneWidget);
     expect(find.text('Para ti visible'), findsOneWidget);
     expect(find.text('Siguiendo visible'), findsNothing);
     expect(find.text('Mi devocional'), findsNothing);
     expect(find.byKey(const Key('devotionals-create-fab')), findsOneWidget);
+    expect(find.byType(BackButton), findsNothing);
 
     await tester.tap(find.byKey(const Key('devotionals-tab-following')));
     await tester.pumpAndSettle();
@@ -82,6 +90,42 @@ void main() {
     expect(find.text('Mi devocional'), findsOneWidget);
     expect(find.text('Editar devocional'), findsOneWidget);
     expect(find.text('Publicar'), findsOneWidget);
+  });
+
+  testWidgets('keeps full tab labels visible on narrow layouts', (
+    tester,
+  ) async {
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.binding.setSurfaceSize(const Size(320, 760));
+
+    await tester.pumpWidget(
+      _TestApp(
+        forYouState: const DevotionalsFeedState(
+          status: DevotionalsFeedStatus.success,
+        ),
+        followingState: const DevotionalsFeedState(
+          status: DevotionalsFeedStatus.success,
+        ),
+        mineState: const DevotionalsListState(
+          status: DevotionalsListStatus.success,
+        ),
+        authState: AuthState(
+          sessionStatus: AuthSessionStatus.authenticated,
+          user: _testUser(UserRole.editor),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Mis devocionales'), findsOneWidget);
+    expect(find.text('En revisión'), findsOneWidget);
+
+    await tester.ensureVisible(find.byKey(const Key('devotionals-tab-review')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('devotionals-tab-review')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('No hay devocionales pendientes'), findsOneWidget);
   });
 
   testWidgets('renders public actions and triggers share flow', (tester) async {
@@ -161,6 +205,35 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('create-screen'), findsOneWidget);
+    expect(find.byType(BackButton), findsOneWidget);
+  });
+
+  testWidgets('opens devotional detail with secondary navigation app bar', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _TestApp(
+        forYouState: DevotionalsFeedState(
+          status: DevotionalsFeedStatus.success,
+          items: [_buildDevotional(id: 'detail-card', title: 'Detalle')],
+        ),
+        followingState: const DevotionalsFeedState(
+          status: DevotionalsFeedStatus.success,
+        ),
+        mineState: const DevotionalsListState(
+          status: DevotionalsListStatus.success,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.text('Leer completo ->'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Leer completo ->'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('detail-screen'), findsOneWidget);
+    expect(find.byType(BackButton), findsOneWidget);
   });
 }
 
@@ -169,11 +242,17 @@ class _TestApp extends StatelessWidget {
     required this.forYouState,
     required this.followingState,
     required this.mineState,
+    this.reviewState = const DevotionalsListState(
+      status: DevotionalsListStatus.success,
+    ),
+    this.authState = const AuthState(sessionStatus: AuthSessionStatus.guest),
   });
 
   final DevotionalsFeedState forYouState;
   final DevotionalsFeedState followingState;
   final DevotionalsListState mineState;
+  final DevotionalsListState reviewState;
+  final AuthState authState;
 
   @override
   Widget build(BuildContext context) {
@@ -187,22 +266,22 @@ class _TestApp extends StatelessWidget {
         GoRoute(
           path: '/devotionals/create',
           builder: (context, state) =>
-              const Scaffold(body: Center(child: Text('create-screen'))),
+              const Scaffold(appBar: HolyChildAppBar(title: 'create-screen')),
         ),
         GoRoute(
           path: '/devotionals/:id',
           builder: (context, state) =>
-              const Scaffold(body: Center(child: Text('detail-screen'))),
+              const Scaffold(appBar: HolyChildAppBar(title: 'detail-screen')),
         ),
         GoRoute(
           path: '/devotionals/:id/edit',
           builder: (context, state) =>
-              const Scaffold(body: Center(child: Text('edit-screen'))),
+              const Scaffold(appBar: HolyChildAppBar(title: 'edit-screen')),
         ),
         GoRoute(
           path: '/devotionals/preview',
           builder: (context, state) =>
-              const Scaffold(body: Center(child: Text('preview-screen'))),
+              const Scaffold(appBar: HolyChildAppBar(title: 'preview-screen')),
         ),
         GoRoute(
           path: '/users/:id',
@@ -225,6 +304,12 @@ class _TestApp extends StatelessWidget {
         ),
         devotionalsListControllerProvider.overrideWith(
           () => _StaticDevotionalsListController(mineState),
+        ),
+        devotionalReviewQueueControllerProvider.overrideWith(
+          () => _StaticReviewQueueController(reviewState),
+        ),
+        authControllerProvider.overrideWith(
+          () => _StaticAuthController(authState),
         ),
       ],
       child: MaterialApp.router(
@@ -347,6 +432,42 @@ class _StaticDevotionalsListController extends DevotionalsListController {
   void setStatusFilter(DevotionalStatus status) {
     state = state.copyWith(statusFilter: status);
   }
+}
+
+class _StaticReviewQueueController extends DevotionalReviewQueueController {
+  _StaticReviewQueueController(this.initialState);
+
+  final DevotionalsListState initialState;
+
+  @override
+  DevotionalsListState build() => initialState;
+
+  @override
+  Future<void> loadInitial({bool forceRefresh = false}) async {}
+
+  @override
+  Future<void> refresh() async {}
+
+  @override
+  Future<void> loadMore() async {}
+}
+
+class _StaticAuthController extends AuthController {
+  _StaticAuthController(this.initialState);
+
+  final AuthState initialState;
+
+  @override
+  AuthState build() => initialState;
+}
+
+User _testUser(UserRole role) {
+  return User(
+    id: 'user-1',
+    name: 'Alexandre',
+    email: 'alexandre@example.com',
+    role: role,
+  );
 }
 
 Devotional _buildDevotional({
