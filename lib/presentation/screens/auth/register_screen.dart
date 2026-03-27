@@ -48,7 +48,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     final state = ref.read(authControllerProvider);
 
     if (success) {
-      context.go('/home');
+      context.go('/devotionals');
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(context.l10n.accountCreated)));

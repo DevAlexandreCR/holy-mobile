@@ -463,7 +463,7 @@ class _SavedVersesTabViewState extends ConsumerState<_SavedVersesTabView> {
     }
 
     if (state.items.isEmpty) {
-      return _EmptySavedState(onDiscover: () => context.go('/home'));
+      return _EmptySavedState(onDiscover: () => context.go('/devotionals'));
     }
 
     return Column(

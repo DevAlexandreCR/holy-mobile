@@ -273,11 +273,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           );
           return '/login?message=$encodedMessage';
         }
-        return '/home';
+        return authState.canAccessProtectedRoutes ? '/devotionals' : '/home';
       }
 
       if (authState.canAccessProtectedRoutes && atAuthRoute) {
-        return '/home';
+        return '/devotionals';
       }
 
       if (!authState.canAccessProtectedRoutes && isProtectedRoute) {

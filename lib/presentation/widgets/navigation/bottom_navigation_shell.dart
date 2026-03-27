@@ -222,14 +222,14 @@ class _NavItem {
 List<_NavItem> _buildItems(AppLocalizations l10n, bool canManageUsers) {
   final items = [
     _NavItem(
-      branchIndex: 0,
-      icon: Icons.home_rounded,
-      label: l10n.navHomeLabel,
-    ),
-    _NavItem(
       branchIndex: 5,
       icon: Icons.menu_book_rounded,
       label: l10n.navDevotionalsLabel,
+    ),
+    _NavItem(
+      branchIndex: 0,
+      icon: Icons.auto_awesome_rounded,
+      label: l10n.navHomeLabel,
     ),
     _NavItem(
       branchIndex: 2,

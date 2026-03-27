@@ -15,9 +15,15 @@ import 'package:holyverso/domain/verse/verse_of_the_day.dart';
 import 'package:holyverso/domain/roles/user_role.dart';
 import 'package:holyverso/presentation/providers/whats_new_provider.dart';
 import 'package:holyverso/presentation/screens/auth/login_screen.dart';
+import 'package:holyverso/presentation/screens/devotionals/devotionals_list_screen.dart';
 import 'package:holyverso/presentation/screens/settings/settings_screen.dart';
 import 'package:holyverso/presentation/screens/search/search_screen.dart';
 import 'package:holyverso/presentation/screens/users/users_list_screen.dart';
+import 'package:holyverso/presentation/state/devotionals/devotional_review_queue_controller.dart';
+import 'package:holyverso/presentation/state/devotionals/devotionals_feed_controller.dart';
+import 'package:holyverso/presentation/state/devotionals/devotionals_feed_state.dart';
+import 'package:holyverso/presentation/state/devotionals/devotionals_list_controller.dart';
+import 'package:holyverso/presentation/state/devotionals/devotionals_list_state.dart';
 import 'package:holyverso/presentation/screens/verse/saved_verses_screen.dart';
 import 'package:holyverso/presentation/screens/verse/verse_of_the_day_screen.dart';
 import 'package:holyverso/presentation/state/auth/auth_controller.dart';
@@ -49,6 +55,26 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(SearchScreen), findsOneWidget);
+  });
+
+  testWidgets('authenticated users boot into devotionals feed', (tester) async {
+    final container = _buildContainer(
+      const AuthState(
+        user: _user,
+        sessionStatus: AuthSessionStatus.authenticated,
+      ),
+    );
+    addTearDown(container.dispose);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(container: container, child: const _TestApp()),
+    );
+    await tester.pumpAndSettle();
+
+    final router = container.read(appRouterProvider);
+
+    expect(find.byType(DevotionalsListScreen), findsOneWidget);
+    expect(router.routeInformationProvider.value.uri.path, '/devotionals');
   });
 
   testWidgets('guest is redirected from protected routes', (tester) async {
@@ -135,6 +161,74 @@ void main() {
       isNotEmpty,
     );
   });
+
+  testWidgets(
+    'authenticated users are redirected from auth routes to devotionals',
+    (tester) async {
+      final container = _buildContainer(
+        const AuthState(
+          user: _user,
+          sessionStatus: AuthSessionStatus.authenticated,
+        ),
+      );
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const _TestApp(),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      container.read(appRouterProvider).go('/login');
+      await tester.pumpAndSettle();
+
+      final router = container.read(appRouterProvider);
+      expect(find.byType(DevotionalsListScreen), findsOneWidget);
+      expect(router.routeInformationProvider.value.uri.path, '/devotionals');
+    },
+  );
+
+  testWidgets(
+    'bottom navigation shows Devotionals before Palabra with star icon',
+    (tester) async {
+      final container = _buildContainer(
+        const AuthState(
+          user: _user,
+          sessionStatus: AuthSessionStatus.authenticated,
+        ),
+      );
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const _TestApp(),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final bottomNav = find.byType(BottomNavigationBar);
+      final devotionalsLabel = find.descendant(
+        of: bottomNav,
+        matching: find.text('Devocionales'),
+      );
+      final palabraLabel = find.descendant(
+        of: bottomNav,
+        matching: find.text('Palabra'),
+      );
+
+      expect(devotionalsLabel, findsOneWidget);
+      expect(palabraLabel, findsOneWidget);
+      expect(
+        tester.getTopLeft(devotionalsLabel).dx,
+        lessThan(tester.getTopLeft(palabraLabel).dx),
+      );
+      expect(find.byIcon(Icons.auto_awesome_rounded), findsWidgets);
+      expect(find.byIcon(Icons.home_rounded), findsNothing);
+    },
+  );
 
   testWidgets('manager can access users route', (tester) async {
     final container = _buildContainer(
@@ -254,6 +348,18 @@ ProviderContainer _buildContainer(
       savedDevotionalsControllerProvider.overrideWith(
         _StaticSavedDevotionalsController.new,
       ),
+      forYouFeedControllerProvider.overrideWith(
+        _StaticForYouFeedController.new,
+      ),
+      followingFeedControllerProvider.overrideWith(
+        _StaticFollowingFeedController.new,
+      ),
+      devotionalsListControllerProvider.overrideWith(
+        _StaticDevotionalsListController.new,
+      ),
+      devotionalReviewQueueControllerProvider.overrideWith(
+        _StaticDevotionalReviewQueueController.new,
+      ),
       roleRepositoryProvider.overrideWith(
         (ref) => roleRepository ?? _StaticRoleRepository(authState.user?.role),
       ),
@@ -324,6 +430,59 @@ class _StaticSavedDevotionalsController extends SavedDevotionalsController {
 
   @override
   Future<void> loadInitial({bool forceRefresh = false}) async {}
+}
+
+class _StaticForYouFeedController extends ForYouFeedController {
+  @override
+  DevotionalsFeedState build() => const DevotionalsFeedState(
+    status: DevotionalsFeedStatus.success,
+    hasMore: false,
+  );
+
+  @override
+  Future<void> loadInitial({bool forceRefresh = false}) async {}
+
+  @override
+  Future<void> refresh() async {}
+}
+
+class _StaticFollowingFeedController extends FollowingFeedController {
+  @override
+  DevotionalsFeedState build() => const DevotionalsFeedState(
+    status: DevotionalsFeedStatus.success,
+    hasMore: false,
+  );
+
+  @override
+  Future<void> loadInitial({bool forceRefresh = false}) async {}
+
+  @override
+  Future<void> refresh() async {}
+}
+
+class _StaticDevotionalsListController extends DevotionalsListController {
+  @override
+  DevotionalsListState build() =>
+      const DevotionalsListState(status: DevotionalsListStatus.success);
+
+  @override
+  Future<void> loadInitial({bool forceRefresh = false}) async {}
+
+  @override
+  Future<void> refresh() async {}
+}
+
+class _StaticDevotionalReviewQueueController
+    extends DevotionalReviewQueueController {
+  @override
+  DevotionalsListState build() =>
+      const DevotionalsListState(status: DevotionalsListStatus.success);
+
+  @override
+  Future<void> loadInitial({bool forceRefresh = false}) async {}
+
+  @override
+  Future<void> refresh() async {}
 }
 
 class _StaticRoleRepository extends RoleRepository {
