@@ -244,6 +244,8 @@ class AppLocalizations {
       _string('devotionalPublishNeedsMoreReflection');
   String get devotionalPublishError => _string('devotionalPublishError');
   String get devotionalFeedSavedToast => _string('devotionalFeedSavedToast');
+  String get devotionalFeedFollowingInline =>
+      _string('devotionalFeedFollowingInline');
   String get devotionalFeedOpenCta => _string('devotionalFeedOpenCta');
   String get devotionalPublishModerationInProgress =>
       _string('devotionalPublishModerationInProgress');
@@ -569,7 +571,8 @@ class AppLocalizations {
           'Aún no está listo para publicar. Desarrolla un poco más la reflexión: necesitas al menos 45 palabras y 3 oraciones o 2 párrafos con contenido.',
       'devotionalPublishError': 'No pudimos publicar el devocional.',
       'devotionalFeedSavedToast': 'Guardado para volver luego',
-      'devotionalFeedOpenCta': 'Recibe este mensaje →',
+      'devotionalFeedFollowingInline': 'Lo sigues',
+      'devotionalFeedOpenCta': 'Esto es para ti →',
       'devotionalPublishModerationInProgress':
           'Revisando tu devocional antes de publicarlo...',
       'devotionalPublishModerationHelper':
@@ -866,7 +869,8 @@ class AppLocalizations {
           'This devotional is not ready to publish yet. Develop the reflection a bit more: you need at least 45 words and 3 sentences or 2 paragraphs with substance.',
       'devotionalPublishError': 'We could not publish the devotional.',
       'devotionalFeedSavedToast': 'Saved for later',
-      'devotionalFeedOpenCta': 'Receive this message →',
+      'devotionalFeedFollowingInline': 'You follow them',
+      'devotionalFeedOpenCta': 'This is for you →',
       'devotionalPublishModerationInProgress':
           'Reviewing your devotional before publishing...',
       'devotionalPublishModerationHelper':

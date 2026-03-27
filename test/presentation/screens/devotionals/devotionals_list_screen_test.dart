@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:holyverso/core/l10n/app_localizations.dart';
+import 'package:holyverso/core/theme/app_colors.dart';
 import 'package:holyverso/core/theme/app_theme.dart';
 import 'package:holyverso/data/auth/models/user.dart';
 import 'package:holyverso/data/devotionals/devotionals_api_client.dart';
@@ -158,7 +159,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Recibe este mensaje →'), findsOneWidget);
+    expect(find.text('Esto es para ti →'), findsOneWidget);
+    expect(find.text('Guardar'), findsOneWidget);
     expect(
       find.byKey(const Key('public-devotional-save-share-card')),
       findsOneWidget,
@@ -177,6 +179,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    expect(find.text('detail-screen'), findsNothing);
     expect(capturedCall?.method, 'share');
     expect((capturedCall?.arguments as Map)['subject'], 'Compartir');
     expect(
@@ -187,6 +190,121 @@ void main() {
       (capturedCall?.arguments as Map)['text'],
       contains('https://holyverso.com/devotionals/share-card'),
     );
+  });
+
+  testWidgets('save button uses the softened inactive footprint and styling', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _TestApp(
+        forYouState: DevotionalsFeedState(
+          status: DevotionalsFeedStatus.success,
+          items: [_buildDevotional(id: 'save-style', title: 'Guardar suave')],
+        ),
+        followingState: const DevotionalsFeedState(
+          status: DevotionalsFeedStatus.success,
+        ),
+        mineState: const DevotionalsListState(
+          status: DevotionalsListStatus.success,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final saveButton = find.byKey(
+      const Key('public-devotional-save-save-style'),
+    );
+    final icon = tester.widget<Icon>(
+      find.descendant(of: saveButton, matching: find.byType(Icon)).first,
+    );
+    final container = tester.widget<AnimatedContainer>(
+      find.descendant(of: saveButton, matching: find.byType(AnimatedContainer)),
+    );
+    final decoration = container.decoration! as BoxDecoration;
+    final gradient = decoration.gradient! as LinearGradient;
+
+    expect(
+      find.descendant(
+        of: saveButton,
+        matching: find.byWidgetPredicate(
+          (widget) =>
+              widget is Padding &&
+              widget.padding ==
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        ),
+      ),
+      findsOneWidget,
+    );
+    expect(icon.icon, Icons.bookmark_border_rounded);
+    expect(icon.size, 17);
+    expect(icon.color, AppColors.holyGold.withValues(alpha: 0.88));
+    expect(
+      find.descendant(
+        of: saveButton,
+        matching: find.byWidgetPredicate(
+          (widget) => widget is SizedBox && widget.width == 6,
+        ),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      decoration.border!.top.color,
+      AppColors.holyGold.withValues(alpha: 0.12),
+    );
+    expect(gradient.colors, [
+      AppColors.holyGold.withValues(alpha: 0.16),
+      AppColors.holyGold.withValues(alpha: 0.10),
+    ]);
+  });
+
+  testWidgets('save button keeps the stronger active saved treatment', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _TestApp(
+        forYouState: DevotionalsFeedState(
+          status: DevotionalsFeedStatus.success,
+          items: [
+            _buildDevotional(
+              id: 'saved-style',
+              title: 'Guardado activo',
+              saved: true,
+            ),
+          ],
+        ),
+        followingState: const DevotionalsFeedState(
+          status: DevotionalsFeedStatus.success,
+        ),
+        mineState: const DevotionalsListState(
+          status: DevotionalsListStatus.success,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final saveButton = find.byKey(
+      const Key('public-devotional-save-saved-style'),
+    );
+    final icon = tester.widget<Icon>(
+      find.descendant(of: saveButton, matching: find.byType(Icon)).first,
+    );
+    final container = tester.widget<AnimatedContainer>(
+      find.descendant(of: saveButton, matching: find.byType(AnimatedContainer)),
+    );
+    final decoration = container.decoration! as BoxDecoration;
+    final gradient = decoration.gradient! as LinearGradient;
+
+    expect(find.text('Guardado'), findsOneWidget);
+    expect(icon.icon, Icons.bookmark_rounded);
+    expect(icon.color, AppColors.midnightFaithDark);
+    expect(
+      decoration.border!.top.color,
+      AppColors.holyGold.withValues(alpha: 0.24),
+    );
+    expect(gradient.colors, [
+      AppColors.holyGold.withValues(alpha: 0.94),
+      const Color(0xFFE7C565),
+    ]);
   });
 
   testWidgets('fab opens devotional create route', (tester) async {
@@ -231,13 +349,109 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.ensureVisible(find.text('Recibe este mensaje →'));
+    await tester.ensureVisible(find.text('Esto es para ti →'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Recibe este mensaje →'));
+    await tester.tap(find.text('Esto es para ti →'));
     await tester.pumpAndSettle();
 
     expect(find.text('detail-screen'), findsOneWidget);
     expect(find.byType(BackButton), findsOneWidget);
+  });
+
+  testWidgets('prioritizes hook and keeps title as secondary metadata', (
+    tester,
+  ) async {
+    const hook = 'Dios no te esta pidiendo perfeccion para acercarte hoy.';
+    const title = 'Un titulo menos fuerte';
+
+    await tester.pumpWidget(
+      _TestApp(
+        forYouState: DevotionalsFeedState(
+          status: DevotionalsFeedStatus.success,
+          items: [
+            _buildDevotional(
+              id: 'hierarchy-card',
+              title: title,
+              computedHook: hook,
+            ),
+          ],
+        ),
+        followingState: const DevotionalsFeedState(
+          status: DevotionalsFeedStatus.success,
+        ),
+        mineState: const DevotionalsListState(
+          status: DevotionalsListStatus.success,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text(hook), findsOneWidget);
+    expect(find.text(title), findsOneWidget);
+    expect(find.text('Juan 3:16'), findsOneWidget);
+  });
+
+  testWidgets('shows following inline and removes public-feed noise', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _TestApp(
+        forYouState: DevotionalsFeedState(
+          status: DevotionalsFeedStatus.success,
+          items: [
+            _buildDevotional(
+              id: 'quiet-card',
+              title: 'Silencio',
+              publicationState: DevotionalPublicationState.trending,
+              feedContextReason: 'FOLLOWED_AUTHOR',
+              following: true,
+            ),
+          ],
+        ),
+        followingState: const DevotionalsFeedState(
+          status: DevotionalsFeedStatus.success,
+        ),
+        mineState: const DevotionalsListState(
+          status: DevotionalsListStatus.success,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('Lo sigues'), findsOneWidget);
+    expect(find.text('Viene de alguien que sigues'), findsNothing);
+    expect(find.text('Muchos lo están guardando'), findsNothing);
+    expect(find.text('Destacado'), findsNothing);
+    expect(find.text('En tendencia'), findsNothing);
+  });
+
+  testWidgets('renders reduced image height below actions', (tester) async {
+    await tester.pumpWidget(
+      _TestApp(
+        forYouState: DevotionalsFeedState(
+          status: DevotionalsFeedStatus.success,
+          items: [
+            _buildDevotional(
+              id: 'image-card',
+              title: 'Con imagen',
+              previewImageUrl: 'https://example.com/devotional.jpg',
+            ),
+          ],
+        ),
+        followingState: const DevotionalsFeedState(
+          status: DevotionalsFeedStatus.success,
+        ),
+        mineState: const DevotionalsListState(
+          status: DevotionalsListStatus.success,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final imageSize = tester.getSize(
+      find.byKey(const Key('public-devotional-image-image-card')),
+    );
+    expect(imageSize.height, 112);
   });
 
   testWidgets('publish from mine tab preserves backend quality gate message', (
@@ -556,21 +770,38 @@ Devotional _buildDevotional({
   required String title,
   DevotionalStatus status = DevotionalStatus.published,
   String? computedHook,
+  bool saved = false,
+  bool following = true,
+  String feedContextReason = 'SAVED_BY_OTHERS',
+  DevotionalPublicationState? publicationState,
+  String coverImageUrl = '',
+  String previewImageUrl = '',
 }) {
+  final resolvedPublicationState =
+      publicationState ??
+      (status == DevotionalStatus.archived
+          ? DevotionalPublicationState.archived
+          : status == DevotionalStatus.draft
+          ? DevotionalPublicationState.draft
+          : DevotionalPublicationState.featured);
+  final author = DevotionalAuthor(
+    id: 'author-1',
+    name: 'Gabriel M.',
+    handle: 'gabriel',
+    avatarUrl: null,
+    following: following,
+  );
+
   return Devotional(
     id: id,
     title: title,
     status: status,
-    publicationState: status == DevotionalStatus.archived
-        ? DevotionalPublicationState.archived
-        : status == DevotionalStatus.draft
-        ? DevotionalPublicationState.draft
-        : DevotionalPublicationState.featured,
+    publicationState: resolvedPublicationState,
     moderationStatus: DevotionalModerationStatus.clear,
     effectiveState: 'CLEAR',
     moderationReason: null,
-    coverImageUrl: '',
-    previewImageUrl: '',
+    coverImageUrl: coverImageUrl,
+    previewImageUrl: previewImageUrl,
     previewText: 'Texto breve para validar la jerarquía del card.',
     computedHook:
         computedHook ?? 'Hay dias en los que volver a Dios es respirar.',
@@ -584,13 +815,7 @@ Devotional _buildDevotional({
     firstPublishedAt: DateTime(2026, 3, 25),
     createdAt: DateTime(2026, 3, 25),
     updatedAt: DateTime(2026, 3, 25),
-    author: const DevotionalAuthor(
-      id: 'author-1',
-      name: 'Gabriel M.',
-      handle: 'gabriel',
-      avatarUrl: null,
-      following: true,
-    ),
+    author: author,
     verseReferences: const [
       DevotionalVerseReference(
         id: 'ref-1',
@@ -610,12 +835,12 @@ Devotional _buildDevotional({
     reportCount: 0,
     openReportCount: 0,
     liked: false,
-    saved: false,
+    saved: saved,
     isOwner: status != DevotionalStatus.published,
     canModerate: false,
     deliveryToken: 'delivery-$id',
     recommendationReason: DevotionalFeedMode.forYou.name,
-    feedContextReason: 'SAVED_BY_OTHERS',
+    feedContextReason: feedContextReason,
     content: const [],
   );
 }

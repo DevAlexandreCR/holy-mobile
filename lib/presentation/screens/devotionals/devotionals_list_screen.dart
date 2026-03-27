@@ -963,8 +963,6 @@ class _PublicDevotionalCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final referenceLabel = _referenceLabel(devotional);
-    final proofLabel = _feedContextLabel(devotional.feedContextReason);
-    final badgeLabel = _publicationBadgeLabel(devotional.publicationState);
     final secondaryTitleVisible = _shouldShowSecondaryTitle(devotional);
     final previewText = devotional.feedPreview;
     final hasImage =
@@ -977,85 +975,49 @@ class _PublicDevotionalCard extends StatelessWidget {
       child: _FeedOpenSurface(
         onTap: onOpen,
         child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.md),
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.md,
+            AppSpacing.lg,
+            AppSpacing.md,
+            AppSpacing.md,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _AuthorHeader(
-                authorName: devotional.author.name,
-                handle: devotional.author.handle,
-                avatarUrl: devotional.author.avatarUrl,
-                following: devotional.author.following,
-                onTap: onOpenAuthor,
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Wrap(
-                      spacing: AppSpacing.sm,
-                      runSpacing: AppSpacing.xs,
-                      children: [
-                        if (proofLabel != null)
-                          _ContextPill(
-                            label: proofLabel,
-                            tonal:
-                                devotional.publicationState ==
-                                DevotionalPublicationState.featured,
-                          ),
-                      ],
-                    ),
-                  ),
-                  if (badgeLabel != null) ...[
-                    const SizedBox(width: AppSpacing.sm),
-                    _PublicationBadge(
-                      label: badgeLabel,
-                      highlighted:
-                          devotional.publicationState ==
-                          DevotionalPublicationState.featured,
-                    ),
-                  ],
-                ],
-              ),
-              const SizedBox(height: 8),
               Text(
                 devotional.primaryHook,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: AppTextStyles.headline3.copyWith(
+                style: AppTextStyles.headline2.copyWith(
                   color: AppColors.pureWhite,
                   fontWeight: FontWeight.w700,
-                  height: 1.2,
+                  height: 1.22,
                 ),
               ),
-              if (referenceLabel != null) ...[
-                const SizedBox(height: 6),
-                Text(
-                  referenceLabel,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTextStyles.referenceSmall.copyWith(
-                    color: AppColors.holyGold,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
+              const SizedBox(height: AppSpacing.md),
+              _PublicAuthorContext(
+                authorName: devotional.author.name,
+                handle: devotional.author.handle,
+                avatarUrl: devotional.author.avatarUrl,
+                following: devotional.author.following,
+                referenceLabel: referenceLabel,
+                onTap: onOpenAuthor,
+              ),
+              const SizedBox(height: AppSpacing.md),
               if (secondaryTitleVisible) ...[
-                const SizedBox(height: 6),
                 Text(
                   devotional.title.trim(),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    color: AppColors.pureWhite.withValues(alpha: 0.82),
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: AppColors.pureWhite.withValues(alpha: 0.72),
                     fontWeight: FontWeight.w600,
                     height: 1.35,
                   ),
                 ),
+                const SizedBox(height: AppSpacing.sm),
               ],
               if (previewText.isNotEmpty) ...[
-                const SizedBox(height: 8),
                 Text(
                   previewText,
                   maxLines: 2,
@@ -1065,31 +1027,19 @@ class _PublicDevotionalCard extends StatelessWidget {
                     height: 1.55,
                   ),
                 ),
-              ],
-              if (hasImage) ...[
                 const SizedBox(height: AppSpacing.md),
-                _FeedImageStrip(
-                  imageUrl:
-                      devotional.previewImageUrl ?? devotional.coverImageUrl,
-                  focusY: devotional.coverImageFocusY,
-                ),
               ],
-              const SizedBox(height: 12),
+              Text(
+                context.l10n.devotionalFeedOpenCta,
+                style: AppTextStyles.labelMedium.copyWith(
+                  color: AppColors.holyGold,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
               Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Expanded(
-                    child: Text(
-                      _footerMetaText(context, devotional, proofLabel),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTextStyles.bodySmall.copyWith(
-                        color: AppColors.softMist.withValues(alpha: 0.82),
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.sm),
                   _SavePillButton(
                     key: Key('public-devotional-save-${devotional.id}'),
                     isSaved: devotional.saved,
@@ -1105,14 +1055,15 @@ class _PublicDevotionalCard extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: AppSpacing.sm),
-              Text(
-                context.l10n.devotionalFeedOpenCta,
-                style: AppTextStyles.labelMedium.copyWith(
-                  color: AppColors.holyGold,
-                  fontWeight: FontWeight.w700,
+              if (hasImage) ...[
+                const SizedBox(height: AppSpacing.lg),
+                _FeedImageStrip(
+                  key: Key('public-devotional-image-${devotional.id}'),
+                  imageUrl:
+                      devotional.previewImageUrl ?? devotional.coverImageUrl,
+                  focusY: devotional.coverImageFocusY,
                 ),
-              ),
+              ],
             ],
           ),
         ),
@@ -1647,41 +1598,30 @@ class _FeedOpenSurfaceState extends State<_FeedOpenSurface> {
     if (_opening) return;
     _opening = true;
     _setPressed(true);
-    await Future<void>.delayed(const Duration(milliseconds: 40));
+    await Future<void>.delayed(const Duration(milliseconds: 70));
     if (mounted) {
-      _setPressed(false);
       widget.onTap();
     }
+    _setPressed(false);
     _opening = false;
   }
 
   @override
   Widget build(BuildContext context) {
     return AnimatedScale(
-      duration: const Duration(milliseconds: 90),
+      duration: const Duration(milliseconds: 180),
       curve: Curves.easeOutCubic,
-      scale: _pressed ? 0.985 : 1,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 90),
+      scale: _pressed ? 0.98 : 1,
+      child: AnimatedOpacity(
+        duration: const Duration(milliseconds: 180),
         curve: Curves.easeOutCubic,
-        decoration: BoxDecoration(
-          borderRadius: AppBorderRadius.card,
-          boxShadow: _pressed
-              ? [
-                  BoxShadow(
-                    color: AppColors.holyGold.withValues(alpha: 0.16),
-                    blurRadius: 18,
-                    spreadRadius: 0,
-                  ),
-                ]
-              : const [],
-        ),
+        opacity: _pressed ? 0.94 : 1,
         child: Material(
           color: Colors.transparent,
           borderRadius: AppBorderRadius.card,
           child: InkWell(
             borderRadius: AppBorderRadius.card,
-            splashColor: AppColors.holyGold.withValues(alpha: 0.08),
+            splashColor: AppColors.holyGold.withValues(alpha: 0.06),
             highlightColor: Colors.transparent,
             onTapDown: (_) => _setPressed(true),
             onTapCancel: () => _setPressed(false),
@@ -1695,72 +1635,12 @@ class _FeedOpenSurfaceState extends State<_FeedOpenSurface> {
   }
 }
 
-class _ContextPill extends StatelessWidget {
-  const _ContextPill({required this.label, this.tonal = false});
-
-  final String label;
-  final bool tonal;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: tonal
-            ? AppColors.holyGold.withValues(alpha: 0.14)
-            : AppColors.pureWhite.withValues(alpha: 0.06),
-        borderRadius: BorderRadius.circular(AppBorderRadius.full),
-        border: Border.all(
-          color: tonal
-              ? AppColors.holyGold.withValues(alpha: 0.28)
-              : AppColors.pureWhite.withValues(alpha: 0.08),
-        ),
-      ),
-      child: Text(
-        label,
-        style: AppTextStyles.labelSmall.copyWith(
-          color: tonal ? AppColors.holyGold : AppColors.softMist,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
-    );
-  }
-}
-
-class _PublicationBadge extends StatelessWidget {
-  const _PublicationBadge({required this.label, required this.highlighted});
-
-  final String label;
-  final bool highlighted;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: highlighted
-            ? AppColors.holyGold.withValues(alpha: 0.16)
-            : AppColors.warning.withValues(alpha: 0.16),
-        borderRadius: BorderRadius.circular(AppBorderRadius.full),
-        border: Border.all(
-          color: highlighted
-              ? AppColors.holyGold.withValues(alpha: 0.32)
-              : AppColors.warning.withValues(alpha: 0.28),
-        ),
-      ),
-      child: Text(
-        label,
-        style: AppTextStyles.labelSmall.copyWith(
-          color: highlighted ? AppColors.holyGold : AppColors.warning,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
-    );
-  }
-}
-
 class _FeedImageStrip extends StatelessWidget {
-  const _FeedImageStrip({required this.imageUrl, required this.focusY});
+  const _FeedImageStrip({
+    super.key,
+    required this.imageUrl,
+    required this.focusY,
+  });
 
   final String? imageUrl;
   final double focusY;
@@ -1775,20 +1655,37 @@ class _FeedImageStrip extends StatelessWidget {
     return ClipRRect(
       borderRadius: BorderRadius.circular(AppBorderRadius.md),
       child: SizedBox(
-        height: 128,
+        height: 112,
         width: double.infinity,
-        child: CachedNetworkImage(
-          imageUrl: effectiveUrl,
-          fit: BoxFit.cover,
-          alignment: Alignment(0, focusY),
-          errorWidget: (context, url, error) => Container(
-            color: AppColors.midnightFaithDark,
-            alignment: Alignment.center,
-            child: const Icon(
-              Icons.image_not_supported_outlined,
-              color: AppColors.softMist,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            CachedNetworkImage(
+              imageUrl: effectiveUrl,
+              fit: BoxFit.cover,
+              alignment: Alignment(0, focusY),
+              errorWidget: (context, url, error) => Container(
+                color: AppColors.midnightFaithDark,
+                alignment: Alignment.center,
+                child: const Icon(
+                  Icons.image_not_supported_outlined,
+                  color: AppColors.softMist,
+                ),
+              ),
             ),
-          ),
+            DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    AppColors.midnightFaithDark.withValues(alpha: 0.08),
+                    AppColors.midnightFaithDark.withValues(alpha: 0.22),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -1809,6 +1706,8 @@ class _SavePillButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final inactiveForeground = AppColors.holyGold.withValues(alpha: 0.88);
+
     return AnimatedContainer(
       duration: const Duration(milliseconds: 170),
       curve: Curves.easeOutCubic,
@@ -1821,12 +1720,12 @@ class _SavePillButton extends StatelessWidget {
                   const Color(0xFFE7C565),
                 ]
               : [
-                  AppColors.holyGold.withValues(alpha: 0.22),
-                  AppColors.holyGold.withValues(alpha: 0.14),
+                  AppColors.holyGold.withValues(alpha: 0.16),
+                  AppColors.holyGold.withValues(alpha: 0.10),
                 ],
         ),
         border: Border.all(
-          color: AppColors.holyGold.withValues(alpha: isSaved ? 0.24 : 0.18),
+          color: AppColors.holyGold.withValues(alpha: isSaved ? 0.24 : 0.12),
         ),
       ),
       child: Material(
@@ -1835,7 +1734,7 @@ class _SavePillButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppBorderRadius.full),
           onTap: onPressed,
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -1848,7 +1747,7 @@ class _SavePillButton extends StatelessWidget {
                       valueColor: AlwaysStoppedAnimation<Color>(
                         isSaved
                             ? AppColors.midnightFaithDark
-                            : AppColors.holyGold,
+                            : inactiveForeground,
                       ),
                     ),
                   )
@@ -1857,18 +1756,18 @@ class _SavePillButton extends StatelessWidget {
                     isSaved
                         ? Icons.bookmark_rounded
                         : Icons.bookmark_border_rounded,
-                    size: 18,
+                    size: 17,
                     color: isSaved
                         ? AppColors.midnightFaithDark
-                        : AppColors.holyGold,
+                        : inactiveForeground,
                   ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 6),
                 Text(
                   isSaved ? context.l10n.savedAction : context.l10n.saveAction,
                   style: AppTextStyles.labelMedium.copyWith(
                     color: isSaved
                         ? AppColors.midnightFaithDark
-                        : AppColors.holyGold,
+                        : inactiveForeground,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -2042,6 +1941,113 @@ class _AuthorHeader extends StatelessWidget {
               ),
             ),
           ),
+      ],
+    );
+
+    if (onTap == null) return content;
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(AppBorderRadius.md),
+      onTap: onTap,
+      child: content,
+    );
+  }
+}
+
+class _PublicAuthorContext extends StatelessWidget {
+  const _PublicAuthorContext({
+    required this.authorName,
+    required this.handle,
+    required this.avatarUrl,
+    required this.following,
+    required this.referenceLabel,
+    this.onTap,
+  });
+
+  final String authorName;
+  final String? handle;
+  final String? avatarUrl;
+  final bool following;
+  final String? referenceLabel;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final avatar = CircleAvatar(
+      radius: 15,
+      backgroundColor: AppColors.holyGold.withValues(alpha: 0.14),
+      backgroundImage: avatarUrl != null && avatarUrl!.isNotEmpty
+          ? CachedNetworkImageProvider(avatarUrl!)
+          : null,
+      child: avatarUrl == null || avatarUrl!.isEmpty
+          ? Text(
+              authorName.isNotEmpty ? authorName.characters.first : '?',
+              style: AppTextStyles.bodySmall.copyWith(
+                color: AppColors.holyGold,
+                fontWeight: FontWeight.w700,
+              ),
+            )
+          : null,
+    );
+
+    final authorLine = Text.rich(
+      TextSpan(
+        children: [
+          TextSpan(
+            text: authorName,
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: AppColors.pureWhite.withValues(alpha: 0.9),
+              fontWeight: FontWeight.w600,
+              height: 1.35,
+            ),
+          ),
+          if (handle != null && handle!.isNotEmpty)
+            TextSpan(
+              text: ' · @$handle',
+              style: AppTextStyles.bodySmall.copyWith(
+                color: AppColors.softMist.withValues(alpha: 0.72),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          if (following)
+            TextSpan(
+              text: ' · ${context.l10n.devotionalFeedFollowingInline}',
+              style: AppTextStyles.bodySmall.copyWith(
+                color: AppColors.softMist.withValues(alpha: 0.72),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+        ],
+      ),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+    );
+
+    final content = Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        avatar,
+        const SizedBox(width: AppSpacing.sm),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              authorLine,
+              if (referenceLabel != null) ...[
+                const SizedBox(height: 4),
+                Text(
+                  referenceLabel!,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.referenceSmall.copyWith(
+                    color: AppColors.holyGold.withValues(alpha: 0.92),
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
       ],
     );
 
@@ -2347,52 +2353,10 @@ String? _referenceLabel(Devotional devotional) {
   return null;
 }
 
-String? _feedContextLabel(String? reason) {
-  switch (reason) {
-    case 'FEATURED':
-      return 'Destacado en HolyVerso';
-    case 'TRENDING':
-      return 'Está impactando a otros';
-    case 'SAVED_BY_OTHERS':
-      return 'Muchos lo están guardando';
-    case 'HIGH_COMPLETION':
-      return 'Se está leyendo hasta el final';
-    case 'HIGH_SHARE':
-      return 'Se está compartiendo';
-    case 'FOLLOWED_AUTHOR':
-      return 'Viene de alguien que sigues';
-    default:
-      return null;
-  }
-}
-
-String? _publicationBadgeLabel(DevotionalPublicationState state) {
-  switch (state) {
-    case DevotionalPublicationState.trending:
-      return 'En tendencia';
-    case DevotionalPublicationState.featured:
-      return 'Destacado';
-    default:
-      return null;
-  }
-}
-
 bool _shouldShowSecondaryTitle(Devotional devotional) {
   final title = devotional.title.trim();
   if (title.isEmpty) return false;
   return !_textsNearDuplicate(title, devotional.primaryHook);
-}
-
-String _footerMetaText(
-  BuildContext context,
-  Devotional devotional,
-  String? proofLabel,
-) {
-  final segments = <String>[
-    '${devotional.estimatedReadTime} ${context.l10n.devotionalMinutesShort}',
-    if (proofLabel != null) proofLabel,
-  ];
-  return segments.join(' · ');
 }
 
 bool _textsNearDuplicate(String left, String right) {
