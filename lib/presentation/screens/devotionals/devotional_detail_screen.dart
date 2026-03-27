@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:holyverso/core/errors/app_error_mapper.dart';
 import 'package:holyverso/core/l10n/app_localizations.dart';
@@ -18,12 +19,18 @@ import 'package:holyverso/presentation/state/devotionals/devotional_detail_state
 import 'package:holyverso/presentation/state/devotionals/devotional_review_queue_controller.dart';
 import 'package:holyverso/presentation/state/devotionals/devotionals_feed_controller.dart';
 import 'package:holyverso/presentation/state/devotionals/devotionals_list_controller.dart';
-import 'package:holyverso/presentation/widgets/common/holy_child_app_bar.dart';
 import 'package:holyverso/presentation/widgets/devotionals/devotional_content_view.dart';
 import 'package:holyverso/presentation/widgets/devotionals/devotional_feed_context_copy.dart';
 import 'package:share_plus/share_plus.dart';
 
-const double _detailCoverImageHeight = 172;
+const double _detailCoverImageHeight = 129;
+const SystemUiOverlayStyle _lightTopOverlayStyle = SystemUiOverlayStyle(
+  statusBarColor: Colors.transparent,
+  statusBarIconBrightness: Brightness.light,
+  statusBarBrightness: Brightness.dark,
+  systemNavigationBarColor: AppColors.midnightFaith,
+  systemNavigationBarIconBrightness: Brightness.light,
+);
 
 enum _DetailMenuAction { report }
 
@@ -457,96 +464,115 @@ class _DevotionalDetailScreenState
   Widget build(BuildContext context) {
     final state = ref.watch(devotionalDetailControllerProvider);
     final commentsState = ref.watch(devotionalCommentsControllerProvider);
-    final l10n = context.l10n;
+    final hasCoverImage =
+        state.devotional?.coverImageUrl != null &&
+        state.devotional!.coverImageUrl!.isNotEmpty;
 
-    return Scaffold(
-      backgroundColor: AppColors.midnightFaith,
-      appBar: HolyChildAppBar(
-        title: l10n.devotionalDetailTitle,
-        actions: state.devotional == null
-            ? null
-            : [
-                PopupMenuButton<_DetailMenuAction>(
-                  icon: const Icon(Icons.more_horiz_rounded),
-                  tooltip: l10n.devotionalReportAction,
-                  color: AppColors.midnightFaithDark,
-                  surfaceTintColor: Colors.transparent,
-                  onSelected: (value) {
-                    if (value == _DetailMenuAction.report) {
-                      _showReportSheet();
-                    }
-                  },
-                  itemBuilder: (context) => [
-                    PopupMenuItem<_DetailMenuAction>(
-                      value: _DetailMenuAction.report,
-                      child: Row(
-                        children: [
-                          const Icon(
-                            Icons.flag_outlined,
-                            color: AppColors.pureWhite,
-                          ),
-                          const SizedBox(width: AppSpacing.sm),
-                          Text(
-                            l10n.devotionalReportAction,
-                            style: AppTextStyles.bodyMedium.copyWith(
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: _lightTopOverlayStyle,
+      child: Scaffold(
+        backgroundColor: AppColors.midnightFaith,
+        extendBodyBehindAppBar: hasCoverImage,
+        appBar: AppBar(
+          backgroundColor: hasCoverImage
+              ? Colors.transparent
+              : AppColors.midnightFaith,
+          foregroundColor: AppColors.pureWhite,
+          surfaceTintColor: Colors.transparent,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          automaticallyImplyLeading: false,
+          titleSpacing: 0,
+          systemOverlayStyle: _lightTopOverlayStyle,
+          leading: const BackButton(),
+          title: null,
+          centerTitle: false,
+          actionsPadding: const EdgeInsets.only(right: AppSpacing.xs),
+          actions: state.devotional == null
+              ? null
+              : [
+                  PopupMenuButton<_DetailMenuAction>(
+                    icon: const Icon(Icons.more_horiz_rounded),
+                    tooltip: context.l10n.devotionalReportAction,
+                    color: AppColors.midnightFaithDark,
+                    surfaceTintColor: Colors.transparent,
+                    onSelected: (value) {
+                      if (value == _DetailMenuAction.report) {
+                        _showReportSheet();
+                      }
+                    },
+                    itemBuilder: (context) => [
+                      PopupMenuItem<_DetailMenuAction>(
+                        value: _DetailMenuAction.report,
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.flag_outlined,
                               color: AppColors.pureWhite,
                             ),
-                          ),
-                        ],
+                            const SizedBox(width: AppSpacing.sm),
+                            Text(
+                              context.l10n.devotionalReportAction,
+                              style: AppTextStyles.bodyMedium.copyWith(
+                                color: AppColors.pureWhite,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-              ],
-      ),
-      bottomNavigationBar: _canModerateCurrentDevotional
-          ? _ReviewActionBar(
-              isApproving: state.isApprovingReview,
-              isRestricting: state.isRestrictingReview,
-              onApprove: _approveReview,
-              onRestrict: _restrictReview,
-            )
-          : null,
-      body: SafeArea(
-        top: false,
-        child: switch (state.status) {
-          DevotionalDetailStatus.loading => const Center(
-            child: CircularProgressIndicator(color: AppColors.holyGold),
-          ),
-          DevotionalDetailStatus.error => _DetailError(
-            message: state.errorMessage ?? l10n.genericError,
-            onRetry: () {
-              _loadDetail();
-            },
-          ),
-          _ => _DetailContent(
-            devotional: state.devotional,
-            commentsState: commentsState,
-            commentController: _commentController,
-            scrollController: _scrollController,
-            isTogglingLike: state.isTogglingLike,
-            isTogglingSave: state.isTogglingSave,
-            onRefresh: () async {
-              await _loadDetail();
-              await ref
-                  .read(devotionalCommentsControllerProvider.notifier)
-                  .refresh();
-            },
-            onToggleLike: () => ref
-                .read(devotionalDetailControllerProvider.notifier)
-                .toggleLike(),
-            onToggleSave: () => ref
-                .read(devotionalDetailControllerProvider.notifier)
-                .toggleSave(),
-            onShare: _share,
-            onSubmitComment: _submitComment,
-            onOpenAuthor: () async {
-              final authorId = state.devotional?.author.id;
-              if (authorId == null || authorId.isEmpty) return;
-              await context.push('/users/$authorId');
-            },
-          ),
-        },
+                    ],
+                  ),
+                ],
+        ),
+        bottomNavigationBar: _canModerateCurrentDevotional
+            ? _ReviewActionBar(
+                isApproving: state.isApprovingReview,
+                isRestricting: state.isRestrictingReview,
+                onApprove: _approveReview,
+                onRestrict: _restrictReview,
+              )
+            : null,
+        body: SafeArea(
+          top: false,
+          child: switch (state.status) {
+            DevotionalDetailStatus.loading => const Center(
+              child: CircularProgressIndicator(color: AppColors.holyGold),
+            ),
+            DevotionalDetailStatus.error => _DetailError(
+              message: state.errorMessage ?? context.l10n.genericError,
+              onRetry: () {
+                _loadDetail();
+              },
+            ),
+            _ => _DetailContent(
+              devotional: state.devotional,
+              commentsState: commentsState,
+              commentController: _commentController,
+              scrollController: _scrollController,
+              isTogglingLike: state.isTogglingLike,
+              isTogglingSave: state.isTogglingSave,
+              onRefresh: () async {
+                await _loadDetail();
+                await ref
+                    .read(devotionalCommentsControllerProvider.notifier)
+                    .refresh();
+              },
+              onToggleLike: () => ref
+                  .read(devotionalDetailControllerProvider.notifier)
+                  .toggleLike(),
+              onToggleSave: () => ref
+                  .read(devotionalDetailControllerProvider.notifier)
+                  .toggleSave(),
+              onShare: _share,
+              onSubmitComment: _submitComment,
+              onOpenAuthor: () async {
+                final authorId = state.devotional?.author.id;
+                if (authorId == null || authorId.isEmpty) return;
+                await context.push('/users/$authorId');
+              },
+            ),
+          },
+        ),
       ),
     );
   }
@@ -597,251 +623,304 @@ class _DetailContent extends StatelessWidget {
     final commentsHeading = commentsState.total > 0
         ? '${context.l10n.commentsLabel} (${commentsState.total})'
         : context.l10n.commentsLabel;
+    final hasCoverImage =
+        devotional.coverImageUrl != null &&
+        devotional.coverImageUrl!.isNotEmpty;
 
     return RefreshIndicator(
       onRefresh: onRefresh,
       child: ListView(
         controller: scrollController,
-        padding: const EdgeInsets.fromLTRB(
-          AppSpacing.lg,
-          AppSpacing.md,
-          AppSpacing.lg,
-          AppSpacing.xl,
-        ),
+        padding: const EdgeInsets.only(bottom: AppSpacing.xl),
         children: [
-          if (devotional.coverImageUrl != null &&
-              devotional.coverImageUrl!.isNotEmpty) ...[
-            ClipRRect(
-              borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-              child: CachedNetworkImage(
-                imageUrl: devotional.coverImageUrl!,
-                height: _detailCoverImageHeight,
-                width: double.infinity,
-                fit: BoxFit.cover,
-                alignment: Alignment(0, devotional.coverImageFocusY),
-                errorWidget: (context, url, error) => Container(
-                  height: _detailCoverImageHeight,
-                  color: AppColors.midnightFaithDark,
-                  alignment: Alignment.center,
-                  child: const Icon(
-                    Icons.image_not_supported_outlined,
-                    color: AppColors.softMist,
+          if (hasCoverImage)
+            _DetailHero(
+              imageUrl: devotional.coverImageUrl!,
+              focusY: devotional.coverImageFocusY,
+            ),
+          Padding(
+            key: const Key('devotional-detail-content'),
+            padding: EdgeInsets.fromLTRB(
+              AppSpacing.lg,
+              hasCoverImage ? AppSpacing.lg : AppSpacing.md,
+              AppSpacing.lg,
+              0,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  devotional.title,
+                  style: AppTextStyles.headline2.copyWith(
+                    color: AppColors.pureWhite,
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
-              ),
-            ),
-            const SizedBox(height: AppSpacing.lg),
-          ],
-          Text(
-            devotional.title,
-            style: AppTextStyles.headline2.copyWith(
-              color: AppColors.pureWhite,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          InkWell(
-            onTap: onOpenAuthor,
-            borderRadius: BorderRadius.circular(AppBorderRadius.md),
-            child: Row(
-              children: [
-                CircleAvatar(
-                  radius: 18,
-                  backgroundColor: AppColors.holyGold.withValues(alpha: 0.18),
-                  backgroundImage:
-                      devotional.author.avatarUrl != null &&
-                          devotional.author.avatarUrl!.isNotEmpty
-                      ? CachedNetworkImageProvider(devotional.author.avatarUrl!)
-                      : null,
-                  child:
-                      devotional.author.avatarUrl == null ||
-                          devotional.author.avatarUrl!.isEmpty
-                      ? Text(
-                          devotional.author.name.isNotEmpty
-                              ? devotional.author.name.characters.first
-                                    .toUpperCase()
-                              : '?',
-                          style: AppTextStyles.bodyMedium.copyWith(
-                            color: AppColors.holyGold,
-                            fontWeight: FontWeight.w700,
+                const SizedBox(height: AppSpacing.sm),
+                InkWell(
+                  onTap: onOpenAuthor,
+                  borderRadius: BorderRadius.circular(AppBorderRadius.md),
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 18,
+                        backgroundColor: AppColors.holyGold.withValues(
+                          alpha: 0.18,
+                        ),
+                        backgroundImage:
+                            devotional.author.avatarUrl != null &&
+                                devotional.author.avatarUrl!.isNotEmpty
+                            ? CachedNetworkImageProvider(
+                                devotional.author.avatarUrl!,
+                              )
+                            : null,
+                        child:
+                            devotional.author.avatarUrl == null ||
+                                devotional.author.avatarUrl!.isEmpty
+                            ? Text(
+                                devotional.author.name.isNotEmpty
+                                    ? devotional.author.name.characters.first
+                                          .toUpperCase()
+                                    : '?',
+                                style: AppTextStyles.bodyMedium.copyWith(
+                                  color: AppColors.holyGold,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              )
+                            : null,
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            devotional.author.name,
+                            style: AppTextStyles.bodyMedium.copyWith(
+                              color: AppColors.holyGold,
+                            ),
                           ),
-                        )
-                      : null,
+                          if (devotional.author.handle != null &&
+                              devotional.author.handle!.isNotEmpty)
+                            Text(
+                              '@${devotional.author.handle}',
+                              style: AppTextStyles.bodySmall.copyWith(
+                                color: AppColors.softMist,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-                const SizedBox(width: AppSpacing.sm),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+                if (referenceLabel != null) ...[
+                  const SizedBox(height: AppSpacing.sm),
+                  Text(
+                    referenceLabel,
+                    style: AppTextStyles.reference.copyWith(
+                      color: AppColors.holyGold.withValues(alpha: 0.92),
+                    ),
+                  ),
+                ],
+                if (devotional.moderationReason != null &&
+                    devotional.moderationReason!.isNotEmpty) ...[
+                  const SizedBox(height: AppSpacing.md),
+                  Container(
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    decoration: BoxDecoration(
+                      color: AppColors.warning.withValues(alpha: 0.16),
+                      borderRadius: BorderRadius.circular(AppBorderRadius.md),
+                    ),
+                    child: Text(
+                      devotional.moderationReason!,
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: AppColors.pureWhite,
+                      ),
+                    ),
+                  ),
+                ],
+                if (hasContent) ...[
+                  const SizedBox(height: AppSpacing.lg),
+                  if (continuityLabel != null) ...[
                     Text(
-                      devotional.author.name,
+                      continuityLabel,
                       style: AppTextStyles.bodyMedium.copyWith(
+                        color: AppColors.softMist.withValues(alpha: 0.9),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                  ],
+                  DevotionalContentView(
+                    content: devotional.content!,
+                    emphasizeLeadingParagraph: true,
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  Text(
+                    context.l10n.devotionalReflectionPrompt,
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: AppColors.softMist.withValues(alpha: 0.92),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                ] else ...[
+                  const SizedBox(height: AppSpacing.lg),
+                ],
+                Wrap(
+                  spacing: AppSpacing.sm,
+                  runSpacing: AppSpacing.sm,
+                  children: [
+                    _PrimarySaveActionButton(
+                      isSaved: devotional.saved,
+                      isLoading: isTogglingSave,
+                      onPressed: isTogglingSave ? null : onToggleSave,
+                      label: devotional.saved
+                          ? context.l10n.savedAction
+                          : context.l10n.saveAction,
+                    ),
+                    _SecondaryActionButton(
+                      onPressed: isTogglingLike ? null : onToggleLike,
+                      icon: devotional.liked
+                          ? Icons.favorite_rounded
+                          : Icons.favorite_border_rounded,
+                      label: _actionLabel(
+                        context.l10n.likesLabel,
+                        devotional.likesCount,
+                      ),
+                      active: devotional.liked,
+                      isLoading: isTogglingLike,
+                    ),
+                    _SecondaryActionButton(
+                      onPressed: () => onShare(devotional),
+                      icon: Icons.share_outlined,
+                      label: _actionLabel(
+                        context.l10n.shareDevotional,
+                        devotional.shareCount,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.xl),
+                Text(
+                  commentsHeading,
+                  style: AppTextStyles.headline3.copyWith(
+                    color: AppColors.pureWhite,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                TextField(
+                  controller: commentController,
+                  minLines: 1,
+                  maxLines: 3,
+                  decoration: InputDecoration(
+                    hintText: context.l10n.writeComment,
+                    filled: true,
+                    fillColor: AppColors.inputBackground,
+                    hintStyle: AppTextStyles.bodyMedium.copyWith(
+                      color: AppColors.inputPlaceholder.withValues(alpha: 0.82),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+                      borderSide: BorderSide(
+                        color: AppColors.inputBorder.withValues(alpha: 0.7),
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+                      borderSide: const BorderSide(
+                        color: AppColors.holyGold,
+                        width: 1.2,
+                      ),
+                    ),
+                    suffixIcon: IconButton(
+                      onPressed: onSubmitComment,
+                      icon: const Icon(
+                        Icons.send_rounded,
                         color: AppColors.holyGold,
                       ),
                     ),
-                    if (devotional.author.handle != null &&
-                        devotional.author.handle!.isNotEmpty)
-                      Text(
-                        '@${devotional.author.handle}',
-                        style: AppTextStyles.bodySmall.copyWith(
-                          color: AppColors.softMist,
-                        ),
-                      ),
-                  ],
+                  ),
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: AppColors.pureWhite,
+                  ),
+                ),
+                if (commentsState.items.isEmpty) ...[
+                  const SizedBox(height: AppSpacing.md),
+                  Text(
+                    context.l10n.devotionalCommentsEmptyTitle,
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: AppColors.pureWhite,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    context.l10n.devotionalCommentsEmptySubtitle,
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: AppColors.softMist,
+                    ),
+                  ),
+                ] else ...[
+                  const SizedBox(height: AppSpacing.md),
+                ],
+                ...commentsState.items.map(
+                  (comment) => _CommentItem(comment: comment),
                 ),
               ],
             ),
           ),
-          if (referenceLabel != null) ...[
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              referenceLabel,
-              style: AppTextStyles.reference.copyWith(
-                color: AppColors.holyGold.withValues(alpha: 0.92),
-              ),
-            ),
-          ],
-          if (devotional.moderationReason != null &&
-              devotional.moderationReason!.isNotEmpty) ...[
-            const SizedBox(height: AppSpacing.md),
-            Container(
-              padding: const EdgeInsets.all(AppSpacing.md),
-              decoration: BoxDecoration(
-                color: AppColors.warning.withValues(alpha: 0.16),
-                borderRadius: BorderRadius.circular(AppBorderRadius.md),
-              ),
-              child: Text(
-                devotional.moderationReason!,
-                style: AppTextStyles.bodySmall.copyWith(
-                  color: AppColors.pureWhite,
-                ),
-              ),
-            ),
-          ],
-          if (hasContent) ...[
-            const SizedBox(height: AppSpacing.lg),
-            if (continuityLabel != null) ...[
-              Text(
-                continuityLabel,
-                style: AppTextStyles.bodyMedium.copyWith(
-                  color: AppColors.softMist.withValues(alpha: 0.9),
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.md),
-            ],
-            DevotionalContentView(
-              content: devotional.content!,
-              emphasizeLeadingParagraph: true,
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            Text(
-              context.l10n.devotionalReflectionPrompt,
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: AppColors.softMist.withValues(alpha: 0.92),
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.md),
-          ] else ...[
-            const SizedBox(height: AppSpacing.lg),
-          ],
-          Wrap(
-            spacing: AppSpacing.sm,
-            runSpacing: AppSpacing.sm,
-            children: [
-              _PrimarySaveActionButton(
-                isSaved: devotional.saved,
-                isLoading: isTogglingSave,
-                onPressed: isTogglingSave ? null : onToggleSave,
-                label: devotional.saved
-                    ? context.l10n.savedAction
-                    : context.l10n.saveAction,
-              ),
-              _SecondaryActionButton(
-                onPressed: isTogglingLike ? null : onToggleLike,
-                icon: devotional.liked
-                    ? Icons.favorite_rounded
-                    : Icons.favorite_border_rounded,
-                label: _actionLabel(
-                  context.l10n.likesLabel,
-                  devotional.likesCount,
-                ),
-                active: devotional.liked,
-                isLoading: isTogglingLike,
-              ),
-              _SecondaryActionButton(
-                onPressed: () => onShare(devotional),
-                icon: Icons.share_outlined,
-                label: _actionLabel(
-                  context.l10n.shareDevotional,
-                  devotional.shareCount,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.xl),
-          Text(
-            commentsHeading,
-            style: AppTextStyles.headline3.copyWith(
-              color: AppColors.pureWhite,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          TextField(
-            controller: commentController,
-            minLines: 1,
-            maxLines: 3,
-            decoration: InputDecoration(
-              hintText: context.l10n.writeComment,
-              filled: true,
-              fillColor: AppColors.inputBackground,
-              hintStyle: AppTextStyles.bodyMedium.copyWith(
-                color: AppColors.inputPlaceholder.withValues(alpha: 0.82),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-                borderSide: BorderSide(
-                  color: AppColors.inputBorder.withValues(alpha: 0.7),
-                ),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-                borderSide: const BorderSide(
-                  color: AppColors.holyGold,
-                  width: 1.2,
-                ),
-              ),
-              suffixIcon: IconButton(
-                onPressed: onSubmitComment,
-                icon: const Icon(Icons.send_rounded, color: AppColors.holyGold),
-              ),
-            ),
-            style: AppTextStyles.bodyMedium.copyWith(
-              color: AppColors.pureWhite,
-            ),
-          ),
-          if (commentsState.items.isEmpty) ...[
-            const SizedBox(height: AppSpacing.md),
-            Text(
-              context.l10n.devotionalCommentsEmptyTitle,
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: AppColors.pureWhite,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.xs),
-            Text(
-              context.l10n.devotionalCommentsEmptySubtitle,
-              style: AppTextStyles.bodyMedium.copyWith(
+        ],
+      ),
+    );
+  }
+}
+
+class _DetailHero extends StatelessWidget {
+  const _DetailHero({required this.imageUrl, required this.focusY});
+
+  final String imageUrl;
+  final double focusY;
+
+  @override
+  Widget build(BuildContext context) {
+    final topInset = MediaQuery.paddingOf(context).top;
+    final heroHeight = topInset + kToolbarHeight + _detailCoverImageHeight;
+
+    return SizedBox(
+      key: const Key('devotional-detail-hero'),
+      height: heroHeight,
+      width: double.infinity,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          CachedNetworkImage(
+            key: const Key('devotional-detail-hero-image'),
+            imageUrl: imageUrl,
+            fit: BoxFit.cover,
+            alignment: Alignment(0, focusY),
+            errorWidget: (context, url, error) => Container(
+              color: AppColors.midnightFaithDark,
+              alignment: Alignment.center,
+              child: const Icon(
+                Icons.image_not_supported_outlined,
                 color: AppColors.softMist,
               ),
             ),
-          ] else ...[
-            const SizedBox(height: AppSpacing.md),
-          ],
-          ...commentsState.items.map(
-            (comment) => _CommentItem(comment: comment),
+          ),
+          DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                stops: const [0, 0.3, 1],
+                colors: [
+                  Colors.black.withValues(alpha: 0.42),
+                  Colors.black.withValues(alpha: 0.14),
+                  Colors.transparent,
+                ],
+              ),
+            ),
           ),
         ],
       ),

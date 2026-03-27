@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:holyverso/core/l10n/app_localizations.dart';
 import 'package:holyverso/core/theme/app_theme.dart';
 import 'package:holyverso/domain/devotionals/devotional.dart';
@@ -91,6 +92,75 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Reportar'), findsOneWidget);
+  });
+
+  testWidgets('uses titleless hero header when cover image exists', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _TestApp(devotional: _buildDevotional(withCover: true)),
+    );
+    await tester.pumpAndSettle();
+
+    final scaffold = tester.widget<Scaffold>(find.byType(Scaffold));
+    final heroLeft = tester.getTopLeft(
+      find.byKey(const Key('devotional-detail-hero')),
+    );
+    final titleLeft = tester.getTopLeft(find.text('Un descanso para hoy'));
+
+    expect(scaffold.extendBodyBehindAppBar, isTrue);
+    expect(find.text('Detalle del devocional'), findsNothing);
+    expect(find.byType(BackButton), findsOneWidget);
+    expect(find.byIcon(Icons.more_horiz_rounded), findsOneWidget);
+    expect(
+      find.byKey(const Key('devotional-detail-hero-image')),
+      findsOneWidget,
+    );
+    expect(heroLeft.dx, 0);
+    expect(titleLeft.dx, greaterThan(0));
+    expect(heroLeft.dy, lessThan(titleLeft.dy));
+  });
+
+  testWidgets(
+    'falls back to a simple titleless header when cover image is absent',
+    (tester) async {
+      await tester.pumpWidget(
+        _TestApp(devotional: _buildDevotional(withCover: false)),
+      );
+      await tester.pumpAndSettle();
+
+      final scaffold = tester.widget<Scaffold>(find.byType(Scaffold));
+      final titleLeft = tester.getTopLeft(find.text('Un descanso para hoy'));
+
+      expect(scaffold.extendBodyBehindAppBar, isFalse);
+      expect(find.text('Detalle del devocional'), findsNothing);
+      expect(find.byIcon(Icons.more_horiz_rounded), findsOneWidget);
+      expect(find.byKey(const Key('devotional-detail-hero')), findsNothing);
+      expect(titleLeft.dx, greaterThan(0));
+    },
+  );
+
+  testWidgets('preserves the saved hero focus alignment when cover exists', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _TestApp(
+        devotional: _buildDevotional(withCover: true, coverImageFocusY: 0.45),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final heroFinder = find.byKey(const Key('devotional-detail-hero'));
+    final hero = tester.getSize(heroFinder);
+    final heroContext = tester.element(heroFinder);
+    final topInset = MediaQuery.paddingOf(heroContext).top;
+    final heroImage = tester.widget<CachedNetworkImage>(
+      find.byKey(const Key('devotional-detail-hero-image')),
+    );
+
+    expect(hero.height, closeTo(topInset + kToolbarHeight + 129, 0.01));
+    expect(heroImage.fit, BoxFit.cover);
+    expect(heroImage.alignment, const Alignment(0, 0.45));
   });
 }
 
@@ -199,6 +269,8 @@ class _StaticDevotionalCommentsController extends DevotionalCommentsController {
 Devotional _buildDevotional({
   String? feedContextReason,
   String? recommendationReason,
+  bool withCover = false,
+  double coverImageFocusY = 0,
 }) {
   return Devotional(
     id: 'devotional-1',
@@ -208,13 +280,17 @@ Devotional _buildDevotional({
     moderationStatus: DevotionalModerationStatus.clear,
     effectiveState: 'PUBLISHED',
     moderationReason: null,
-    coverImageUrl: null,
-    previewImageUrl: null,
+    coverImageUrl: withCover
+        ? 'https://images.example.com/devotional-cover.jpg'
+        : null,
+    previewImageUrl: withCover
+        ? 'https://images.example.com/devotional-preview.jpg'
+        : null,
     previewText: 'Dios sigue hablando en lo sencillo.',
     computedHook: 'Dios sigue hablando en lo sencillo.',
     optimizedPreviewText: 'Dios sigue hablando en lo sencillo.',
     hookSource: null,
-    coverImageFocusY: 0,
+    coverImageFocusY: coverImageFocusY,
     viewCount: 12,
     estimatedReadTime: 2,
     publishedAt: DateTime(2026, 1, 2),
