@@ -9,6 +9,7 @@ import 'package:holyverso/presentation/state/auth/auth_controller.dart';
 import 'package:holyverso/presentation/state/auth/auth_state.dart';
 import 'package:holyverso/presentation/widgets/holy_button.dart';
 import 'package:holyverso/presentation/widgets/holy_input_field.dart';
+import 'package:holyverso/presentation/widgets/legal/legal_links_section.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key, this.successMessage});
@@ -278,6 +279,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ),
                       child: Text(l10n.createAccount),
                     ),
+                    const SizedBox(height: AppSpacing.lg),
+                    const LegalLinksSection.auth(),
                   ],
                 ),
               ),

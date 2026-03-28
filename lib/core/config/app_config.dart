@@ -11,6 +11,9 @@ class AppConfig {
   final String genericErrorMessage;
   final String networkErrorMessage;
   final FirebaseOptions? firebaseOptions;
+  final String? termsUrl;
+  final String? privacyPolicyUrl;
+  final String? contactUrl;
 
   const AppConfig({
     required this.baseApiUrl,
@@ -18,6 +21,9 @@ class AppConfig {
     required this.genericErrorMessage,
     required this.networkErrorMessage,
     required this.firebaseOptions,
+    required this.termsUrl,
+    required this.privacyPolicyUrl,
+    required this.contactUrl,
   });
 
   /// Load configuration from .env files (dotenv must be loaded first in main)
@@ -32,6 +38,9 @@ class AppConfig {
       genericErrorMessage: l10n.genericError,
       networkErrorMessage: l10n.networkError,
       firebaseOptions: _loadFirebaseOptions(),
+      termsUrl: _maybeGetEnv('TERMS_URL'),
+      privacyPolicyUrl: _maybeGetEnv('PRIVACY_POLICY_URL'),
+      contactUrl: _maybeGetEnv('CONTACT_URL') ?? _maybeGetEnv('SUPPORT_URL'),
     );
   }
 

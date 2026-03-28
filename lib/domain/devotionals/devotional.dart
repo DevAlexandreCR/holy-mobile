@@ -1,4 +1,5 @@
 import 'package:holyverso/domain/devotionals/devotional_author.dart';
+import 'package:holyverso/domain/devotionals/devotional_author_block_recommendation.dart';
 import 'package:holyverso/domain/devotionals/devotional_moderation_status.dart';
 import 'package:holyverso/domain/devotionals/devotional_publication_state.dart';
 import 'package:holyverso/domain/devotionals/devotional_status.dart';
@@ -44,6 +45,7 @@ class Devotional {
     required this.deliveryToken,
     required this.recommendationReason,
     required this.feedContextReason,
+    this.authorBlockRecommendation,
     this.content,
   });
 
@@ -85,6 +87,7 @@ class Devotional {
   final String? deliveryToken;
   final String? recommendationReason;
   final String? feedContextReason;
+  final DevotionalAuthorBlockRecommendation? authorBlockRecommendation;
   final List<dynamic>? content;
 
   List<DevotionalVerseReference> get primaryReferences =>
@@ -202,6 +205,13 @@ class Devotional {
       deliveryToken: map['delivery_token']?.toString(),
       recommendationReason: map['recommendation_reason']?.toString(),
       feedContextReason: map['feed_context_reason']?.toString(),
+      authorBlockRecommendation: map['author_block_recommendation'] is Map
+          ? DevotionalAuthorBlockRecommendation.fromMap(
+              Map<String, dynamic>.from(
+                map['author_block_recommendation'] as Map,
+              ),
+            )
+          : null,
       content: content,
     );
   }
@@ -216,6 +226,7 @@ class Devotional {
     bool? saved,
     List<dynamic>? content,
     DevotionalAuthor? author,
+    DevotionalAuthorBlockRecommendation? authorBlockRecommendation,
   }) {
     return Devotional(
       id: id,
@@ -256,6 +267,8 @@ class Devotional {
       deliveryToken: deliveryToken,
       recommendationReason: recommendationReason,
       feedContextReason: feedContextReason,
+      authorBlockRecommendation:
+          authorBlockRecommendation ?? this.authorBlockRecommendation,
       content: content ?? this.content,
     );
   }

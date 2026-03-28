@@ -126,6 +126,14 @@ class DevotionalCommentsController extends Notifier<DevotionalCommentsState> {
       error,
       l10n: _l10n,
       fallbackMessage: _l10n.genericError,
+      businessCodeMessages: const {
+        'USER_BLOCKED_COMMENT_CREATE':
+            'Tu cuenta está bloqueada y no puede comentar.',
+        'USER_BLOCKED_COMMENT_EDIT':
+            'Tu cuenta está bloqueada y no puede editar comentarios.',
+        'USER_BLOCKED_COMMENT_DELETE':
+            'Tu cuenta está bloqueada y no puede eliminar comentarios.',
+      },
     );
   }
 }

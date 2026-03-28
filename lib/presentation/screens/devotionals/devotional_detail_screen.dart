@@ -10,6 +10,7 @@ import 'package:holyverso/core/theme/app_colors.dart';
 import 'package:holyverso/core/theme/app_design_tokens.dart';
 import 'package:holyverso/core/theme/app_text_styles.dart';
 import 'package:holyverso/data/devotionals/devotionals_repository.dart';
+import 'package:holyverso/data/roles/role_repository.dart';
 import 'package:holyverso/domain/devotionals/devotional.dart';
 import 'package:holyverso/domain/devotionals/devotional_comment.dart';
 import 'package:holyverso/presentation/state/devotionals/devotional_comments_controller.dart';
@@ -19,6 +20,7 @@ import 'package:holyverso/presentation/state/devotionals/devotional_detail_state
 import 'package:holyverso/presentation/state/devotionals/devotional_review_queue_controller.dart';
 import 'package:holyverso/presentation/state/devotionals/devotionals_feed_controller.dart';
 import 'package:holyverso/presentation/state/devotionals/devotionals_list_controller.dart';
+import 'package:holyverso/presentation/state/roles/role_provider.dart';
 import 'package:holyverso/presentation/widgets/devotionals/devotional_content_view.dart';
 import 'package:holyverso/presentation/widgets/devotionals/devotional_feed_context_copy.dart';
 import 'package:share_plus/share_plus.dart';
@@ -55,6 +57,7 @@ class _DevotionalDetailScreenState
     extends ConsumerState<DevotionalDetailScreen> {
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _commentController = TextEditingController();
+  bool _isBlockingAuthor = false;
 
   @override
   void initState() {
@@ -370,7 +373,7 @@ class _DevotionalDetailScreenState
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Restringir devocional',
+                  'Ocultar devocional',
                   style: AppTextStyles.headline3.copyWith(
                     color: AppColors.pureWhite,
                     fontWeight: FontWeight.w700,
@@ -389,7 +392,7 @@ class _DevotionalDetailScreenState
                   minLines: 3,
                   maxLines: 5,
                   decoration: InputDecoration(
-                    hintText: 'Motivo de la restricción',
+                    hintText: 'Motivo para ocultar el devocional',
                     filled: true,
                     fillColor: AppColors.inputBackground,
                     enabledBorder: OutlineInputBorder(
@@ -419,7 +422,7 @@ class _DevotionalDetailScreenState
                       if (value.isEmpty) return;
                       Navigator.of(context).pop(value);
                     },
-                    child: const Text('Restringir'),
+                    child: const Text('Ocultar devocional'),
                   ),
                 ),
               ],
@@ -443,7 +446,7 @@ class _DevotionalDetailScreenState
     if (!mounted) return;
 
     final message = success
-        ? 'Devocional restringido correctamente.'
+        ? 'Devocional ocultado correctamente.'
         : AppErrorMapper.toMessage(
             Exception('restrict-review'),
             l10n: context.l10n,
@@ -460,10 +463,147 @@ class _DevotionalDetailScreenState
     );
   }
 
+  Future<void> _blockAuthor() async {
+    final devotional = ref.read(devotionalDetailControllerProvider).devotional;
+    final recommendation = devotional?.authorBlockRecommendation;
+    if (devotional == null || recommendation == null || _isBlockingAuthor) {
+      return;
+    }
+
+    final reasonController = TextEditingController();
+    final reason = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: AppColors.midnightFaith,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (context) {
+        final mediaQuery = MediaQuery.of(context);
+        return SafeArea(
+          top: false,
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(
+              AppSpacing.lg,
+              AppSpacing.md,
+              AppSpacing.lg,
+              mediaQuery.viewInsets.bottom + AppSpacing.lg,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Bloquear autor',
+                  style: AppTextStyles.headline3.copyWith(
+                    color: AppColors.pureWhite,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  'Este autor suma ${recommendation.restrictedDevotionalsCountLast30Days} devocionales restringidos en ${recommendation.windowDays} días. Escribe el motivo del bloqueo.',
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: AppColors.softMist,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                TextField(
+                  controller: reasonController,
+                  minLines: 3,
+                  maxLines: 5,
+                  decoration: InputDecoration(
+                    hintText: 'Motivo del bloqueo',
+                    filled: true,
+                    fillColor: AppColors.inputBackground,
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppBorderRadius.md),
+                      borderSide: BorderSide(
+                        color: AppColors.inputBorder.withValues(alpha: 0.7),
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppBorderRadius.md),
+                      borderSide: BorderSide(
+                        color: Colors.red.shade400,
+                        width: 1.2,
+                      ),
+                    ),
+                  ),
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: AppColors.pureWhite,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      final value = reasonController.text.trim();
+                      if (value.isEmpty) return;
+                      Navigator.of(context).pop(value);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red.shade600,
+                      foregroundColor: AppColors.pureWhite,
+                    ),
+                    child: const Text('Bloquear autor'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+    reasonController.dispose();
+
+    if (!mounted || reason == null || reason.isEmpty) return;
+
+    setState(() => _isBlockingAuthor = true);
+    try {
+      await ref
+          .read(roleRepositoryProvider)
+          .blockUser(userId: devotional.author.id, reason: reason);
+      await _loadDetail();
+      await _refreshCollections();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Autor bloqueado correctamente.'),
+          backgroundColor: AppColors.holyGold,
+        ),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppErrorMapper.toMessage(
+              error,
+              l10n: context.l10n,
+              fallbackMessage: 'No se pudo bloquear al autor.',
+              businessCodeMessages: const {
+                'BLOCK_REASON_REQUIRED': 'Debes indicar el motivo del bloqueo',
+                'USER_ALREADY_BLOCKED': 'El autor ya está bloqueado',
+                'USER_NOT_FOUND': 'No se encontró el autor',
+                'FORBIDDEN': 'No tienes permisos para bloquear usuarios',
+              },
+            ),
+          ),
+          backgroundColor: Colors.red.shade700,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isBlockingAuthor = false);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(devotionalDetailControllerProvider);
     final commentsState = ref.watch(devotionalCommentsControllerProvider);
+    final isAdmin = ref.watch(isAdminProvider);
     final hasCoverImage =
         state.devotional?.coverImageUrl != null &&
         state.devotional!.coverImageUrl!.isNotEmpty;
@@ -565,6 +705,9 @@ class _DevotionalDetailScreenState
                   .toggleSave(),
               onShare: _share,
               onSubmitComment: _submitComment,
+              isAdmin: isAdmin,
+              isBlockingAuthor: _isBlockingAuthor,
+              onBlockAuthor: _blockAuthor,
               onOpenAuthor: () async {
                 final authorId = state.devotional?.author.id;
                 if (authorId == null || authorId.isEmpty) return;
@@ -591,6 +734,9 @@ class _DetailContent extends StatelessWidget {
     required this.onToggleSave,
     required this.onShare,
     required this.onSubmitComment,
+    required this.isAdmin,
+    required this.isBlockingAuthor,
+    required this.onBlockAuthor,
     required this.onOpenAuthor,
   });
 
@@ -605,6 +751,9 @@ class _DetailContent extends StatelessWidget {
   final VoidCallback onToggleSave;
   final Future<void> Function(Devotional devotional) onShare;
   final Future<void> Function() onSubmitComment;
+  final bool isAdmin;
+  final bool isBlockingAuthor;
+  final Future<void> Function() onBlockAuthor;
   final Future<void> Function() onOpenAuthor;
 
   @override
@@ -736,6 +885,17 @@ class _DetailContent extends StatelessWidget {
                         color: AppColors.pureWhite,
                       ),
                     ),
+                  ),
+                ],
+                if (devotional.authorBlockRecommendation != null &&
+                    devotional.canModerate &&
+                    devotional.moderationStatus.name == 'underReview') ...[
+                  const SizedBox(height: AppSpacing.md),
+                  _AuthorBlockRecommendationCard(
+                    devotional: devotional,
+                    isAdmin: isAdmin,
+                    isBlockingAuthor: isBlockingAuthor,
+                    onBlockAuthor: onBlockAuthor,
                   ),
                 ],
                 if (hasContent) ...[
@@ -1140,6 +1300,178 @@ class _CommentItem extends StatelessWidget {
   }
 }
 
+class _DetailStatusPill extends StatelessWidget {
+  const _DetailStatusPill({required this.label, this.isDanger = false});
+
+  final String label;
+  final bool isDanger;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = isDanger ? Colors.red.shade300 : AppColors.holyGold;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(AppBorderRadius.full),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
+      ),
+      child: Text(
+        label,
+        style: AppTextStyles.labelSmall.copyWith(
+          color: color,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+}
+
+class _DetailMetaChip extends StatelessWidget {
+  const _DetailMetaChip({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: AppColors.pureWhite.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(AppBorderRadius.full),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: AppColors.softMist),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: AppTextStyles.labelSmall.copyWith(color: AppColors.softMist),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AuthorBlockRecommendationCard extends StatelessWidget {
+  const _AuthorBlockRecommendationCard({
+    required this.devotional,
+    required this.isAdmin,
+    required this.isBlockingAuthor,
+    required this.onBlockAuthor,
+  });
+
+  final Devotional devotional;
+  final bool isAdmin;
+  final bool isBlockingAuthor;
+  final Future<void> Function() onBlockAuthor;
+
+  @override
+  Widget build(BuildContext context) {
+    final recommendation = devotional.authorBlockRecommendation!;
+    final shouldSuggestBlocking = recommendation.shouldSuggestBlocking;
+    final summary =
+        '${recommendation.restrictedDevotionalsCountLast30Days} devocionales restringidos en los últimos ${recommendation.windowDays} días.';
+    final title = recommendation.authorIsBlocked
+        ? 'Autor ya bloqueado'
+        : shouldSuggestBlocking
+        ? 'Se recomienda bloquear al autor'
+        : 'Seguimiento del autor';
+    final description = recommendation.authorIsBlocked
+        ? 'La cuenta del autor ya tiene un bloqueo activo. Puedes ocultar este devocional sin repetir la acción sobre la cuenta.'
+        : shouldSuggestBlocking
+        ? '$summary Este umbral alcanzó la política actual de bloqueo manual.'
+        : '$summary Aún no alcanza el umbral de ${recommendation.threshold} restricciones.';
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: shouldSuggestBlocking
+            ? Colors.red.shade900.withValues(alpha: 0.22)
+            : AppColors.inputBackground,
+        borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+        border: Border.all(
+          color: shouldSuggestBlocking
+              ? Colors.red.shade300.withValues(alpha: 0.3)
+              : AppColors.pureWhite.withValues(alpha: 0.08),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: AppTextStyles.bodyLarge.copyWith(
+              color: AppColors.pureWhite,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            description,
+            style: AppTextStyles.bodySmall.copyWith(
+              color: AppColors.softMist.withValues(alpha: 0.88),
+              height: 1.45,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Wrap(
+            spacing: AppSpacing.sm,
+            runSpacing: AppSpacing.sm,
+            children: [
+              _DetailMetaChip(
+                icon: Icons.flag_outlined,
+                label:
+                    '${recommendation.restrictedDevotionalsCountLast30Days}/${recommendation.threshold}',
+              ),
+              _DetailMetaChip(
+                icon: Icons.calendar_today_outlined,
+                label: '${recommendation.windowDays} días',
+              ),
+              if (recommendation.authorIsBlocked)
+                const _DetailStatusPill(
+                  label: 'Autor bloqueado',
+                  isDanger: true,
+                )
+              else if (shouldSuggestBlocking)
+                const _DetailStatusPill(
+                  label: 'Sugerencia de bloqueo',
+                  isDanger: true,
+                )
+              else
+                const _DetailStatusPill(label: 'Solo informativo'),
+            ],
+          ),
+          if (isAdmin && shouldSuggestBlocking) ...[
+            const SizedBox(height: AppSpacing.md),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: isBlockingAuthor ? null : () => onBlockAuthor(),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red.shade600,
+                  foregroundColor: AppColors.pureWhite,
+                ),
+                child: isBlockingAuthor
+                    ? const SizedBox(
+                        height: 18,
+                        width: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text('Bloquear autor'),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
 class _ReviewActionBar extends StatelessWidget {
   const _ReviewActionBar({
     required this.isApproving,
@@ -1187,7 +1519,7 @@ class _ReviewActionBar extends StatelessWidget {
                         width: 18,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : const Text('Restringir'),
+                    : const Text('Ocultar'),
               ),
             ),
             const SizedBox(width: AppSpacing.sm),

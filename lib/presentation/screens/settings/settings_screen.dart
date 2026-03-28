@@ -17,6 +17,7 @@ import 'package:holyverso/presentation/widgets/section_card.dart';
 import 'package:holyverso/presentation/widgets/setting_tile.dart';
 import 'package:holyverso/presentation/widgets/common/holy_bottom_sheet.dart';
 import 'package:holyverso/presentation/widgets/common/holy_child_app_bar.dart';
+import 'package:holyverso/presentation/widgets/legal/legal_links_section.dart';
 import 'package:holyverso/presentation/widgets/users/role_badge.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
@@ -767,6 +768,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         ),
                     ],
                   ),
+                  const SizedBox(height: AppSpacing.lg),
+                  _sectionLabel('Legal y Soporte'),
+                  const SectionCard(children: [LegalLinksSection.settings()]),
                   const SizedBox(height: AppSpacing.lg),
                   _sectionLabel('Acerca de'),
                   SectionCard(

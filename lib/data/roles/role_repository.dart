@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:holyverso/data/roles/roles_api_client.dart';
 import 'package:holyverso/domain/roles/user_role.dart';
+import 'package:holyverso/domain/roles/user_with_role.dart';
 import 'package:holyverso/domain/roles/users_list_result.dart';
 
 class RoleRepository {
@@ -31,6 +32,20 @@ class RoleRepository {
     required UserRole role,
   }) {
     return _client.updateUserRole(userId: userId, role: role);
+  }
+
+  Future<UserWithRole> blockUser({
+    required String userId,
+    required String reason,
+  }) {
+    return _client.blockUser(userId: userId, reason: reason);
+  }
+
+  Future<UserWithRole> unblockUser({
+    required String userId,
+    required String reason,
+  }) {
+    return _client.unblockUser(userId: userId, reason: reason);
   }
 }
 

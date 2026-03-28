@@ -1,4 +1,5 @@
 import 'package:holyverso/domain/roles/user_role.dart';
+import 'package:holyverso/domain/users/user_moderation_state.dart';
 
 class UserWithRole {
   const UserWithRole({
@@ -7,6 +8,8 @@ class UserWithRole {
     this.name,
     required this.role,
     required this.createdAt,
+    required this.updatedAt,
+    this.moderation = const UserModerationState(),
   });
 
   final String id;
@@ -14,6 +17,8 @@ class UserWithRole {
   final String? name;
   final UserRole role;
   final DateTime createdAt;
+  final DateTime updatedAt;
+  final UserModerationState moderation;
 
   String get displayName {
     final trimmed = name?.trim();
@@ -33,6 +38,14 @@ class UserWithRole {
       createdAt:
           DateTime.tryParse(map['createdAt']?.toString() ?? '') ??
           DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
+      updatedAt:
+          DateTime.tryParse(map['updatedAt']?.toString() ?? '') ??
+          DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
+      moderation: UserModerationState.fromMap(
+        map['moderation'] is Map
+            ? Map<String, dynamic>.from(map['moderation'] as Map)
+            : null,
+      ),
     );
   }
 
@@ -42,6 +55,8 @@ class UserWithRole {
     String? name,
     UserRole? role,
     DateTime? createdAt,
+    DateTime? updatedAt,
+    UserModerationState? moderation,
   }) {
     return UserWithRole(
       id: id ?? this.id,
@@ -49,6 +64,8 @@ class UserWithRole {
       name: name ?? this.name,
       role: role ?? this.role,
       createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      moderation: moderation ?? this.moderation,
     );
   }
 }

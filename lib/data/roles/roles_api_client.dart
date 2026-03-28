@@ -92,6 +92,32 @@ class RolesApiClient {
       data: {'role': role.value.toUpperCase()},
     );
   }
+
+  Future<UserWithRole> blockUser({
+    required String userId,
+    required String reason,
+  }) async {
+    final response = await _dio.post(
+      '/roles/users/$userId/block',
+      data: {'reason': reason},
+    );
+    final rawData = response.data;
+    final data = rawData is Map ? rawData['data'] ?? rawData : rawData;
+    return UserWithRole.fromMap(Map<String, dynamic>.from(data as Map));
+  }
+
+  Future<UserWithRole> unblockUser({
+    required String userId,
+    required String reason,
+  }) async {
+    final response = await _dio.post(
+      '/roles/users/$userId/unblock',
+      data: {'reason': reason},
+    );
+    final rawData = response.data;
+    final data = rawData is Map ? rawData['data'] ?? rawData : rawData;
+    return UserWithRole.fromMap(Map<String, dynamic>.from(data as Map));
+  }
 }
 
 final rolesApiClientProvider = Provider<RolesApiClient>((ref) {

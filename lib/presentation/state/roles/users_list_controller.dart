@@ -154,6 +154,42 @@ class UsersListController extends Notifier<UsersListState> {
     }
   }
 
+  Future<bool> blockUser(String userId, String reason) async {
+    try {
+      final updatedUser = await _repository.blockUser(
+        userId: userId,
+        reason: reason,
+      );
+      state = state.copyWith(
+        users: state.users
+            .map((user) => user.id == userId ? updatedUser : user)
+            .toList(),
+      );
+      return true;
+    } catch (error) {
+      state = state.copyWith(errorMessage: _mapError(error));
+      return false;
+    }
+  }
+
+  Future<bool> unblockUser(String userId, String reason) async {
+    try {
+      final updatedUser = await _repository.unblockUser(
+        userId: userId,
+        reason: reason,
+      );
+      state = state.copyWith(
+        users: state.users
+            .map((user) => user.id == userId ? updatedUser : user)
+            .toList(),
+      );
+      return true;
+    } catch (error) {
+      state = state.copyWith(errorMessage: _mapError(error));
+      return false;
+    }
+  }
+
   void clearError() {
     state = state.copyWith(clearError: true);
   }
@@ -167,6 +203,12 @@ class UsersListController extends Notifier<UsersListState> {
         'FORBIDDEN': 'No tienes permisos para esta acción',
         'LAST_ADMIN': 'No puedes quitar el último administrador',
         'CANNOT_CHANGE_OWN_ROLE': 'No puedes cambiar tu propio rol',
+        'CANNOT_BLOCK_SELF': 'No puedes bloquear tu propia cuenta',
+        'CANNOT_UNBLOCK_SELF': 'No puedes desbloquear tu propia cuenta',
+        'BLOCK_REASON_REQUIRED': 'Debes escribir un motivo para bloquear',
+        'UNBLOCK_REASON_REQUIRED': 'Debes escribir un motivo para desbloquear',
+        'USER_ALREADY_BLOCKED': 'La cuenta ya está bloqueada',
+        'USER_NOT_BLOCKED': 'La cuenta no está bloqueada',
         'USER_NOT_FOUND': 'No se encontró el usuario',
         'INVALID_ROLE': 'El rol seleccionado no es válido',
         'AUTH_REQUIRED': 'Debes iniciar sesión para continuar',

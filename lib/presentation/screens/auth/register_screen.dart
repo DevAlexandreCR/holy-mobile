@@ -8,6 +8,7 @@ import 'package:holyverso/core/theme/app_text_styles.dart';
 import 'package:holyverso/presentation/state/auth/auth_controller.dart';
 import 'package:holyverso/presentation/widgets/holy_button.dart';
 import 'package:holyverso/presentation/widgets/holy_input_field.dart';
+import 'package:holyverso/presentation/widgets/legal/legal_links_section.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
@@ -214,6 +215,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       ),
                       child: Text(l10n.alreadyHaveAccount),
                     ),
+                    const SizedBox(height: AppSpacing.lg),
+                    const LegalLinksSection.auth(),
                   ],
                 ),
               ),

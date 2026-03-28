@@ -618,6 +618,8 @@ class _DevotionalEditorScreenState
                             context.l10n.devotionalsModerationUnavailable,
                         'IMAGE_ASSET_ALREADY_ATTACHED':
                             context.l10n.devotionalImageAlreadyAttached,
+                        'USER_BLOCKED_DEVOTIONAL_PUBLISH':
+                            'Tu cuenta está bloqueada y no puede publicar devocionales.',
                       },
                     )
                   : AppErrorMapper.toMessage(
@@ -627,6 +629,10 @@ class _DevotionalEditorScreenState
                       businessCodeMessages: {
                         'IMAGE_ASSET_ALREADY_ATTACHED':
                             context.l10n.devotionalImageAlreadyAttached,
+                        'USER_BLOCKED_DEVOTIONAL_CREATE':
+                            'Tu cuenta está bloqueada y no puede crear devocionales.',
+                        'USER_BLOCKED_DEVOTIONAL_EDIT':
+                            'Tu cuenta está bloqueada y no puede editar devocionales.',
                       },
                     ),
             ),

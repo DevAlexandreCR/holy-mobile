@@ -112,6 +112,45 @@ class UserListItem extends StatelessWidget {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
+                  if (user.moderation.isBlocked) ...[
+                    const SizedBox(height: 6),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 6,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.red.shade900.withValues(alpha: 0.26),
+                            borderRadius: BorderRadius.circular(999),
+                            border: Border.all(
+                              color: Colors.red.shade300.withValues(
+                                alpha: 0.35,
+                              ),
+                            ),
+                          ),
+                          child: Text(
+                            'Bloqueado',
+                            style: AppTextStyles.labelSmall.copyWith(
+                              color: Colors.red.shade100,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                        if (user.moderation.blockedAt != null)
+                          Text(
+                            _formatBlockedAt(user.moderation.blockedAt!),
+                            style: AppTextStyles.labelSmall.copyWith(
+                              color: AppColors.softMist.withValues(alpha: 0.72),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -123,5 +162,12 @@ class UserListItem extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _formatBlockedAt(DateTime value) {
+    final local = value.toLocal();
+    final day = local.day.toString().padLeft(2, '0');
+    final month = local.month.toString().padLeft(2, '0');
+    return 'Desde $day/$month/${local.year}';
   }
 }

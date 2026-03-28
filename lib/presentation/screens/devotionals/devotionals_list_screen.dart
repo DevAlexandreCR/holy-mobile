@@ -634,6 +634,8 @@ class _MyDevotionalsTabState extends ConsumerState<_MyDevotionalsTab> {
         'DEVOTIONAL_PUBLISH_BLOCKED': context.l10n.devotionalPublishBlocked,
         'OPENAI_MODERATION_UNAVAILABLE':
             context.l10n.devotionalsModerationUnavailable,
+        'USER_BLOCKED_DEVOTIONAL_PUBLISH':
+            'Tu cuenta está bloqueada y no puede publicar devocionales.',
       },
     );
   }
@@ -1670,6 +1672,20 @@ class _ReviewDevotionalCard extends StatelessWidget {
                   runSpacing: AppSpacing.sm,
                   children: [
                     const _StatusPill(label: 'En revisión', isWarning: true),
+                    if (devotional.authorBlockRecommendation?.authorIsBlocked ==
+                        true)
+                      const _StatusPill(
+                        label: 'Autor bloqueado',
+                        isWarning: true,
+                      )
+                    else if (devotional
+                            .authorBlockRecommendation
+                            ?.shouldSuggestBlocking ==
+                        true)
+                      const _StatusPill(
+                        label: 'Sugerir bloqueo',
+                        isWarning: true,
+                      ),
                     _MetaChip(
                       icon: Icons.flag_outlined,
                       label: '${devotional.reportCount} reportes',

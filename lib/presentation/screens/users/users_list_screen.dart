@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:holyverso/core/theme/app_colors.dart';
 import 'package:holyverso/core/theme/app_design_tokens.dart';
 import 'package:holyverso/core/theme/app_text_styles.dart';
+import 'package:holyverso/domain/roles/user_management_action.dart';
 import 'package:holyverso/domain/roles/user_role.dart';
 import 'package:holyverso/domain/roles/user_with_role.dart';
 import 'package:holyverso/presentation/screens/users/user_role_dialog.dart';
@@ -255,7 +256,7 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen> {
   }
 
   Future<void> _showRoleDialog(UserWithRole user) async {
-    final result = await showModalBottomSheet<UserRole>(
+    final result = await showModalBottomSheet<UserManagementAction>(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
@@ -264,23 +265,39 @@ class _UsersListScreenState extends ConsumerState<UsersListScreen> {
 
     if (result == null || !mounted) return;
 
-    final success = await ref
-        .read(usersListControllerProvider.notifier)
-        .updateUserRole(user.id, result);
+    final controller = ref.read(usersListControllerProvider.notifier);
+    final success = switch (result.type) {
+      UserManagementActionType.updateRole => await controller.updateUserRole(
+        user.id,
+        result.role!,
+      ),
+      UserManagementActionType.block => await controller.blockUser(
+        user.id,
+        result.reason!,
+      ),
+      UserManagementActionType.unblock => await controller.unblockUser(
+        user.id,
+        result.reason!,
+      ),
+    };
 
     if (!mounted) return;
 
     if (success) {
+      final message = switch (result.type) {
+        UserManagementActionType.updateRole =>
+          'Rol actualizado a ${result.role!.displayName}',
+        UserManagementActionType.block => 'Usuario bloqueado correctamente',
+        UserManagementActionType.unblock =>
+          'Usuario desbloqueado correctamente',
+      };
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Role actualizado a ${result.displayName}'),
-          backgroundColor: AppColors.holyGold,
-        ),
+        SnackBar(content: Text(message), backgroundColor: AppColors.holyGold),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('No fue posible actualizar el role'),
+          content: const Text('No fue posible actualizar el usuario'),
           backgroundColor: Colors.red.shade700,
         ),
       );

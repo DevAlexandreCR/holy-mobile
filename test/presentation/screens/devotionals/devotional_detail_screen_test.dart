@@ -165,16 +165,9 @@ void main() {
 }
 
 class _TestApp extends StatelessWidget {
-  const _TestApp({
-    required this.devotional,
-    this.commentsState = const DevotionalCommentsState(
-      status: DevotionalCommentsStatus.success,
-      devotionalId: 'devotional-1',
-    ),
-  });
+  const _TestApp({required this.devotional});
 
   final Devotional devotional;
-  final DevotionalCommentsState commentsState;
 
   @override
   Widget build(BuildContext context) {
@@ -189,7 +182,12 @@ class _TestApp extends StatelessWidget {
           ),
         ),
         devotionalCommentsControllerProvider.overrideWith(
-          () => _StaticDevotionalCommentsController(commentsState),
+          () => _StaticDevotionalCommentsController(
+            const DevotionalCommentsState(
+              status: DevotionalCommentsStatus.success,
+              devotionalId: 'devotional-1',
+            ),
+          ),
         ),
       ],
       child: MaterialApp(
