@@ -61,6 +61,10 @@ enum DevotionalsTopTab {
   }
 }
 
+const double _publicFeedMediaSectionHeight = 164;
+const double _publicFeedMediaOverlayTop = 4;
+const double _publicFeedMediaOverlayTopWithBadge = 46;
+
 class _DevotionalsListScreenState extends ConsumerState<DevotionalsListScreen> {
   late DevotionalsTopTab _selectedTab;
 
@@ -1015,8 +1019,34 @@ class _PublicDevotionalCard extends StatelessWidget {
         context.l10n.devotionalFeedOpenCta;
     final stateMarker = _feedStateMarkerLabel(context, devotional);
     final inlineStateMarker = hasImage ? null : stateMarker;
-    final showSocialStats =
-        devotional.likesCount > 0 || devotional.commentsCount > 0;
+    final showEngagementStats =
+        devotional.likesCount > 0 ||
+        devotional.commentsCount > 0 ||
+        devotional.viewCount > 0;
+    final saveButton = _SavePillButton(
+      key: Key('public-devotional-save-${devotional.id}'),
+      isSaved: devotional.saved,
+      isLoading: isSaving,
+      onPressed: isSaving ? null : onSave,
+    );
+    final shareButton = _GhostActionButton(
+      key: Key('public-devotional-share-${devotional.id}'),
+      onPressed: onShare,
+      tooltip: context.l10n.shareAction,
+      icon: Icons.share_outlined,
+    );
+    final inlineStats = _PublicFeedStats(
+      likesCount: devotional.likesCount,
+      commentsCount: devotional.commentsCount,
+      viewsCount: devotional.viewCount,
+    );
+    final overlayStats = _PublicFeedStats(
+      key: Key('public-devotional-overlay-stats-${devotional.id}'),
+      likesCount: devotional.likesCount,
+      commentsCount: devotional.commentsCount,
+      viewsCount: devotional.viewCount,
+      singleLine: true,
+    );
 
     return _DevotionalSurfaceCard(
       featured:
@@ -1095,33 +1125,20 @@ class _PublicDevotionalCard extends StatelessWidget {
                         ),
                     ],
                   ),
-                  const SizedBox(height: AppSpacing.md),
-                  Row(
-                    children: [
-                      if (showSocialStats)
-                        Expanded(
-                          child: _PublicFeedStats(
-                            likesCount: devotional.likesCount,
-                            commentsCount: devotional.commentsCount,
-                          ),
-                        )
-                      else
-                        const Spacer(),
-                      _SavePillButton(
-                        key: Key('public-devotional-save-${devotional.id}'),
-                        isSaved: devotional.saved,
-                        isLoading: isSaving,
-                        onPressed: isSaving ? null : onSave,
-                      ),
-                      const SizedBox(width: AppSpacing.sm),
-                      _GhostActionButton(
-                        key: Key('public-devotional-share-${devotional.id}'),
-                        onPressed: onShare,
-                        tooltip: context.l10n.shareAction,
-                        icon: Icons.share_outlined,
-                      ),
-                    ],
-                  ),
+                  if (!hasImage) ...[
+                    const SizedBox(height: AppSpacing.md),
+                    Row(
+                      children: [
+                        if (showEngagementStats)
+                          Expanded(child: inlineStats)
+                        else
+                          const Spacer(),
+                        saveButton,
+                        const SizedBox(width: AppSpacing.sm),
+                        shareButton,
+                      ],
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -1133,6 +1150,32 @@ class _PublicDevotionalCard extends StatelessWidget {
                     devotional.previewImageUrl ?? devotional.coverImageUrl,
                 focusY: devotional.coverImageFocusY,
                 stateMarker: stateMarker,
+                overlayBar: Row(
+                  key: Key('public-devotional-overlay-bar-${devotional.id}'),
+                  children: [
+                    if (showEngagementStats)
+                      Expanded(
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: overlayStats,
+                        ),
+                      )
+                    else
+                      const Spacer(),
+                    const SizedBox(width: AppSpacing.md),
+                    Row(
+                      key: Key(
+                        'public-devotional-overlay-actions-${devotional.id}',
+                      ),
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        saveButton,
+                        const SizedBox(width: AppSpacing.sm),
+                        shareButton,
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ],
           ],
@@ -1263,12 +1306,17 @@ class _ImageFeedStateBadge extends StatelessWidget {
 
 class _PublicFeedStats extends StatelessWidget {
   const _PublicFeedStats({
+    super.key,
     required this.likesCount,
     required this.commentsCount,
+    required this.viewsCount,
+    this.singleLine = false,
   });
 
   final int likesCount;
   final int commentsCount;
+  final int viewsCount;
+  final bool singleLine;
 
   @override
   Widget build(BuildContext context) {
@@ -1287,10 +1335,29 @@ class _PublicFeedStats extends StatelessWidget {
           value: commentsCount,
           semanticsLabel: context.l10n.commentsLabel,
         ),
+      if (viewsCount > 0)
+        _PublicFeedStat(
+          key: const Key('public-devotional-views'),
+          icon: Icons.remove_red_eye_outlined,
+          value: viewsCount,
+          semanticsLabel: context.l10n.viewsLabel,
+        ),
     ];
 
     if (stats.isEmpty) {
       return const SizedBox.shrink();
+    }
+
+    if (singleLine) {
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (var i = 0; i < stats.length; i++) ...[
+            if (i > 0) const SizedBox(width: AppSpacing.sm),
+            stats[i],
+          ],
+        ],
+      );
     }
 
     return Wrap(
@@ -1899,11 +1966,13 @@ class _FeedImageStrip extends StatelessWidget {
     required this.imageUrl,
     required this.focusY,
     this.stateMarker,
+    this.overlayBar,
   });
 
   final String? imageUrl;
   final double focusY;
   final _FeedStateMarkerData? stateMarker;
+  final Widget? overlayBar;
 
   @override
   Widget build(BuildContext context) {
@@ -1911,13 +1980,16 @@ class _FeedImageStrip extends StatelessWidget {
     if (effectiveUrl == null || effectiveUrl.isEmpty) {
       return const SizedBox.shrink();
     }
+    final overlayTop = stateMarker == null
+        ? _publicFeedMediaOverlayTop
+        : _publicFeedMediaOverlayTopWithBadge;
 
     return ClipRRect(
       borderRadius: const BorderRadius.vertical(
         bottom: Radius.circular(AppBorderRadius.lg),
       ),
       child: SizedBox(
-        height: 112,
+        height: _publicFeedMediaSectionHeight,
         width: double.infinity,
         child: Stack(
           fit: StackFit.expand,
@@ -1940,13 +2012,24 @@ class _FeedImageStrip extends StatelessWidget {
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
+                  stops: const [0, 0.18, 0.42, 0.72, 1],
                   colors: [
-                    AppColors.midnightFaithDark.withValues(alpha: 0.08),
-                    AppColors.midnightFaithDark.withValues(alpha: 0.22),
+                    AppColors.midnightFaith.withValues(alpha: 0.95),
+                    AppColors.midnightFaith.withValues(alpha: 0.82),
+                    AppColors.midnightFaithDark.withValues(alpha: 0.58),
+                    AppColors.midnightFaithDark.withValues(alpha: 0.2),
+                    AppColors.midnightFaithDark.withValues(alpha: 0.06),
                   ],
                 ),
               ),
             ),
+            if (overlayBar != null)
+              Positioned(
+                top: overlayTop,
+                left: 12,
+                right: 12,
+                child: overlayBar!,
+              ),
             if (stateMarker != null)
               Positioned(
                 top: 12,

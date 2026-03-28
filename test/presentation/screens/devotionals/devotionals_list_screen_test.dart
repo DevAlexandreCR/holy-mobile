@@ -212,9 +212,16 @@ void main() {
     expect(find.text('Muchos lo están guardando ->'), findsOneWidget);
     expect(find.text('Recomendado'), findsOneWidget);
     expect(find.text('Destacado en HolyVerso'), findsNothing);
-    expect(find.text('12'), findsOneWidget);
     expect(find.text('4'), findsOneWidget);
     expect(find.text('Guardar'), findsOneWidget);
+    expect(
+      find.byKey(const Key('public-devotional-overlay-bar-share-card')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('public-devotional-overlay-stats-share-card')),
+      findsOneWidget,
+    );
     expect(
       find.byKey(const Key('public-devotional-save-share-card')),
       findsOneWidget,
@@ -223,6 +230,52 @@ void main() {
       find.byKey(const Key('public-devotional-share-share-card')),
       findsOneWidget,
     );
+    expect(
+      find.byKey(const Key('public-devotional-overlay-actions-share-card')),
+      findsOneWidget,
+    );
+
+    final imageFinder = find.byKey(
+      const Key('public-devotional-image-share-card'),
+    );
+    final saveFinder = find.byKey(
+      const Key('public-devotional-save-share-card'),
+    );
+    final shareFinder = find.byKey(
+      const Key('public-devotional-share-share-card'),
+    );
+    final imageTop = tester.getTopLeft(imageFinder).dy;
+    final imageBottom = tester.getBottomLeft(imageFinder).dy;
+    final imageHeight = tester.getSize(imageFinder).height;
+    final likesCenter = tester
+        .getCenter(find.byKey(const Key('public-devotional-likes')))
+        .dy;
+    final commentsCenter = tester
+        .getCenter(find.byKey(const Key('public-devotional-comments')))
+        .dy;
+    final viewsCenter = tester
+        .getCenter(find.byKey(const Key('public-devotional-views')))
+        .dy;
+    final saveCenter = tester.getCenter(saveFinder).dy;
+    final shareCenter = tester.getCenter(shareFinder).dy;
+
+    expect(find.byKey(const Key('public-devotional-likes')), findsOneWidget);
+    expect(find.byKey(const Key('public-devotional-comments')), findsOneWidget);
+    expect(find.byKey(const Key('public-devotional-views')), findsOneWidget);
+    expect(likesCenter, greaterThan(imageTop));
+    expect(likesCenter, lessThan(imageBottom));
+    expect(commentsCenter, greaterThan(imageTop));
+    expect(commentsCenter, lessThan(imageBottom));
+    expect(viewsCenter, greaterThan(imageTop));
+    expect(viewsCenter, lessThan(imageBottom));
+    expect(saveCenter, greaterThan(imageTop));
+    expect(saveCenter, lessThan(imageBottom));
+    expect(shareCenter, greaterThan(imageTop));
+    expect(shareCenter, lessThan(imageBottom));
+    expect(saveCenter, lessThan(imageTop + (imageHeight * 0.42)));
+    expect(shareCenter, lessThan(imageTop + (imageHeight * 0.42)));
+    expect((likesCenter - saveCenter).abs(), lessThan(2));
+    expect((commentsCenter - shareCenter).abs(), lessThan(2));
 
     await tester.ensureVisible(
       find.byKey(const Key('public-devotional-share-share-card')),
@@ -375,6 +428,7 @@ void main() {
               title: 'Sin estadisticas',
               likesCount: 0,
               commentsCount: 0,
+              viewCount: 0,
             ),
           ],
         ),
@@ -390,6 +444,7 @@ void main() {
 
     expect(find.byKey(const Key('public-devotional-likes')), findsNothing);
     expect(find.byKey(const Key('public-devotional-comments')), findsNothing);
+    expect(find.byKey(const Key('public-devotional-views')), findsNothing);
   });
 
   testWidgets('fab opens devotional create route', (tester) async {
@@ -514,6 +569,7 @@ void main() {
     expect(find.text('En tendencia'), findsOneWidget);
     expect(find.byKey(const Key('public-devotional-likes')), findsOneWidget);
     expect(find.byKey(const Key('public-devotional-comments')), findsOneWidget);
+    expect(find.byKey(const Key('public-devotional-views')), findsOneWidget);
   });
 
   testWidgets('renders recommended badge over the image when available', (
@@ -587,7 +643,60 @@ void main() {
     final imageSize = tester.getSize(
       find.byKey(const Key('public-devotional-image-image-card')),
     );
-    expect(imageSize.height, 112);
+    expect(imageSize.height, 164);
+  });
+
+  testWidgets('keeps inline actions row when the public card has no image', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _TestApp(
+        forYouState: DevotionalsFeedState(
+          status: DevotionalsFeedStatus.success,
+          items: [
+            _buildDevotional(
+              id: 'no-image-actions',
+              title: 'Sin imagen',
+              previewImageUrl: '',
+              coverImageUrl: '',
+            ),
+          ],
+        ),
+        followingState: const DevotionalsFeedState(
+          status: DevotionalsFeedStatus.success,
+        ),
+        mineState: const DevotionalsListState(
+          status: DevotionalsListStatus.success,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const Key('public-devotional-image-no-image-actions')),
+      findsNothing,
+    );
+    expect(
+      find.byKey(
+        const Key('public-devotional-overlay-actions-no-image-actions'),
+      ),
+      findsNothing,
+    );
+    expect(
+      find.byKey(const Key('public-devotional-overlay-stats-no-image-actions')),
+      findsNothing,
+    );
+    expect(
+      find.byKey(const Key('public-devotional-save-no-image-actions')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('public-devotional-share-no-image-actions')),
+      findsOneWidget,
+    );
+    expect(find.byKey(const Key('public-devotional-likes')), findsOneWidget);
+    expect(find.byKey(const Key('public-devotional-comments')), findsOneWidget);
+    expect(find.byKey(const Key('public-devotional-views')), findsOneWidget);
   });
 
   testWidgets('uses fallback contextual text when there is no interpretation', (
@@ -944,6 +1053,7 @@ Devotional _buildDevotional({
   bool following = true,
   int likesCount = 12,
   int commentsCount = 4,
+  int viewCount = 21,
   String feedContextReason = 'SAVED_BY_OTHERS',
   DevotionalPublicationState? publicationState,
   String coverImageUrl = '',
@@ -981,7 +1091,7 @@ Devotional _buildDevotional({
         'Su gracia no te exige fingir fuerza; te invita a seguir desde la verdad.',
     hookSource: 'CONTENT_OPENING',
     coverImageFocusY: 0,
-    viewCount: 12,
+    viewCount: viewCount,
     estimatedReadTime: 5,
     publishedAt: DateTime(2026, 3, 25),
     firstPublishedAt: DateTime(2026, 3, 25),
