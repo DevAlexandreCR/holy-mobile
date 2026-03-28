@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:holyverso/data/widget/models/widget_install_status.dart';
 import 'package:holyverso/domain/widget/widget_verse.dart';
 
 class WidgetVerseStorage {
@@ -77,6 +78,19 @@ class WidgetVerseStorage {
       debugPrint('Failed to request immediate widget update: $error');
       debugPrint('$stackTrace');
     }
+  }
+
+  Future<WidgetInstallStatus> readInstallStatus() async {
+    final raw = await _channel.invokeMapMethod<Object?, Object?>(
+      'getWidgetInstallStatus',
+    );
+    if (raw == null) {
+      throw StateError('Widget install status unavailable');
+    }
+
+    return WidgetInstallStatus.fromMap(
+      raw.map((key, value) => MapEntry(key?.toString() ?? '', value)),
+    );
   }
 }
 

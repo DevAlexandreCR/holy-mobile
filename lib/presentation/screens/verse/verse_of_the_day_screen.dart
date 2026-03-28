@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -12,6 +14,7 @@ import 'package:holyverso/presentation/screens/verse/chapter_reader_screen.dart'
 import 'package:holyverso/presentation/state/auth/auth_controller.dart';
 import 'package:holyverso/presentation/state/verse/saved_verses_controller.dart';
 import 'package:holyverso/presentation/state/verse/chapter_reader_state.dart';
+import 'package:holyverso/presentation/state/verse/widget_adoption_prompt_controller.dart';
 import 'package:holyverso/presentation/state/verse/verse_controller.dart';
 import 'package:holyverso/presentation/state/verse/verse_state.dart';
 import 'package:holyverso/presentation/widgets/holy_button.dart';
@@ -26,7 +29,8 @@ class VerseOfTheDayScreen extends ConsumerStatefulWidget {
       _VerseOfTheDayScreenState();
 }
 
-class _VerseOfTheDayScreenState extends ConsumerState<VerseOfTheDayScreen> {
+class _VerseOfTheDayScreenState extends ConsumerState<VerseOfTheDayScreen>
+    with WidgetsBindingObserver {
   bool _isFavorite = false;
   final VerseImageService _verseImageService = VerseImageService();
   bool _isGeneratingImage = false;
@@ -35,9 +39,33 @@ class _VerseOfTheDayScreenState extends ConsumerState<VerseOfTheDayScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(verseControllerProvider.notifier).loadVerse();
+      unawaited(ref.read(verseControllerProvider.notifier).loadVerse());
+      unawaited(
+        ref
+            .read(widgetAdoptionPromptControllerProvider.notifier)
+            .refreshStatus(),
+      );
     });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.resumed) {
+      unawaited(
+        ref
+            .read(widgetAdoptionPromptControllerProvider.notifier)
+            .refreshStatus(),
+      );
+    }
   }
 
   Future<void> _onRefresh() {
@@ -196,6 +224,24 @@ class _VerseOfTheDayScreenState extends ConsumerState<VerseOfTheDayScreen> {
     );
   }
 
+  Future<void> _showWidgetSetupSheet() async {
+    await showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (sheetContext) {
+        return _WidgetSetupSheet(
+          onRefreshStatus: () async {
+            Navigator.of(sheetContext).pop();
+            await ref
+                .read(widgetAdoptionPromptControllerProvider.notifier)
+                .refreshStatus();
+          },
+        );
+      },
+    );
+  }
+
   Future<void> _toggleSave(VerseOfTheDay verse) async {
     final libraryVerseId = verse.libraryVerseId;
     if (libraryVerseId == null) return;
@@ -279,6 +325,7 @@ class _VerseOfTheDayScreenState extends ConsumerState<VerseOfTheDayScreen> {
     final authState = ref.watch(authControllerProvider);
     final isGuest = !authState.isAuthenticated;
     final savedState = ref.watch(savedVersesControllerProvider);
+    final widgetPromptState = ref.watch(widgetAdoptionPromptControllerProvider);
     final verseId = verse?.libraryVerseId;
     final isSaved = verseId != null && savedState.savedIds.contains(verseId);
     final isSaving = verseId != null && savedState.pendingIds.contains(verseId);
@@ -370,6 +417,17 @@ class _VerseOfTheDayScreenState extends ConsumerState<VerseOfTheDayScreen> {
                   if (verse != null && !isGuest) ...[
                     const SizedBox(height: AppSpacing.md),
                     _ChapterEntryCard(onTap: () => _openChapterReader(verse)),
+                    if (widgetPromptState.shouldShowPrompt) ...[
+                      const SizedBox(height: AppSpacing.md),
+                      _WidgetAdoptionCard(
+                        onShowInstructions: _showWidgetSetupSheet,
+                        onDismiss: () => ref
+                            .read(
+                              widgetAdoptionPromptControllerProvider.notifier,
+                            )
+                            .dismissPrompt(),
+                      ),
+                    ],
                   ],
                   if (isGuest) ...[
                     const SizedBox(height: AppSpacing.md),
@@ -669,6 +727,199 @@ class _ChapterEntryCard extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _WidgetAdoptionCard extends StatelessWidget {
+  const _WidgetAdoptionCard({
+    required this.onShowInstructions,
+    required this.onDismiss,
+  });
+
+  final VoidCallback onShowInstructions;
+  final VoidCallback onDismiss;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: AppColors.pureWhite.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+        border: Border.all(color: AppColors.pureWhite.withValues(alpha: 0.1)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(AppSpacing.sm),
+                decoration: BoxDecoration(
+                  color: AppColors.holyGold.withValues(alpha: 0.14),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: AppColors.holyGold.withValues(alpha: 0.35),
+                  ),
+                ),
+                child: const Icon(
+                  Icons.widgets_outlined,
+                  color: AppColors.holyGold,
+                  size: AppSizes.iconMedium,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l10n.widgetPromptTitle,
+                      style: AppTextStyles.labelLarge.copyWith(
+                        color: AppColors.pureWhite,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                    Text(
+                      l10n.widgetPromptBody,
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: AppColors.softMist.withValues(alpha: 0.78),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+          HolyButton(
+            label: l10n.widgetPromptPrimaryAction,
+            onPressed: onShowInstructions,
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          TextButton(
+            onPressed: onDismiss,
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.softMist,
+              textStyle: AppTextStyles.bodyMedium.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            child: Text(l10n.widgetPromptDismissAction),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _WidgetSetupSheet extends StatelessWidget {
+  const _WidgetSetupSheet({required this.onRefreshStatus});
+
+  final Future<void> Function() onRefreshStatus;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final isAndroid = Theme.of(context).platform == TargetPlatform.android;
+    final steps = isAndroid
+        ? [
+            l10n.widgetSetupAndroidStepOne,
+            l10n.widgetSetupAndroidStepTwo,
+            l10n.widgetSetupAndroidStepThree,
+          ]
+        : [
+            l10n.widgetSetupIosStepOne,
+            l10n.widgetSetupIosStepTwo,
+            l10n.widgetSetupIosStepThree,
+          ];
+
+    return HolyBottomSheet(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            l10n.widgetSetupTitle,
+            style: AppTextStyles.labelLarge.copyWith(
+              color: AppColors.pureWhite,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            isAndroid
+                ? l10n.widgetSetupAndroidSubtitle
+                : l10n.widgetSetupIosSubtitle,
+            style: AppTextStyles.bodySmall.copyWith(
+              color: AppColors.softMist.withValues(alpha: 0.8),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          for (var index = 0; index < steps.length; index++) ...[
+            _WidgetSetupStep(number: index + 1, text: steps[index]),
+            if (index < steps.length - 1) const SizedBox(height: AppSpacing.sm),
+          ],
+          const SizedBox(height: AppSpacing.md),
+          HolyButton(
+            label: l10n.widgetSetupRefreshAction,
+            onPressed: () {
+              unawaited(onRefreshStatus());
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _WidgetSetupStep extends StatelessWidget {
+  const _WidgetSetupStep({required this.number, required this.text});
+
+  final int number;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 28,
+          height: 28,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: AppColors.holyGold.withValues(alpha: 0.16),
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: AppColors.holyGold.withValues(alpha: 0.35),
+            ),
+          ),
+          child: Text(
+            '$number',
+            style: AppTextStyles.labelMedium.copyWith(
+              color: AppColors.holyGold,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+        const SizedBox(width: AppSpacing.sm),
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(
+              text,
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.pureWhite,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

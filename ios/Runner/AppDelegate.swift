@@ -6,6 +6,8 @@ import BackgroundTasks
 private enum WidgetSharedConfig {
   static let appGroupId = "group.gorda.holyverso"
   static let widgetVerseKey = "widgetVerse" // Must match Flutter + Widget target.
+  static let widgetHeartbeatKey = "widgetLastTimelineHeartbeat"
+  static let widgetHeartbeatFreshnessWindow: TimeInterval = 48 * 60 * 60
 }
 
 @main
@@ -92,6 +94,20 @@ private enum WidgetSharedConfig {
             DailyVerseFetchTask.shared.scheduleNextFetch(retryInHour: false, immediate: true)
           }
           result(nil)
+
+        case "getWidgetInstallStatus":
+          let heartbeat = sharedDefaults.string(forKey: WidgetSharedConfig.widgetHeartbeatKey)
+          let formatter = ISO8601DateFormatter()
+          let heartbeatDate = heartbeat.flatMap { formatter.date(from: $0) }
+          let isInstalled = heartbeatDate.map {
+            Date().timeIntervalSince($0) <= WidgetSharedConfig.widgetHeartbeatFreshnessWindow
+          } ?? false
+
+          result([
+            "isInstalled": isInstalled,
+            "isHeuristic": true,
+            "detectedAt": heartbeat ?? "",
+          ])
 
         default:
           result(FlutterMethodNotImplemented)

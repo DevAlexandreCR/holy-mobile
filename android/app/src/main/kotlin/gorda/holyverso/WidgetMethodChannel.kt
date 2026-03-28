@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
+import java.time.Instant
 
 class WidgetMethodChannel(private val context: Context) : MethodChannel.MethodCallHandler {
     companion object {
@@ -35,6 +36,9 @@ class WidgetMethodChannel(private val context: Context) : MethodChannel.MethodCa
             "requestImmediateUpdate" -> {
                 requestImmediateUpdate()
                 result.success(null)
+            }
+            "getWidgetInstallStatus" -> {
+                result.success(getWidgetInstallStatus())
             }
             else -> {
                 result.notImplemented()
@@ -69,5 +73,20 @@ class WidgetMethodChannel(private val context: Context) : MethodChannel.MethodCa
     private fun requestImmediateUpdate() {
         // Programar una actualización inmediata del WidgetUpdateWorker
         WidgetUpdateWorker.scheduleOneTimeUpdate(context, 0) // 0 horas = inmediato
+    }
+
+    private fun getWidgetInstallStatus(): Map<String, Any> {
+        val widgetManager = AppWidgetManager.getInstance(context)
+        val widgetIds = widgetManager.getAppWidgetIds(
+            ComponentName(context, BibleWidgetProvider::class.java)
+        )
+        val hasWidget = widgetIds.isNotEmpty()
+
+        return mapOf(
+            "isInstalled" to hasWidget,
+            "isHeuristic" to false,
+            "detectedAt" to if (hasWidget) Instant.now().toString() else "",
+            "widgetCount" to widgetIds.size
+        )
     }
 }

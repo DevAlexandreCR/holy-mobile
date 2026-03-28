@@ -6,6 +6,7 @@ import SwiftUI
 private enum SharedConfig {
     static let appGroupId = "group.gorda.holyverso"
     static let widgetVerseKey = "widgetVerse" // Must match Flutter channel.
+    static let widgetHeartbeatKey = "widgetLastTimelineHeartbeat"
 }
 
 private enum WidgetRoute {
@@ -176,9 +177,20 @@ struct WidgetVerseProvider: TimelineProvider {
             let hoursUntilNextRefresh = (savedVerse == nil || !isVerseCurrentDate(savedVerse)) ? 1 : 6
             let nextRefresh = calendar.date(byAdding: .hour, value: hoursUntilNextRefresh, to: now)
                 ?? now.addingTimeInterval(Double(hoursUntilNextRefresh) * 3600)
+
+            markTimelineHeartbeat()
             
             completion(Timeline(entries: [entry], policy: .after(nextRefresh)))
         }
+    }
+
+    private func markTimelineHeartbeat() {
+        guard let defaults = UserDefaults(suiteName: SharedConfig.appGroupId) else {
+            return
+        }
+
+        let heartbeat = ISO8601DateFormatter().string(from: Date())
+        defaults.set(heartbeat, forKey: SharedConfig.widgetHeartbeatKey)
     }
 
     private func loadSavedVerse() -> WidgetVerseModel? {

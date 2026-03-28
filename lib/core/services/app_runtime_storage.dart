@@ -10,6 +10,8 @@ class AppRuntimeStorage {
   static const _lastSeenAppVersionKey = 'phase3.last_seen_app_version';
   static const _notificationPromptAttemptVersionKey =
       'phase3.notification_prompt_attempt_version';
+  static const _widgetPromptDismissedUntilKey =
+      'phase3.widget_prompt_dismissed_until';
 
   SharedPreferences? _preferences;
 
@@ -95,6 +97,28 @@ class AppRuntimeStorage {
       return null;
     }
     return version;
+  }
+
+  Future<void> saveWidgetPromptDismissedUntil(DateTime value) async {
+    final preferences = await _instance;
+    await preferences.setString(
+      _widgetPromptDismissedUntilKey,
+      value.toIso8601String(),
+    );
+  }
+
+  Future<DateTime?> readWidgetPromptDismissedUntil() async {
+    final preferences = await _instance;
+    final raw = preferences.getString(_widgetPromptDismissedUntilKey);
+    if (raw == null || raw.isEmpty) {
+      return null;
+    }
+    return DateTime.tryParse(raw);
+  }
+
+  Future<void> clearWidgetPromptDismissedUntil() async {
+    final preferences = await _instance;
+    await preferences.remove(_widgetPromptDismissedUntilKey);
   }
 
   Future<SharedPreferences> get _instance async {

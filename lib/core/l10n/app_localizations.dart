@@ -116,6 +116,22 @@ class AppLocalizations {
   String get errorRetry => _string('errorRetry');
   String get readFullChapter => _string('readFullChapter');
   String get readFullChapterSubtitle => _string('readFullChapterSubtitle');
+  String get widgetPromptTitle => _string('widgetPromptTitle');
+  String get widgetPromptBody => _string('widgetPromptBody');
+  String get widgetPromptPrimaryAction => _string('widgetPromptPrimaryAction');
+  String get widgetPromptDismissAction => _string('widgetPromptDismissAction');
+  String get widgetSetupTitle => _string('widgetSetupTitle');
+  String get widgetSetupAndroidSubtitle =>
+      _string('widgetSetupAndroidSubtitle');
+  String get widgetSetupIosSubtitle => _string('widgetSetupIosSubtitle');
+  String get widgetSetupAndroidStepOne => _string('widgetSetupAndroidStepOne');
+  String get widgetSetupAndroidStepTwo => _string('widgetSetupAndroidStepTwo');
+  String get widgetSetupAndroidStepThree =>
+      _string('widgetSetupAndroidStepThree');
+  String get widgetSetupIosStepOne => _string('widgetSetupIosStepOne');
+  String get widgetSetupIosStepTwo => _string('widgetSetupIosStepTwo');
+  String get widgetSetupIosStepThree => _string('widgetSetupIosStepThree');
+  String get widgetSetupRefreshAction => _string('widgetSetupRefreshAction');
   String get chapterReaderTitle => _string('chapterReaderTitle');
   String get chapterLoading => _string('chapterLoading');
   String get chapterLoadError => _string('chapterLoadError');
@@ -466,6 +482,26 @@ class AppLocalizations {
           'No pudimos cargar el versículo. Inténtalo nuevamente.',
       'readFullChapter': 'Leer capítulo completo',
       'readFullChapterSubtitle': 'Abre el capítulo con controles de lectura',
+      'widgetPromptTitle': 'Lleva este versículo a tu pantalla de inicio',
+      'widgetPromptBody':
+          'Agrega el widget de HolyVerso para volver a encontrar la palabra de hoy sin abrir la app.',
+      'widgetPromptPrimaryAction': 'Cómo agregarlo',
+      'widgetPromptDismissAction': 'Recordármelo en 7 días',
+      'widgetSetupTitle': 'Agrega el widget de HolyVerso',
+      'widgetSetupAndroidSubtitle':
+          'Sigue estos pasos para tener el versículo del día en tu pantalla de inicio.',
+      'widgetSetupIosSubtitle':
+          'Sigue estos pasos para tener el versículo del día en tu iPhone.',
+      'widgetSetupAndroidStepOne':
+          'Mantén presionada un área vacía de tu pantalla de inicio.',
+      'widgetSetupAndroidStepTwo': 'Toca Widgets y busca HolyVerso.',
+      'widgetSetupAndroidStepThree':
+          'Arrastra el widget a la pantalla y suéltalo donde prefieras.',
+      'widgetSetupIosStepOne':
+          'Mantén presionada la pantalla de inicio y toca Editar pantalla de inicio.',
+      'widgetSetupIosStepTwo': 'Toca el botón + y busca HolyVerso.',
+      'widgetSetupIosStepThree': 'Elige el widget y toca Agregar widget.',
+      'widgetSetupRefreshAction': 'Ya lo agregué',
       'chapterReaderTitle': 'Capítulo completo',
       'chapterLoading': 'Cargando capítulo...',
       'chapterLoadError': 'No pudimos cargar el capítulo completo.',
@@ -787,6 +823,26 @@ class AppLocalizations {
       'verseRequestError': 'We could not load the verse. Please try again.',
       'readFullChapter': 'Read full chapter',
       'readFullChapterSubtitle': 'Open the full chapter with reading controls',
+      'widgetPromptTitle': 'Bring this verse to your home screen',
+      'widgetPromptBody':
+          'Add the HolyVerso widget so today’s word is one glance away without opening the app.',
+      'widgetPromptPrimaryAction': 'How to add it',
+      'widgetPromptDismissAction': 'Remind me in 7 days',
+      'widgetSetupTitle': 'Add the HolyVerso widget',
+      'widgetSetupAndroidSubtitle':
+          'Follow these steps to keep the verse of the day on your home screen.',
+      'widgetSetupIosSubtitle':
+          'Follow these steps to keep the verse of the day on your iPhone.',
+      'widgetSetupAndroidStepOne':
+          'Press and hold an empty area on your home screen.',
+      'widgetSetupAndroidStepTwo': 'Tap Widgets and look for HolyVerso.',
+      'widgetSetupAndroidStepThree':
+          'Drag the widget to the screen and drop it where you want.',
+      'widgetSetupIosStepOne':
+          'Press and hold the home screen, then tap Edit Home Screen.',
+      'widgetSetupIosStepTwo': 'Tap the + button and search for HolyVerso.',
+      'widgetSetupIosStepThree': 'Choose the widget and tap Add Widget.',
+      'widgetSetupRefreshAction': 'I added it',
       'chapterReaderTitle': 'Full chapter',
       'chapterLoading': 'Loading chapter...',
       'chapterLoadError': 'We could not load the full chapter.',
