@@ -104,6 +104,7 @@ class AuthApiClient {
     required bool devotionalNotificationsEnabled,
     required bool followedCreatorNotificationsEnabled,
     required bool featuredDevotionalNotificationsEnabled,
+    required bool streakRiskNotificationsEnabled,
     required bool authorModerationNotificationsEnabled,
     required bool editorReviewNotificationsEnabled,
   }) async {
@@ -115,6 +116,7 @@ class AuthApiClient {
             followedCreatorNotificationsEnabled,
         'featured_devotional_notifications_enabled':
             featuredDevotionalNotificationsEnabled,
+        'streak_risk_notifications_enabled': streakRiskNotificationsEnabled,
         'author_moderation_notifications_enabled':
             authorModerationNotificationsEnabled,
         'editor_review_notifications_enabled': editorReviewNotificationsEnabled,

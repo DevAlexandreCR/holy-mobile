@@ -35,6 +35,7 @@ class UserSettings {
     this.devotionalNotificationsEnabled = true,
     this.followedCreatorNotificationsEnabled = true,
     this.featuredDevotionalNotificationsEnabled = true,
+    this.streakRiskNotificationsEnabled = true,
     this.authorModerationNotificationsEnabled = true,
     this.editorReviewNotificationsEnabled = true,
   });
@@ -45,6 +46,7 @@ class UserSettings {
   final bool devotionalNotificationsEnabled;
   final bool followedCreatorNotificationsEnabled;
   final bool featuredDevotionalNotificationsEnabled;
+  final bool streakRiskNotificationsEnabled;
   final bool authorModerationNotificationsEnabled;
   final bool editorReviewNotificationsEnabled;
 
@@ -69,6 +71,8 @@ class UserSettings {
           map['followed_creator_notifications_enabled'] as bool? ?? true,
       featuredDevotionalNotificationsEnabled:
           map['featured_devotional_notifications_enabled'] as bool? ?? true,
+      streakRiskNotificationsEnabled:
+          map['streak_risk_notifications_enabled'] as bool? ?? true,
       authorModerationNotificationsEnabled:
           map['author_moderation_notifications_enabled'] as bool? ?? true,
       editorReviewNotificationsEnabled:
@@ -86,6 +90,7 @@ class UserSettings {
           followedCreatorNotificationsEnabled,
       'featured_devotional_notifications_enabled':
           featuredDevotionalNotificationsEnabled,
+      'streak_risk_notifications_enabled': streakRiskNotificationsEnabled,
       'author_moderation_notifications_enabled':
           authorModerationNotificationsEnabled,
       'editor_review_notifications_enabled': editorReviewNotificationsEnabled,

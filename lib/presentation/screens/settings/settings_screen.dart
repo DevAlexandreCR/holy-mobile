@@ -235,6 +235,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     bool? devotionalNotificationsEnabled,
     bool? followedCreatorNotificationsEnabled,
     bool? featuredDevotionalNotificationsEnabled,
+    bool? streakRiskNotificationsEnabled,
     bool? authorModerationNotificationsEnabled,
     bool? editorReviewNotificationsEnabled,
   }) async {
@@ -249,6 +250,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final targetAuthorModerationNotificationsEnabled =
         authorModerationNotificationsEnabled ??
         settings.authorModerationNotificationsEnabled;
+    final targetStreakRiskNotificationsEnabled =
+        streakRiskNotificationsEnabled ?? settings.streakRiskNotificationsEnabled;
     final targetEditorReviewNotificationsEnabled =
         editorReviewNotificationsEnabled ??
         settings.editorReviewNotificationsEnabled;
@@ -258,6 +261,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final shouldRequestPermission =
         (!settings.devotionalNotificationsEnabled &&
             targetDevotionalNotificationsEnabled) ||
+        (!settings.streakRiskNotificationsEnabled &&
+            targetStreakRiskNotificationsEnabled) ||
         (!settings.authorModerationNotificationsEnabled &&
             targetAuthorModerationNotificationsEnabled) ||
         (!settings.editorReviewNotificationsEnabled &&
@@ -279,6 +284,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           featuredDevotionalNotificationsEnabled:
               featuredDevotionalNotificationsEnabled ??
               settings.featuredDevotionalNotificationsEnabled,
+          streakRiskNotificationsEnabled: targetStreakRiskNotificationsEnabled,
           authorModerationNotificationsEnabled:
               targetAuthorModerationNotificationsEnabled,
           editorReviewNotificationsEnabled:
@@ -527,6 +533,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         notificationSettings?.followedCreatorNotificationsEnabled ?? true;
     final featuredDevotionalNotificationsEnabled =
         notificationSettings?.featuredDevotionalNotificationsEnabled ?? true;
+    final streakRiskNotificationsEnabled =
+        notificationSettings?.streakRiskNotificationsEnabled ?? true;
     final authorModerationNotificationsEnabled =
         notificationSettings?.authorModerationNotificationsEnabled ?? true;
     final editorReviewNotificationsEnabled =
@@ -715,6 +723,33 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             : () => _updateNotificationPreferences(
                                 featuredDevotionalNotificationsEnabled:
                                     !featuredDevotionalNotificationsEnabled,
+                              ),
+                      ),
+                      SettingTile(
+                        icon: Icons.local_fire_department_outlined,
+                        title: 'Racha en riesgo',
+                        subtitle:
+                            'Recibe un recordatorio en la tarde si todavía no has completado tu día',
+                        trailing: Switch.adaptive(
+                          value:
+                              devotionalNotificationsEnabled &&
+                              streakRiskNotificationsEnabled,
+                          activeThumbColor: AppColors.holyGold,
+                          activeTrackColor: AppColors.holyGold.withValues(
+                            alpha: 0.3,
+                          ),
+                          onChanged:
+                              isUpdating || !devotionalNotificationsEnabled
+                              ? null
+                              : (value) => _updateNotificationPreferences(
+                                  streakRiskNotificationsEnabled: value,
+                                ),
+                        ),
+                        onTap: isUpdating || !devotionalNotificationsEnabled
+                            ? null
+                            : () => _updateNotificationPreferences(
+                                streakRiskNotificationsEnabled:
+                                    !streakRiskNotificationsEnabled,
                               ),
                       ),
                       SettingTile(

@@ -124,6 +124,7 @@ class AuthRepository {
     required bool devotionalNotificationsEnabled,
     required bool followedCreatorNotificationsEnabled,
     required bool featuredDevotionalNotificationsEnabled,
+    required bool streakRiskNotificationsEnabled,
     required bool authorModerationNotificationsEnabled,
     required bool editorReviewNotificationsEnabled,
   }) {
@@ -133,6 +134,7 @@ class AuthRepository {
           followedCreatorNotificationsEnabled,
       featuredDevotionalNotificationsEnabled:
           featuredDevotionalNotificationsEnabled,
+      streakRiskNotificationsEnabled: streakRiskNotificationsEnabled,
       authorModerationNotificationsEnabled:
           authorModerationNotificationsEnabled,
       editorReviewNotificationsEnabled: editorReviewNotificationsEnabled,
