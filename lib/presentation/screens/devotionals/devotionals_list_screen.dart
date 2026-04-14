@@ -13,6 +13,7 @@ import 'package:holyverso/core/theme/app_text_styles.dart';
 import 'package:holyverso/data/devotionals/devotionals_repository.dart';
 import 'package:holyverso/domain/devotionals/devotional.dart';
 import 'package:holyverso/domain/devotionals/devotional_feed_mode.dart';
+import 'package:holyverso/domain/devotionals/devotional_feed_header.dart';
 import 'package:holyverso/domain/devotionals/devotional_publication_state.dart';
 import 'package:holyverso/domain/devotionals/devotional_status.dart';
 import 'package:holyverso/domain/devotionals/devotional_verse_reference.dart';
@@ -416,9 +417,44 @@ class _PublicFeedModeViewState extends ConsumerState<_PublicFeedModeView> {
     final updated = await context.push<Devotional>(
       '/devotionals/${devotional.id}$query',
     );
+    if (mounted && widget.mode == DevotionalFeedMode.forYou) {
+      await ref.read(widget.provider.notifier).refreshHeader();
+    }
     if (updated != null && mounted) {
       ref.read(widget.provider.notifier).syncUpdatedDevotional(updated);
     }
+  }
+
+  Future<void> _handleHeaderCta(
+    DevotionalFeedHeader header,
+    List<Devotional> items,
+  ) async {
+    final devotionalId = header.primaryCtaDevotionalId;
+    if (devotionalId != null) {
+      final matchedDevotional = items.where((item) => item.id == devotionalId);
+      if (matchedDevotional.isNotEmpty) {
+        await _openDetail(matchedDevotional.first);
+        return;
+      }
+
+      final updated = await context.push<Devotional>(
+        '/devotionals/$devotionalId',
+      );
+      if (updated != null && mounted) {
+        ref.read(widget.provider.notifier).syncUpdatedDevotional(updated);
+      }
+      if (mounted) {
+        await ref.read(widget.provider.notifier).refreshHeader();
+      }
+      return;
+    }
+
+    if (items.isNotEmpty) {
+      await _openDetail(items.first);
+      return;
+    }
+
+    await ref.read(widget.provider.notifier).refresh();
   }
 
   Future<void> _openAuthor(Devotional devotional) async {
@@ -430,14 +466,21 @@ class _PublicFeedModeViewState extends ConsumerState<_PublicFeedModeView> {
   Widget build(BuildContext context) {
     final state = ref.watch(widget.provider);
     final l10n = context.l10n;
+    final header = widget.mode == DevotionalFeedMode.forYou
+        ? state.feedHeader
+        : null;
 
-    if (state.status == DevotionalsFeedStatus.loading && state.items.isEmpty) {
+    if (state.status == DevotionalsFeedStatus.loading &&
+        state.items.isEmpty &&
+        header == null) {
       return const Center(
         child: CircularProgressIndicator(color: AppColors.holyGold),
       );
     }
 
-    if (state.status == DevotionalsFeedStatus.error && state.items.isEmpty) {
+    if (state.status == DevotionalsFeedStatus.error &&
+        state.items.isEmpty &&
+        header == null) {
       return _ErrorState(
         message: state.errorMessage ?? l10n.genericError,
         onRetry: () =>
@@ -446,18 +489,57 @@ class _PublicFeedModeViewState extends ConsumerState<_PublicFeedModeView> {
     }
 
     if (state.items.isEmpty) {
-      return _EmptyState(
-        title: widget.mode == DevotionalFeedMode.following
-            ? l10n.devotionalsFollowingEmptyTitle
-            : l10n.devotionalsFeedEmptyTitle,
-        subtitle: widget.mode == DevotionalFeedMode.following
-            ? l10n.devotionalsFollowingEmptySubtitle
-            : l10n.devotionalsFeedEmptySubtitle,
+      final emptyContent = switch (state.status) {
+        DevotionalsFeedStatus.loading => const Padding(
+          padding: EdgeInsets.symmetric(vertical: AppSpacing.xxl),
+          child: Center(
+            child: CircularProgressIndicator(color: AppColors.holyGold),
+          ),
+        ),
+        DevotionalsFeedStatus.error => _ErrorState(
+          message: state.errorMessage ?? l10n.genericError,
+          onRetry: () => ref
+              .read(widget.provider.notifier)
+              .loadInitial(forceRefresh: true),
+        ),
+        _ => _EmptyState(
+          title: widget.mode == DevotionalFeedMode.following
+              ? l10n.devotionalsFollowingEmptyTitle
+              : l10n.devotionalsFeedEmptyTitle,
+          subtitle: widget.mode == DevotionalFeedMode.following
+              ? l10n.devotionalsFollowingEmptySubtitle
+              : l10n.devotionalsFeedEmptySubtitle,
+        ),
+      };
+
+      return RefreshIndicator(
+        onRefresh: () => ref.read(widget.provider.notifier).refresh(),
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(
+            12,
+            AppSpacing.sm,
+            12,
+            AppSpacing.xxl,
+          ),
+          children: [
+            if (header != null) ...[
+              _FeedRitualHeader(
+                header: header,
+                onPrimaryCta: () => _handleHeaderCta(header, state.items),
+              ),
+              const SizedBox(height: AppSpacing.md),
+            ],
+            emptyContent,
+          ],
+        ),
       );
     }
 
     final showErrorBanner =
         state.errorMessage != null && state.items.isNotEmpty;
+    final leadingItemsCount =
+        (header != null ? 1 : 0) + (showErrorBanner ? 1 : 0);
 
     return RefreshIndicator(
       onRefresh: () => ref.read(widget.provider.notifier).refresh(),
@@ -471,18 +553,29 @@ class _PublicFeedModeViewState extends ConsumerState<_PublicFeedModeView> {
           AppSpacing.xxl,
         ),
         itemCount:
+            (header != null ? 1 : 0) +
             state.items.length +
             (state.isFetchingMore ? 1 : 0) +
             (showErrorBanner ? 1 : 0),
         itemBuilder: (context, index) {
-          if (showErrorBanner && index == 0) {
+          if (header != null && index == 0) {
+            return Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.md),
+              child: _FeedRitualHeader(
+                header: header,
+                onPrimaryCta: () => _handleHeaderCta(header, state.items),
+              ),
+            );
+          }
+
+          if (showErrorBanner && index == (header != null ? 1 : 0)) {
             return Padding(
               padding: const EdgeInsets.only(bottom: AppSpacing.md),
               child: _ErrorBanner(message: state.errorMessage!),
             );
           }
 
-          final listIndex = showErrorBanner ? index - 1 : index;
+          final listIndex = index - leadingItemsCount;
           if (listIndex >= state.items.length) {
             return const Padding(
               padding: EdgeInsets.symmetric(vertical: AppSpacing.md),
@@ -511,6 +604,176 @@ class _PublicFeedModeViewState extends ConsumerState<_PublicFeedModeView> {
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+class _FeedRitualHeader extends StatelessWidget {
+  const _FeedRitualHeader({required this.header, required this.onPrimaryCta});
+
+  final DevotionalFeedHeader header;
+  final VoidCallback onPrimaryCta;
+
+  String _streakLabel() {
+    final daysLabel = header.currentStreak == 1 ? 'día' : 'días';
+    return 'Racha: ${header.currentStreak} $daysLabel';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final statusLabel = header.completedToday
+        ? 'Completado hoy'
+        : 'Pendiente hoy';
+    final statusIcon = header.completedToday
+        ? Icons.check_circle_rounded
+        : Icons.schedule_rounded;
+    final statusColor = header.completedToday
+        ? AppColors.holyGold
+        : AppColors.morningLight;
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: AppBorderRadius.card,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppColors.midnightFaithDark.withValues(alpha: 0.96),
+            const Color(0xFF243553),
+            const Color(0xFF304868),
+          ],
+        ),
+        border: Border.all(color: AppColors.holyGold.withValues(alpha: 0.24)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.18),
+            blurRadius: 20,
+            offset: const Offset(0, 12),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.lg,
+          AppSpacing.lg,
+          AppSpacing.lg,
+          AppSpacing.md,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: AppColors.holyGold.withValues(alpha: 0.16),
+                    borderRadius: BorderRadius.circular(AppBorderRadius.md),
+                  ),
+                  child: const Icon(
+                    Icons.local_fire_department_rounded,
+                    color: AppColors.holyGold,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Tu ritual de hoy',
+                        style: AppTextStyles.labelSmall.copyWith(
+                          color: AppColors.softMist.withValues(alpha: 0.82),
+                          letterSpacing: 0.4,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.xs),
+                      Text(
+                        _streakLabel(),
+                        style: AppTextStyles.headline3.copyWith(
+                          color: AppColors.pureWhite,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md,
+                vertical: AppSpacing.sm,
+              ),
+              decoration: BoxDecoration(
+                color: statusColor.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(AppBorderRadius.full),
+                border: Border.all(color: statusColor.withValues(alpha: 0.24)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(statusIcon, size: 16, color: statusColor),
+                  const SizedBox(width: AppSpacing.sm),
+                  Text(
+                    statusLabel,
+                    style: AppTextStyles.labelMedium.copyWith(
+                      color: statusColor,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Text(
+              header.completedToday
+                  ? 'Ya marcaste tu lectura del día. Si quieres, sigue explorando.'
+                  : 'Haz una lectura completa hoy para mantener viva tu racha.',
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.softMist.withValues(alpha: 0.9),
+                height: 1.45,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: onPrimaryCta,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: header.completedToday
+                      ? AppColors.pureWhite.withValues(alpha: 0.1)
+                      : AppColors.holyGold,
+                  foregroundColor: header.completedToday
+                      ? AppColors.pureWhite
+                      : AppColors.midnightFaithDark,
+                  elevation: 0,
+                  minimumSize: const Size.fromHeight(AppSizes.buttonHeight),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: AppBorderRadius.button,
+                    side: header.completedToday
+                        ? BorderSide(
+                            color: AppColors.pureWhite.withValues(alpha: 0.18),
+                          )
+                        : BorderSide.none,
+                  ),
+                ),
+                child: Text(
+                  header.primaryCtaLabel,
+                  style: AppTextStyles.button.copyWith(
+                    color: header.completedToday
+                        ? AppColors.pureWhite
+                        : AppColors.midnightFaithDark,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

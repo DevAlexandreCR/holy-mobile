@@ -10,6 +10,7 @@ import 'package:holyverso/domain/core/cursor_paged_result.dart';
 import 'package:holyverso/domain/devotionals/devotional.dart';
 import 'package:holyverso/domain/devotionals/devotional_author.dart';
 import 'package:holyverso/domain/devotionals/devotional_feed_mode.dart';
+import 'package:holyverso/domain/devotionals/devotional_feed_header.dart';
 import 'package:holyverso/domain/devotionals/devotional_moderation_status.dart';
 import 'package:holyverso/domain/devotionals/devotional_publication_state.dart';
 import 'package:holyverso/domain/devotionals/devotional_status.dart';
@@ -53,8 +54,10 @@ void main() {
 
       final state = container.read(forYouFeedControllerProvider);
       expect(repository.fetchFeedCalls, 1);
+      expect(repository.fetchFeedHeaderCalls, 1);
       expect(state.ownerUserId, 'user-1');
       expect(state.items.single.id, 'one');
+      expect(state.feedHeader?.currentStreak, 5);
     });
 
     test('reloads feed when authenticated user changes', () async {
@@ -187,6 +190,7 @@ class _FakeDevotionalsRepository extends DevotionalsRepository {
   final Queue<CursorPagedResult<Devotional>> _feedQueue =
       Queue<CursorPagedResult<Devotional>>();
   int fetchFeedCalls = 0;
+  int fetchFeedHeaderCalls = 0;
   Object? recordFeedEventsError;
 
   void enqueueFeed(CursorPagedResult<Devotional> result) {
@@ -208,6 +212,20 @@ class _FakeDevotionalsRepository extends DevotionalsRepository {
       );
     }
     return _feedQueue.removeFirst();
+  }
+
+  @override
+  Future<DevotionalFeedHeader> fetchFeedHeader() async {
+    fetchFeedHeaderCalls += 1;
+    return const DevotionalFeedHeader(
+      currentStreak: 5,
+      longestStreak: 8,
+      streakFreezeCount: 1,
+      completedToday: false,
+      primaryCtaType: 'COMPLETE_TODAY',
+      primaryCtaLabel: 'Completa tu día',
+      primaryCtaDevotionalId: null,
+    );
   }
 
   @override

@@ -21,6 +21,7 @@ abstract class BaseDevotionalsFeedController
   static const _l10n = AppLocalizations(Locale('es'));
 
   DevotionalFeedMode get feedMode;
+  bool get showsRitualHeader => feedMode == DevotionalFeedMode.forYou;
 
   @override
   DevotionalsFeedState build() {
@@ -52,10 +53,21 @@ abstract class BaseDevotionalsFeedController
             clearNextCursor: true,
           );
 
-    await _fetchPage(clearTracking: forceRefresh);
+    await Future.wait([
+      _fetchPage(clearTracking: forceRefresh),
+      if (showsRitualHeader) _fetchHeader(),
+    ]);
   }
 
   Future<void> refresh() => loadInitial(forceRefresh: true);
+
+  Future<void> refreshHeader() async {
+    if (!showsRitualHeader) {
+      return;
+    }
+
+    await _fetchHeader();
+  }
 
   Future<void> loadMore() async {
     if (_syncFeedOwner()) {
@@ -104,6 +116,13 @@ abstract class BaseDevotionalsFeedController
         state = state.copyWith(isFetchingMore: false);
       }
     }
+  }
+
+  Future<void> _fetchHeader() async {
+    try {
+      final header = await _repository.fetchFeedHeader();
+      state = state.copyWith(feedHeader: header);
+    } catch (_) {}
   }
 
   Future<void> toggleLike(String devotionalId) async {
@@ -300,6 +319,7 @@ abstract class BaseDevotionalsFeedController
     state = state.copyWith(
       items: const [],
       status: DevotionalsFeedStatus.idle,
+      feedHeader: showsRitualHeader ? null : state.feedHeader,
       ownerUserId: currentUserId,
       hasMore: true,
       isFetchingMore: false,
@@ -352,6 +372,7 @@ abstract class BaseDevotionalsFeedController
       state = state.copyWith(
         items: const [],
         status: DevotionalsFeedStatus.idle,
+        feedHeader: showsRitualHeader ? null : state.feedHeader,
         hasMore: true,
         isFetchingMore: false,
         clearError: true,

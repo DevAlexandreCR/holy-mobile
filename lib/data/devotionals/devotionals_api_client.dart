@@ -10,6 +10,7 @@ import 'package:holyverso/domain/core/paged_result.dart';
 import 'package:holyverso/domain/devotionals/devotional.dart';
 import 'package:holyverso/domain/devotionals/devotional_comment.dart';
 import 'package:holyverso/domain/devotionals/devotional_feed_mode.dart';
+import 'package:holyverso/domain/devotionals/devotional_feed_header.dart';
 import 'package:holyverso/domain/devotionals/devotional_status.dart';
 import 'package:holyverso/domain/devotionals/devotional_verse_reference.dart';
 import 'package:holyverso/domain/devotionals/uploaded_devotional_image.dart';
@@ -147,6 +148,12 @@ class DevotionalsApiClient {
       nextCursor: data['next_cursor']?.toString(),
       hasMore: data['has_more'] == true,
     );
+  }
+
+  Future<DevotionalFeedHeader> fetchFeedHeader() async {
+    final response = await _dio.get('/devotionals/feed/header');
+    final data = _unwrapData(response.data);
+    return DevotionalFeedHeader.fromMap(data);
   }
 
   Future<CursorPagedResult<Devotional>> fetchSavedDevotionals({
