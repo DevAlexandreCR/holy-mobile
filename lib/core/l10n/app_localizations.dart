@@ -286,6 +286,19 @@ class AppLocalizations {
   String get devotionalFeedBadgeRecommended =>
       _string('devotionalFeedBadgeRecommended');
   String get devotionalFeedOpenCta => _string('devotionalFeedOpenCta');
+  String get devotionalFeedRitualTitle => _string('devotionalFeedRitualTitle');
+  String get devotionalFeedCompletedToday =>
+      _string('devotionalFeedCompletedToday');
+  String get devotionalFeedPendingToday =>
+      _string('devotionalFeedPendingToday');
+  String get devotionalFeedCompletedMessage =>
+      _string('devotionalFeedCompletedMessage');
+  String get devotionalFeedPendingMessage =>
+      _string('devotionalFeedPendingMessage');
+  String get devotionalFeedDailyFeaturedLabel =>
+      _string('devotionalFeedDailyFeaturedLabel');
+  String get devotionalFeedReadTimeLabel =>
+      _string('devotionalFeedReadTimeLabel');
   String get devotionalPublishModerationInProgress =>
       _string('devotionalPublishModerationInProgress');
   String get devotionalPublishModerationHelper =>
@@ -652,6 +665,15 @@ class AppLocalizations {
       'devotionalFeedBadgeTrending': 'En tendencia',
       'devotionalFeedBadgeRecommended': 'Recomendado',
       'devotionalFeedOpenCta': 'Esto es para ti',
+      'devotionalFeedRitualTitle': 'Tu ritual de hoy',
+      'devotionalFeedCompletedToday': 'Completado hoy',
+      'devotionalFeedPendingToday': 'Pendiente hoy',
+      'devotionalFeedCompletedMessage':
+          'Ya marcaste tu lectura del día. Si quieres, sigue explorando.',
+      'devotionalFeedPendingMessage':
+          'Haz una lectura completa hoy para mantener viva tu racha.',
+      'devotionalFeedDailyFeaturedLabel': 'Devocional de hoy',
+      'devotionalFeedReadTimeLabel': 'Tiempo estimado',
       'devotionalPublishModerationInProgress':
           'Revisando tu devocional antes de publicarlo...',
       'devotionalPublishModerationHelper':
@@ -987,6 +1009,15 @@ class AppLocalizations {
       'devotionalFeedBadgeTrending': 'Trending',
       'devotionalFeedBadgeRecommended': 'Recommended',
       'devotionalFeedOpenCta': 'This is for you',
+      'devotionalFeedRitualTitle': 'Your ritual today',
+      'devotionalFeedCompletedToday': 'Completed today',
+      'devotionalFeedPendingToday': 'Pending today',
+      'devotionalFeedCompletedMessage':
+          'You already marked today’s reading. Keep exploring if you want.',
+      'devotionalFeedPendingMessage':
+          'Complete a reading today to keep your streak alive.',
+      'devotionalFeedDailyFeaturedLabel': 'Today’s devotional',
+      'devotionalFeedReadTimeLabel': 'Estimated time',
       'devotionalPublishModerationInProgress':
           'Reviewing your devotional before publishing...',
       'devotionalPublishModerationHelper':

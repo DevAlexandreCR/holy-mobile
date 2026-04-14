@@ -12,7 +12,9 @@ import 'package:holyverso/data/devotionals/devotionals_api_client.dart';
 import 'package:holyverso/data/devotionals/devotionals_repository.dart';
 import 'package:holyverso/domain/devotionals/devotional.dart';
 import 'package:holyverso/domain/devotionals/devotional_author.dart';
+import 'package:holyverso/domain/devotionals/devotional_daily_featured.dart';
 import 'package:holyverso/domain/devotionals/devotional_feed_mode.dart';
+import 'package:holyverso/domain/devotionals/devotional_feed_header.dart';
 import 'package:holyverso/domain/devotionals/devotional_moderation_status.dart';
 import 'package:holyverso/domain/devotionals/devotional_publication_state.dart';
 import 'package:holyverso/domain/devotionals/devotional_status.dart';
@@ -176,6 +178,100 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('No hay devocionales pendientes'), findsOneWidget);
+  });
+
+  testWidgets('renders daily featured devotional inside the For You header', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _TestApp(
+        forYouState: DevotionalsFeedState(
+          status: DevotionalsFeedStatus.success,
+          feedHeader: const DevotionalFeedHeader(
+            currentStreak: 5,
+            longestStreak: 8,
+            streakFreezeCount: 1,
+            completedToday: false,
+            dailyFeatured: DevotionalDailyFeatured(
+              id: 'featured-header',
+              title: 'Dios sigue obrando',
+              estimatedReadTime: 3,
+              previewText: 'Aunque hoy parezca lento, Dios sigue presente.',
+              previewImageUrl: 'https://example.com/featured-header.jpg',
+            ),
+            primaryCtaType: 'OPEN_DAILY_FEATURED',
+            primaryCtaLabel: 'Completa tu día',
+            primaryCtaDevotionalId: 'featured-header',
+          ),
+          items: [_buildDevotional(id: 'feed-item', title: 'Feed item')],
+        ),
+        followingState: const DevotionalsFeedState(
+          status: DevotionalsFeedStatus.success,
+        ),
+        mineState: const DevotionalsListState(
+          status: DevotionalsListStatus.success,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Tu ritual de hoy'), findsOneWidget);
+    expect(find.text('Devocional de hoy'), findsOneWidget);
+    expect(find.text('Dios sigue obrando'), findsOneWidget);
+    expect(
+      find.text('Aunque hoy parezca lento, Dios sigue presente.'),
+      findsOneWidget,
+    );
+    expect(find.text('3 min'), findsOneWidget);
+    expect(find.text('Completa tu día'), findsOneWidget);
+    expect(
+      find.byKey(const Key('daily-featured-card-featured-header')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('daily-featured-image-featured-header')),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('daily featured CTA opens devotional detail route', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _TestApp(
+        forYouState: const DevotionalsFeedState(
+          status: DevotionalsFeedStatus.success,
+          feedHeader: DevotionalFeedHeader(
+            currentStreak: 2,
+            longestStreak: 4,
+            streakFreezeCount: 0,
+            completedToday: false,
+            dailyFeatured: DevotionalDailyFeatured(
+              id: 'featured-detail',
+              title: 'Abre el detalle',
+              estimatedReadTime: 4,
+              previewText: 'Este es el devocional fijo del día.',
+              previewImageUrl: null,
+            ),
+            primaryCtaType: 'OPEN_DAILY_FEATURED',
+            primaryCtaLabel: 'Leer de una vez',
+            primaryCtaDevotionalId: 'featured-detail',
+          ),
+        ),
+        followingState: const DevotionalsFeedState(
+          status: DevotionalsFeedStatus.success,
+        ),
+        mineState: const DevotionalsListState(
+          status: DevotionalsListStatus.success,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Leer de una vez'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('detail-screen'), findsOneWidget);
   });
 
   testWidgets('renders public actions and triggers share flow', (tester) async {

@@ -12,6 +12,7 @@ import 'package:holyverso/core/theme/app_design_tokens.dart';
 import 'package:holyverso/core/theme/app_text_styles.dart';
 import 'package:holyverso/data/devotionals/devotionals_repository.dart';
 import 'package:holyverso/domain/devotionals/devotional.dart';
+import 'package:holyverso/domain/devotionals/devotional_daily_featured.dart';
 import 'package:holyverso/domain/devotionals/devotional_feed_mode.dart';
 import 'package:holyverso/domain/devotionals/devotional_feed_header.dart';
 import 'package:holyverso/domain/devotionals/devotional_publication_state.dart';
@@ -429,8 +430,17 @@ class _PublicFeedModeViewState extends ConsumerState<_PublicFeedModeView> {
     DevotionalFeedHeader header,
     List<Devotional> items,
   ) async {
-    final devotionalId = header.primaryCtaDevotionalId;
-    if (devotionalId != null) {
+    final devotionalId =
+        header.primaryCtaDevotionalId ?? header.dailyFeatured?.id;
+
+    if (header.primaryCtaType == 'BROWSE_FEED' && devotionalId == null) {
+      if (items.isEmpty) {
+        await ref.read(widget.provider.notifier).refresh();
+      }
+      return;
+    }
+
+    if (devotionalId != null && devotionalId.isNotEmpty) {
       final matchedDevotional = items.where((item) => item.id == devotionalId);
       if (matchedDevotional.isNotEmpty) {
         await _openDetail(matchedDevotional.first);
@@ -622,9 +632,10 @@ class _FeedRitualHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final statusLabel = header.completedToday
-        ? 'Completado hoy'
-        : 'Pendiente hoy';
+        ? l10n.devotionalFeedCompletedToday
+        : l10n.devotionalFeedPendingToday;
     final statusIcon = header.completedToday
         ? Icons.check_circle_rounded
         : Icons.schedule_rounded;
@@ -684,7 +695,7 @@ class _FeedRitualHeader extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Tu ritual de hoy',
+                        l10n.devotionalFeedRitualTitle,
                         style: AppTextStyles.labelSmall.copyWith(
                           color: AppColors.softMist.withValues(alpha: 0.82),
                           letterSpacing: 0.4,
@@ -732,48 +743,196 @@ class _FeedRitualHeader extends StatelessWidget {
             const SizedBox(height: AppSpacing.md),
             Text(
               header.completedToday
-                  ? 'Ya marcaste tu lectura del día. Si quieres, sigue explorando.'
-                  : 'Haz una lectura completa hoy para mantener viva tu racha.',
+                  ? l10n.devotionalFeedCompletedMessage
+                  : l10n.devotionalFeedPendingMessage,
               style: AppTextStyles.bodyMedium.copyWith(
                 color: AppColors.softMist.withValues(alpha: 0.9),
                 height: 1.45,
               ),
             ),
-            const SizedBox(height: AppSpacing.lg),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: onPrimaryCta,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: header.completedToday
-                      ? AppColors.pureWhite.withValues(alpha: 0.1)
-                      : AppColors.holyGold,
-                  foregroundColor: header.completedToday
-                      ? AppColors.pureWhite
-                      : AppColors.midnightFaithDark,
-                  elevation: 0,
-                  minimumSize: const Size.fromHeight(AppSizes.buttonHeight),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: AppBorderRadius.button,
-                    side: header.completedToday
-                        ? BorderSide(
-                            color: AppColors.pureWhite.withValues(alpha: 0.18),
-                          )
-                        : BorderSide.none,
-                  ),
-                ),
-                child: Text(
-                  header.primaryCtaLabel,
-                  style: AppTextStyles.button.copyWith(
-                    color: header.completedToday
+            if (header.dailyFeatured != null) ...[
+              const SizedBox(height: AppSpacing.lg),
+              _DailyFeaturedDevotionalCard(
+                devotional: header.dailyFeatured!,
+                ctaLabel: header.primaryCtaLabel,
+                onPrimaryCta: onPrimaryCta,
+                completedToday: header.completedToday,
+              ),
+            ] else ...[
+              const SizedBox(height: AppSpacing.lg),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: onPrimaryCta,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: header.completedToday
+                        ? AppColors.pureWhite.withValues(alpha: 0.1)
+                        : AppColors.holyGold,
+                    foregroundColor: header.completedToday
                         ? AppColors.pureWhite
                         : AppColors.midnightFaithDark,
+                    elevation: 0,
+                    minimumSize: const Size.fromHeight(AppSizes.buttonHeight),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: AppBorderRadius.button,
+                      side: header.completedToday
+                          ? BorderSide(
+                              color: AppColors.pureWhite.withValues(
+                                alpha: 0.18,
+                              ),
+                            )
+                          : BorderSide.none,
+                    ),
+                  ),
+                  child: Text(
+                    header.primaryCtaLabel,
+                    style: AppTextStyles.button.copyWith(
+                      color: header.completedToday
+                          ? AppColors.pureWhite
+                          : AppColors.midnightFaithDark,
+                    ),
                   ),
                 ),
               ),
-            ),
+            ],
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _DailyFeaturedDevotionalCard extends StatelessWidget {
+  const _DailyFeaturedDevotionalCard({
+    required this.devotional,
+    required this.ctaLabel,
+    required this.onPrimaryCta,
+    required this.completedToday,
+  });
+
+  final DevotionalDailyFeatured devotional;
+  final String ctaLabel;
+  final VoidCallback onPrimaryCta;
+  final bool completedToday;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final hasImage =
+        devotional.previewImageUrl != null &&
+        devotional.previewImageUrl!.trim().isNotEmpty;
+
+    return Container(
+      key: Key('daily-featured-card-${devotional.id}'),
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: AppColors.pureWhite.withValues(alpha: 0.08),
+        borderRadius: AppBorderRadius.card,
+        border: Border.all(color: AppColors.pureWhite.withValues(alpha: 0.12)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            l10n.devotionalFeedDailyFeaturedLabel,
+            style: AppTextStyles.labelSmall.copyWith(
+              color: AppColors.holyGold,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.3,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          if (hasImage) ...[
+            ClipRRect(
+              borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+              child: AspectRatio(
+                aspectRatio: 16 / 9,
+                child: CachedNetworkImage(
+                  key: Key('daily-featured-image-${devotional.id}'),
+                  imageUrl: devotional.previewImageUrl!,
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+          ],
+          Text(
+            devotional.title,
+            style: AppTextStyles.headline3.copyWith(
+              color: AppColors.pureWhite,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.schedule_rounded,
+                size: 16,
+                color: AppColors.holyGold,
+              ),
+              const SizedBox(width: AppSpacing.xs),
+              Text(
+                '${devotional.estimatedReadTime} ${l10n.devotionalMinutesShort}',
+                style: AppTextStyles.labelMedium.copyWith(
+                  color: AppColors.softMist.withValues(alpha: 0.88),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Text(
+                l10n.devotionalFeedReadTimeLabel,
+                style: AppTextStyles.labelSmall.copyWith(
+                  color: AppColors.softMist.withValues(alpha: 0.66),
+                ),
+              ),
+            ],
+          ),
+          if (devotional.previewText.trim().isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.md),
+            Text(
+              devotional.previewText.trim(),
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.softMist.withValues(alpha: 0.92),
+                height: 1.45,
+              ),
+            ),
+          ],
+          const SizedBox(height: AppSpacing.md),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: onPrimaryCta,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: completedToday
+                    ? AppColors.pureWhite.withValues(alpha: 0.1)
+                    : AppColors.holyGold,
+                foregroundColor: completedToday
+                    ? AppColors.pureWhite
+                    : AppColors.midnightFaithDark,
+                elevation: 0,
+                minimumSize: const Size.fromHeight(AppSizes.buttonHeight),
+                shape: RoundedRectangleBorder(
+                  borderRadius: AppBorderRadius.button,
+                  side: completedToday
+                      ? BorderSide(
+                          color: AppColors.pureWhite.withValues(alpha: 0.18),
+                        )
+                      : BorderSide.none,
+                ),
+              ),
+              child: Text(
+                ctaLabel,
+                style: AppTextStyles.button.copyWith(
+                  color: completedToday
+                      ? AppColors.pureWhite
+                      : AppColors.midnightFaithDark,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

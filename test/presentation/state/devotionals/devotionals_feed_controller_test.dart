@@ -9,6 +9,7 @@ import 'package:holyverso/data/devotionals/devotionals_repository.dart';
 import 'package:holyverso/domain/core/cursor_paged_result.dart';
 import 'package:holyverso/domain/devotionals/devotional.dart';
 import 'package:holyverso/domain/devotionals/devotional_author.dart';
+import 'package:holyverso/domain/devotionals/devotional_daily_featured.dart';
 import 'package:holyverso/domain/devotionals/devotional_feed_mode.dart';
 import 'package:holyverso/domain/devotionals/devotional_feed_header.dart';
 import 'package:holyverso/domain/devotionals/devotional_moderation_status.dart';
@@ -58,6 +59,8 @@ void main() {
       expect(state.ownerUserId, 'user-1');
       expect(state.items.single.id, 'one');
       expect(state.feedHeader?.currentStreak, 5);
+      expect(state.feedHeader?.dailyFeatured?.id, 'featured-1');
+      expect(state.feedHeader?.primaryCtaType, 'OPEN_DAILY_FEATURED');
     });
 
     test('reloads feed when authenticated user changes', () async {
@@ -222,9 +225,16 @@ class _FakeDevotionalsRepository extends DevotionalsRepository {
       longestStreak: 8,
       streakFreezeCount: 1,
       completedToday: false,
-      primaryCtaType: 'COMPLETE_TODAY',
+      dailyFeatured: DevotionalDailyFeatured(
+        id: 'featured-1',
+        title: 'Dios sigue obrando',
+        estimatedReadTime: 3,
+        previewText: 'Aunque hoy parezca lento...',
+        previewImageUrl: null,
+      ),
+      primaryCtaType: 'OPEN_DAILY_FEATURED',
       primaryCtaLabel: 'Completa tu día',
-      primaryCtaDevotionalId: null,
+      primaryCtaDevotionalId: 'featured-1',
     );
   }
 
