@@ -5,6 +5,40 @@ import 'package:holyverso/domain/devotionals/devotional_publication_state.dart';
 import 'package:holyverso/domain/devotionals/devotional_status.dart';
 import 'package:holyverso/domain/devotionals/devotional_verse_reference.dart';
 
+List<dynamic>? _normalizeQuillContent(dynamic contentRaw) {
+  List<dynamic>? content;
+
+  if (contentRaw is List) {
+    content = List<dynamic>.from(contentRaw);
+  } else if (contentRaw is Map && contentRaw['ops'] is List) {
+    content = List<dynamic>.from(contentRaw['ops'] as List);
+  }
+
+  if (content == null) {
+    return null;
+  }
+
+  if (content.isEmpty) {
+    return [
+      {'insert': '\n'},
+    ];
+  }
+
+  final normalized = List<dynamic>.from(content);
+  final lastOp = normalized.last;
+
+  if (lastOp is Map && lastOp['insert'] is String) {
+    final lastInsert = lastOp['insert'] as String;
+    if (!lastInsert.endsWith('\n')) {
+      normalized.add({'insert': '\n'});
+    }
+    return normalized;
+  }
+
+  normalized.add({'insert': '\n'});
+  return normalized;
+}
+
 class Devotional {
   const Devotional({
     required this.id,
@@ -116,13 +150,7 @@ class Devotional {
         map['verseReferences'] as List? ??
         const [];
 
-    final contentRaw = map['content'];
-    List<dynamic>? content;
-    if (contentRaw is List) {
-      content = List<dynamic>.from(contentRaw);
-    } else if (contentRaw is Map && contentRaw['ops'] is List) {
-      content = List<dynamic>.from(contentRaw['ops'] as List);
-    }
+    final content = _normalizeQuillContent(map['content']);
 
     final viewerState = map['viewer_state'] as Map?;
     final counters = map['counters'] as Map?;

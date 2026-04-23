@@ -128,6 +128,28 @@ class _ReadOnlyQuillViewState extends State<_ReadOnlyQuillView> {
   final ScrollController _scrollController = ScrollController();
   final FocusNode _focusNode = FocusNode();
 
+  List<dynamic> _normalizeContent(List<dynamic> content) {
+    if (content.isEmpty) {
+      return const [
+        {'insert': '\n'},
+      ];
+    }
+
+    final normalized = List<dynamic>.from(content);
+    final lastOp = normalized.last;
+
+    if (lastOp is Map && lastOp['insert'] is String) {
+      final lastInsert = lastOp['insert'] as String;
+      if (!lastInsert.endsWith('\n')) {
+        normalized.add({'insert': '\n'});
+      }
+      return normalized;
+    }
+
+    normalized.add({'insert': '\n'});
+    return normalized;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -153,7 +175,7 @@ class _ReadOnlyQuillViewState extends State<_ReadOnlyQuillView> {
 
   QuillController _buildController(List<dynamic> content) {
     return QuillController(
-      document: Document.fromJson(content),
+      document: Document.fromJson(_normalizeContent(content)),
       selection: const TextSelection.collapsed(offset: 0),
     );
   }
