@@ -132,6 +132,10 @@ class DevotionalDetailController extends Notifier<DevotionalDetailState> {
     } catch (_) {}
   }
 
+  void acknowledgeReadComplete() {
+    state = state.copyWith(readCompleteJustSucceeded: false);
+  }
+
   Future<void> reportReadComplete() async {
     final devotional = state.devotional;
     if (devotional == null ||
@@ -161,6 +165,7 @@ class DevotionalDetailController extends Notifier<DevotionalDetailState> {
         devotional: devotional.copyWith(readCompleteCount: count),
         isReportingReadComplete: false,
         hasReportedReadComplete: true,
+        readCompleteJustSucceeded: true,
       );
     } catch (error) {
       final shouldStopRetrying =

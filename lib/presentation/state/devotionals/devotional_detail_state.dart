@@ -17,6 +17,7 @@ class DevotionalDetailState {
     this.isReporting = false,
     this.isReportingReadComplete = false,
     this.hasReportedReadComplete = false,
+    this.readCompleteJustSucceeded = false,
     this.isApprovingReview = false,
     this.isRestrictingReview = false,
   });
@@ -32,6 +33,10 @@ class DevotionalDetailState {
   final bool isReporting;
   final bool isReportingReadComplete;
   final bool hasReportedReadComplete;
+
+  /// True for exactly one state emission after the backend confirms read-complete.
+  /// Consumers must clear it immediately after reacting.
+  final bool readCompleteJustSucceeded;
   final bool isApprovingReview;
   final bool isRestrictingReview;
 
@@ -47,6 +52,7 @@ class DevotionalDetailState {
     bool? isReporting,
     bool? isReportingReadComplete,
     bool? hasReportedReadComplete,
+    bool? readCompleteJustSucceeded,
     bool? isApprovingReview,
     bool? isRestrictingReview,
     bool clearError = false,
@@ -72,6 +78,8 @@ class DevotionalDetailState {
           isReportingReadComplete ?? this.isReportingReadComplete,
       hasReportedReadComplete:
           hasReportedReadComplete ?? this.hasReportedReadComplete,
+      readCompleteJustSucceeded:
+          readCompleteJustSucceeded ?? this.readCompleteJustSucceeded,
       isApprovingReview: isApprovingReview ?? this.isApprovingReview,
       isRestrictingReview: isRestrictingReview ?? this.isRestrictingReview,
     );

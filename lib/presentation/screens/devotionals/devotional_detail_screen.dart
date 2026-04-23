@@ -608,6 +608,19 @@ class _DevotionalDetailScreenState
         state.devotional?.coverImageUrl != null &&
         state.devotional!.coverImageUrl!.isNotEmpty;
 
+    ref.listen<bool>(
+      devotionalDetailControllerProvider.select(
+        (s) => s.readCompleteJustSucceeded,
+      ),
+      (_, justSucceeded) {
+        if (!justSucceeded) return;
+        ref
+            .read(devotionalDetailControllerProvider.notifier)
+            .acknowledgeReadComplete();
+        ref.read(forYouFeedControllerProvider.notifier).refreshHeader();
+      },
+    );
+
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: _lightTopOverlayStyle,
       child: Scaffold(
