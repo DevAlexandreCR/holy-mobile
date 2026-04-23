@@ -295,6 +295,8 @@ class AppLocalizations {
       _string('devotionalFeedCompletedMessage');
   String get devotionalFeedPendingMessage =>
       _string('devotionalFeedPendingMessage');
+  String get devotionalFeedHideCompletedBadge =>
+      _string('devotionalFeedHideCompletedBadge');
   String get devotionalFeedDailyFeaturedLabel =>
       _string('devotionalFeedDailyFeaturedLabel');
   String get devotionalFeedReadTimeLabel =>
@@ -672,6 +674,7 @@ class AppLocalizations {
           'Ya marcaste tu lectura del día. Si quieres, sigue explorando.',
       'devotionalFeedPendingMessage':
           'Haz una lectura completa hoy para mantener viva tu racha.',
+      'devotionalFeedHideCompletedBadge': 'Ocultar indicador de racha',
       'devotionalFeedDailyFeaturedLabel': 'Devocional de hoy',
       'devotionalFeedReadTimeLabel': 'Tiempo estimado',
       'devotionalPublishModerationInProgress':
@@ -1016,6 +1019,7 @@ class AppLocalizations {
           'You already marked today’s reading. Keep exploring if you want.',
       'devotionalFeedPendingMessage':
           'Complete a reading today to keep your streak alive.',
+      'devotionalFeedHideCompletedBadge': 'Hide streak badge',
       'devotionalFeedDailyFeaturedLabel': 'Today’s devotional',
       'devotionalFeedReadTimeLabel': 'Estimated time',
       'devotionalPublishModerationInProgress':

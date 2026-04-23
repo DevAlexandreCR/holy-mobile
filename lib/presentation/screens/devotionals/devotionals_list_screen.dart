@@ -67,6 +67,11 @@ const double _publicFeedMediaSectionHeight = 164;
 const double _publicFeedMediaOverlayTop = 4;
 const double _publicFeedMediaOverlayTopWithBadge = 46;
 
+String _formatStreakLabel(int currentStreak) {
+  final daysLabel = currentStreak == 1 ? 'día' : 'días';
+  return 'Racha: $currentStreak $daysLabel';
+}
+
 class _DevotionalsListScreenState extends ConsumerState<DevotionalsListScreen> {
   late DevotionalsTopTab _selectedTab;
 
@@ -335,6 +340,9 @@ class _PublicFeedModeView extends ConsumerStatefulWidget {
 
 class _PublicFeedModeViewState extends ConsumerState<_PublicFeedModeView> {
   final ScrollController _scrollController = ScrollController();
+  ProviderSubscription<bool?>? _completedHeaderListener;
+  bool _completedBadgeDismissed = false;
+  bool? _previousHeaderCompletedToday;
 
   @override
   void initState() {
@@ -342,13 +350,45 @@ class _PublicFeedModeViewState extends ConsumerState<_PublicFeedModeView> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(widget.provider.notifier).loadInitial();
     });
+    _bindCompletedHeaderListener();
     _scrollController.addListener(_onScroll);
   }
 
   @override
+  void didUpdateWidget(covariant _PublicFeedModeView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.provider != widget.provider) {
+      _completedHeaderListener?.close();
+      _previousHeaderCompletedToday = null;
+      _bindCompletedHeaderListener();
+    }
+  }
+
+  @override
   void dispose() {
+    _completedHeaderListener?.close();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  void _bindCompletedHeaderListener() {
+    _completedHeaderListener = ref.listenManual<bool?>(
+      widget.provider.select((state) => state.feedHeader?.completedToday),
+      (_, next) {
+        final wasCompleted = _previousHeaderCompletedToday == true;
+        final isCompleted = next == true;
+        if (!wasCompleted &&
+            isCompleted &&
+            _completedBadgeDismissed &&
+            mounted) {
+          setState(() {
+            _completedBadgeDismissed = false;
+          });
+        }
+        _previousHeaderCompletedToday = next;
+      },
+      fireImmediately: true,
+    );
   }
 
   void _onScroll() {
@@ -479,6 +519,8 @@ class _PublicFeedModeViewState extends ConsumerState<_PublicFeedModeView> {
     final header = widget.mode == DevotionalFeedMode.forYou
         ? state.feedHeader
         : null;
+    final showsInlineHeader = header != null && !header.completedToday;
+    final completedHeader = header != null && header.completedToday;
 
     if (state.status == DevotionalsFeedStatus.loading &&
         state.items.isEmpty &&
@@ -524,23 +566,42 @@ class _PublicFeedModeViewState extends ConsumerState<_PublicFeedModeView> {
 
       return RefreshIndicator(
         onRefresh: () => ref.read(widget.provider.notifier).refresh(),
-        child: ListView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(
-            12,
-            AppSpacing.sm,
-            12,
-            AppSpacing.xxl,
-          ),
+        child: Stack(
           children: [
-            if (header != null) ...[
-              _FeedRitualHeader(
-                header: header,
-                onPrimaryCta: () => _handleHeaderCta(header, state.items),
+            ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(
+                12,
+                AppSpacing.sm,
+                12,
+                AppSpacing.xxl,
               ),
-              const SizedBox(height: AppSpacing.md),
-            ],
-            emptyContent,
+              children: [
+                if (showsInlineHeader) ...[
+                  _FeedRitualHeader(
+                    header: header,
+                    onPrimaryCta: () => _handleHeaderCta(header, state.items),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                ],
+                emptyContent,
+              ],
+            ),
+            if (completedHeader)
+              PositionedDirectional(
+                top: AppSpacing.sm,
+                end: 12,
+                child: _CompletedStreakBadge(
+                  key: const Key('completed-streak-badge'),
+                  header: header,
+                  visible: !_completedBadgeDismissed,
+                  onDismiss: () {
+                    setState(() {
+                      _completedBadgeDismissed = true;
+                    });
+                  },
+                ),
+              ),
           ],
         ),
       );
@@ -549,71 +610,90 @@ class _PublicFeedModeViewState extends ConsumerState<_PublicFeedModeView> {
     final showErrorBanner =
         state.errorMessage != null && state.items.isNotEmpty;
     final leadingItemsCount =
-        (header != null ? 1 : 0) + (showErrorBanner ? 1 : 0);
+        (showsInlineHeader ? 1 : 0) + (showErrorBanner ? 1 : 0);
 
     return RefreshIndicator(
       onRefresh: () => ref.read(widget.provider.notifier).refresh(),
-      child: ListView.builder(
-        controller: _scrollController,
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(
-          12,
-          AppSpacing.sm,
-          12,
-          AppSpacing.xxl,
-        ),
-        itemCount:
-            (header != null ? 1 : 0) +
-            state.items.length +
-            (state.isFetchingMore ? 1 : 0) +
-            (showErrorBanner ? 1 : 0),
-        itemBuilder: (context, index) {
-          if (header != null && index == 0) {
-            return Padding(
-              padding: const EdgeInsets.only(bottom: AppSpacing.md),
-              child: _FeedRitualHeader(
-                header: header,
-                onPrimaryCta: () => _handleHeaderCta(header, state.items),
-              ),
-            );
-          }
+      child: Stack(
+        children: [
+          ListView.builder(
+            controller: _scrollController,
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(
+              12,
+              AppSpacing.sm,
+              12,
+              AppSpacing.xxl,
+            ),
+            itemCount:
+                (showsInlineHeader ? 1 : 0) +
+                state.items.length +
+                (state.isFetchingMore ? 1 : 0) +
+                (showErrorBanner ? 1 : 0),
+            itemBuilder: (context, index) {
+              if (showsInlineHeader && index == 0) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                  child: _FeedRitualHeader(
+                    header: header,
+                    onPrimaryCta: () => _handleHeaderCta(header, state.items),
+                  ),
+                );
+              }
 
-          if (showErrorBanner && index == (header != null ? 1 : 0)) {
-            return Padding(
-              padding: const EdgeInsets.only(bottom: AppSpacing.md),
-              child: _ErrorBanner(message: state.errorMessage!),
-            );
-          }
+              if (showErrorBanner && index == (showsInlineHeader ? 1 : 0)) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                  child: _ErrorBanner(message: state.errorMessage!),
+                );
+              }
 
-          final listIndex = index - leadingItemsCount;
-          if (listIndex >= state.items.length) {
-            return const Padding(
-              padding: EdgeInsets.symmetric(vertical: AppSpacing.md),
-              child: Center(
-                child: CircularProgressIndicator(color: AppColors.holyGold),
-              ),
-            );
-          }
+              final listIndex = index - leadingItemsCount;
+              if (listIndex >= state.items.length) {
+                return const Padding(
+                  padding: EdgeInsets.symmetric(vertical: AppSpacing.md),
+                  child: Center(
+                    child: CircularProgressIndicator(color: AppColors.holyGold),
+                  ),
+                );
+              }
 
-          final devotional = state.items[listIndex];
-          return _FeedImpressionTracker(
-            devotional: devotional,
-            onQualified: () => ref
-                .read(widget.provider.notifier)
-                .registerImpression(devotional),
-            child: _FeedCardEntrance(
-              index: listIndex,
-              child: _PublicDevotionalCard(
+              final devotional = state.items[listIndex];
+              return _FeedImpressionTracker(
                 devotional: devotional,
-                isSaving: state.savingDevotionalId == devotional.id,
-                onOpen: () => _openDetail(devotional),
-                onOpenAuthor: () => _openAuthor(devotional),
-                onSave: () => _toggleSave(devotional),
-                onShare: () => _share(devotional),
+                onQualified: () => ref
+                    .read(widget.provider.notifier)
+                    .registerImpression(devotional),
+                child: _FeedCardEntrance(
+                  index: listIndex,
+                  child: _PublicDevotionalCard(
+                    devotional: devotional,
+                    isSaving: state.savingDevotionalId == devotional.id,
+                    onOpen: () => _openDetail(devotional),
+                    onOpenAuthor: () => _openAuthor(devotional),
+                    onSave: () => _toggleSave(devotional),
+                    onShare: () => _share(devotional),
+                  ),
+                ),
+              );
+            },
+          ),
+          if (completedHeader)
+            PositionedDirectional(
+              top: AppSpacing.sm,
+              end: 12,
+              child: _CompletedStreakBadge(
+                key: const Key('completed-streak-badge'),
+                header: header,
+                visible: !_completedBadgeDismissed,
+                onDismiss: () {
+                  setState(() {
+                    _completedBadgeDismissed = true;
+                  });
+                },
               ),
             ),
-          );
-        },
+        ],
       ),
     );
   }
@@ -624,11 +704,6 @@ class _FeedRitualHeader extends StatelessWidget {
 
   final DevotionalFeedHeader header;
   final VoidCallback onPrimaryCta;
-
-  String _streakLabel() {
-    final daysLabel = header.currentStreak == 1 ? 'día' : 'días';
-    return 'Racha: ${header.currentStreak} $daysLabel';
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -703,7 +778,7 @@ class _FeedRitualHeader extends StatelessWidget {
                       ),
                       const SizedBox(height: AppSpacing.xs),
                       Text(
-                        _streakLabel(),
+                        _formatStreakLabel(header.currentStreak),
                         style: AppTextStyles.headline3.copyWith(
                           color: AppColors.pureWhite,
                           fontWeight: FontWeight.w700,
@@ -796,6 +871,192 @@ class _FeedRitualHeader extends StatelessWidget {
               ),
             ],
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CompletedStreakBadge extends StatefulWidget {
+  const _CompletedStreakBadge({
+    super.key,
+    required this.header,
+    required this.visible,
+    required this.onDismiss,
+  });
+
+  final DevotionalFeedHeader header;
+  final bool visible;
+  final VoidCallback onDismiss;
+
+  @override
+  State<_CompletedStreakBadge> createState() => _CompletedStreakBadgeState();
+}
+
+class _CompletedStreakBadgeState extends State<_CompletedStreakBadge> {
+  bool _entered = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      setState(() {
+        _entered = true;
+      });
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final badgeLabel =
+        '${l10n.devotionalFeedCompletedToday}. ${_formatStreakLabel(widget.header.currentStreak)}.';
+    final isVisible = widget.visible && _entered;
+    final dismissLabel = l10n.devotionalFeedHideCompletedBadge;
+
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 220),
+      child: IgnorePointer(
+        ignoring: !widget.visible,
+        child: AnimatedScale(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOutCubic,
+          scale: isVisible ? 1 : 0.96,
+          child: AnimatedOpacity(
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeOutCubic,
+            opacity: isVisible ? 1 : 0,
+            child: Semantics(
+              container: true,
+              explicitChildNodes: true,
+              label: badgeLabel,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(AppBorderRadius.full),
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      const Color(0xFF243553).withValues(alpha: 0.96),
+                      const Color(0xFF304868).withValues(alpha: 0.94),
+                    ],
+                  ),
+                  border: Border.all(
+                    color: AppColors.holyGold.withValues(alpha: 0.2),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.2),
+                      blurRadius: 18,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
+                ),
+                child: Padding(
+                  padding: const EdgeInsetsDirectional.fromSTEB(
+                    AppSpacing.md,
+                    AppSpacing.sm,
+                    AppSpacing.sm,
+                    AppSpacing.sm,
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Flexible(
+                        fit: FlexFit.loose,
+                        child: ExcludeSemantics(
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                width: 32,
+                                height: 32,
+                                decoration: BoxDecoration(
+                                  color: AppColors.holyGold.withValues(
+                                    alpha: 0.14,
+                                  ),
+                                  borderRadius: BorderRadius.circular(
+                                    AppBorderRadius.full,
+                                  ),
+                                ),
+                                child: const Icon(
+                                  Icons.local_fire_department_rounded,
+                                  color: AppColors.holyGold,
+                                  size: 18,
+                                ),
+                              ),
+                              const SizedBox(width: AppSpacing.sm),
+                              Flexible(
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      _formatStreakLabel(
+                                        widget.header.currentStreak,
+                                      ),
+                                      style: AppTextStyles.labelLarge.copyWith(
+                                        color: AppColors.pureWhite,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      l10n.devotionalFeedCompletedToday,
+                                      style: AppTextStyles.labelSmall.copyWith(
+                                        color: AppColors.softMist.withValues(
+                                          alpha: 0.84,
+                                        ),
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.xs),
+                      Tooltip(
+                        message: dismissLabel,
+                        child: Semantics(
+                          button: true,
+                          label: dismissLabel,
+                          onTap: widget.onDismiss,
+                          child: ExcludeSemantics(
+                            child: InkResponse(
+                              key: const Key('completed-streak-badge-close'),
+                              radius: 18,
+                              onTap: widget.onDismiss,
+                              child: Container(
+                                width: 28,
+                                height: 28,
+                                decoration: BoxDecoration(
+                                  color: AppColors.pureWhite.withValues(
+                                    alpha: 0.08,
+                                  ),
+                                  borderRadius: BorderRadius.circular(
+                                    AppBorderRadius.full,
+                                  ),
+                                ),
+                                child: const Icon(
+                                  Icons.close_rounded,
+                                  size: 16,
+                                  color: AppColors.softMist,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
         ),
       ),
     );

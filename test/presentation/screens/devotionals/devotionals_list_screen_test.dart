@@ -274,6 +274,274 @@ void main() {
     expect(find.text('detail-screen'), findsOneWidget);
   });
 
+  testWidgets(
+    'completed state does not render the inline ritual header, even when the feed is empty',
+    (tester) async {
+      await tester.pumpWidget(
+        _TestApp(
+          forYouState: const DevotionalsFeedState(
+            status: DevotionalsFeedStatus.success,
+            feedHeader: DevotionalFeedHeader(
+              currentStreak: 7,
+              longestStreak: 9,
+              streakFreezeCount: 0,
+              completedToday: true,
+              dailyFeatured: DevotionalDailyFeatured(
+                id: 'featured-completed-empty',
+                title: 'No deberia aparecer',
+                estimatedReadTime: 4,
+                previewText: 'Tampoco deberia aparecer en completado.',
+                previewImageUrl: null,
+              ),
+              primaryCtaType: 'OPEN_DAILY_FEATURED',
+              primaryCtaLabel: 'Leer',
+              primaryCtaDevotionalId: 'featured-completed-empty',
+            ),
+          ),
+          followingState: const DevotionalsFeedState(
+            status: DevotionalsFeedStatus.success,
+          ),
+          mineState: const DevotionalsListState(
+            status: DevotionalsListStatus.success,
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 220));
+
+      expect(find.text('Tu ritual de hoy'), findsNothing);
+      expect(find.text('Devocional de hoy'), findsNothing);
+      expect(
+        find.byKey(const Key('daily-featured-card-featured-completed-empty')),
+        findsNothing,
+      );
+      expect(find.text('Racha: 7 días'), findsOneWidget);
+      expect(find.text('Completado hoy'), findsOneWidget);
+      expect(
+        find.text('Todavía no hay devocionales en el feed'),
+        findsOneWidget,
+      );
+    },
+  );
+
+  testWidgets(
+    'completed state renders a floating streak badge with dismiss affordance',
+    (tester) async {
+      await tester.pumpWidget(
+        _TestApp(
+          forYouState: DevotionalsFeedState(
+            status: DevotionalsFeedStatus.success,
+            feedHeader: const DevotionalFeedHeader(
+              currentStreak: 3,
+              longestStreak: 5,
+              streakFreezeCount: 0,
+              completedToday: true,
+              dailyFeatured: null,
+              primaryCtaType: 'BROWSE_FEED',
+              primaryCtaLabel: 'Explorar',
+              primaryCtaDevotionalId: null,
+            ),
+            items: [_buildDevotional(id: 'completed-item', title: 'Feed item')],
+          ),
+          followingState: const DevotionalsFeedState(
+            status: DevotionalsFeedStatus.success,
+          ),
+          mineState: const DevotionalsListState(
+            status: DevotionalsListStatus.success,
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 220));
+
+      expect(find.byKey(const Key('completed-streak-badge')), findsOneWidget);
+      expect(find.text('Racha: 3 días'), findsOneWidget);
+      expect(find.text('Completado hoy'), findsOneWidget);
+      expect(find.byTooltip('Ocultar indicador de racha'), findsOneWidget);
+      expect(find.text('Feed item'), findsOneWidget);
+    },
+  );
+
+  testWidgets('closing the badge hides only the overlay', (tester) async {
+    await tester.pumpWidget(
+      _TestApp(
+        forYouState: DevotionalsFeedState(
+          status: DevotionalsFeedStatus.success,
+          feedHeader: const DevotionalFeedHeader(
+            currentStreak: 4,
+            longestStreak: 6,
+            streakFreezeCount: 1,
+            completedToday: true,
+            dailyFeatured: null,
+            primaryCtaType: 'BROWSE_FEED',
+            primaryCtaLabel: 'Explorar',
+            primaryCtaDevotionalId: null,
+          ),
+          items: [
+            _buildDevotional(id: 'visible-item', title: 'Visible debajo'),
+          ],
+        ),
+        followingState: const DevotionalsFeedState(
+          status: DevotionalsFeedStatus.success,
+        ),
+        mineState: const DevotionalsListState(
+          status: DevotionalsListStatus.success,
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 220));
+
+    expect(find.byKey(const Key('completed-streak-badge')), findsOneWidget);
+    expect(find.text('Visible debajo'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('completed-streak-badge-close')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 220));
+
+    final opacity = tester.widget<AnimatedOpacity>(
+      find.descendant(
+        of: find.byKey(const Key('completed-streak-badge')),
+        matching: find.byType(AnimatedOpacity),
+      ),
+    );
+    expect(opacity.opacity, 0);
+    expect(find.text('Visible debajo'), findsOneWidget);
+  });
+
+  testWidgets(
+    'badge becomes visible again after a pending to completed transition',
+    (tester) async {
+      final controller = _MutableForYouFeedController(
+        DevotionalsFeedState(
+          status: DevotionalsFeedStatus.success,
+          feedHeader: const DevotionalFeedHeader(
+            currentStreak: 2,
+            longestStreak: 4,
+            streakFreezeCount: 0,
+            completedToday: true,
+            dailyFeatured: null,
+            primaryCtaType: 'BROWSE_FEED',
+            primaryCtaLabel: 'Explorar',
+            primaryCtaDevotionalId: null,
+          ),
+          items: [_buildDevotional(id: 'transition-item', title: 'Transition')],
+        ),
+      );
+
+      await tester.pumpWidget(
+        _TestApp(
+          forYouState: controller.initialState,
+          forYouController: controller,
+          followingState: const DevotionalsFeedState(
+            status: DevotionalsFeedStatus.success,
+          ),
+          mineState: const DevotionalsListState(
+            status: DevotionalsListStatus.success,
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 220));
+
+      await tester.tap(find.byKey(const Key('completed-streak-badge-close')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 220));
+
+      var opacity = tester.widget<AnimatedOpacity>(
+        find.descendant(
+          of: find.byKey(const Key('completed-streak-badge')),
+          matching: find.byType(AnimatedOpacity),
+        ),
+      );
+      expect(opacity.opacity, 0);
+
+      controller.replaceState(
+        DevotionalsFeedState(
+          status: DevotionalsFeedStatus.success,
+          feedHeader: const DevotionalFeedHeader(
+            currentStreak: 2,
+            longestStreak: 4,
+            streakFreezeCount: 0,
+            completedToday: false,
+            dailyFeatured: null,
+            primaryCtaType: 'BROWSE_FEED',
+            primaryCtaLabel: 'Explorar',
+            primaryCtaDevotionalId: null,
+          ),
+          items: [_buildDevotional(id: 'transition-item', title: 'Transition')],
+        ),
+      );
+      await tester.pump();
+
+      controller.replaceState(
+        DevotionalsFeedState(
+          status: DevotionalsFeedStatus.success,
+          feedHeader: const DevotionalFeedHeader(
+            currentStreak: 2,
+            longestStreak: 4,
+            streakFreezeCount: 0,
+            completedToday: true,
+            dailyFeatured: null,
+            primaryCtaType: 'BROWSE_FEED',
+            primaryCtaLabel: 'Explorar',
+            primaryCtaDevotionalId: null,
+          ),
+          items: [_buildDevotional(id: 'transition-item', title: 'Transition')],
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 220));
+
+      opacity = tester.widget<AnimatedOpacity>(
+        find.descendant(
+          of: find.byKey(const Key('completed-streak-badge')),
+          matching: find.byType(AnimatedOpacity),
+        ),
+      );
+      expect(opacity.opacity, 1);
+      expect(find.text('Racha: 2 días'), findsOneWidget);
+    },
+  );
+
+  testWidgets('completed badge exposes accessible semantics', (tester) async {
+    final semanticsHandle = tester.ensureSemantics();
+
+    await tester.pumpWidget(
+      _TestApp(
+        forYouState: DevotionalsFeedState(
+          status: DevotionalsFeedStatus.success,
+          feedHeader: const DevotionalFeedHeader(
+            currentStreak: 1,
+            longestStreak: 3,
+            streakFreezeCount: 0,
+            completedToday: true,
+            dailyFeatured: null,
+            primaryCtaType: 'BROWSE_FEED',
+            primaryCtaLabel: 'Explorar',
+            primaryCtaDevotionalId: null,
+          ),
+          items: [_buildDevotional(id: 'semantics-item', title: 'Semantics')],
+        ),
+        followingState: const DevotionalsFeedState(
+          status: DevotionalsFeedStatus.success,
+        ),
+        mineState: const DevotionalsListState(
+          status: DevotionalsListStatus.success,
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 220));
+
+    expect(
+      find.bySemanticsLabel('Completado hoy. Racha: 1 día.'),
+      findsOneWidget,
+    );
+    expect(find.bySemanticsLabel('Ocultar indicador de racha'), findsOneWidget);
+    semanticsHandle.dispose();
+  });
+
   testWidgets('renders public actions and triggers share flow', (tester) async {
     MethodCall? capturedCall;
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
@@ -892,6 +1160,7 @@ class _TestApp extends StatelessWidget {
     ),
     this.authState = const AuthState(sessionStatus: AuthSessionStatus.guest),
     this.apiClient,
+    this.forYouController,
   });
 
   final DevotionalsFeedState forYouState;
@@ -901,6 +1170,7 @@ class _TestApp extends StatelessWidget {
   final DevotionalsListState reviewState;
   final AuthState authState;
   final DevotionalsApiClient? apiClient;
+  final ForYouFeedController? forYouController;
 
   @override
   Widget build(BuildContext context) {
@@ -950,7 +1220,7 @@ class _TestApp extends StatelessWidget {
               DevotionalsRepository(apiClient ?? _FakeDevotionalsApiClient()),
         ),
         forYouFeedControllerProvider.overrideWith(
-          () => _StaticForYouFeedController(forYouState),
+          () => forYouController ?? _StaticForYouFeedController(forYouState),
         ),
         followingFeedControllerProvider.overrideWith(
           () => _StaticFollowingFeedController(followingState),
@@ -1016,6 +1286,46 @@ class _StaticForYouFeedController extends ForYouFeedController {
 
   @override
   DevotionalsFeedState build() => initialState;
+
+  @override
+  Future<void> loadInitial({bool forceRefresh = false}) async {}
+
+  @override
+  Future<void> refresh() async {}
+
+  @override
+  Future<void> loadMore() async {}
+
+  @override
+  Future<void> toggleLike(String devotionalId) async {}
+
+  @override
+  Future<bool> toggleSave(String devotionalId) async => true;
+
+  @override
+  Future<void> registerImpression(Devotional devotional) async {}
+
+  @override
+  Future<void> registerOpen(Devotional devotional) async {}
+
+  @override
+  Future<void> registerShare(Devotional devotional, {int? shareCount}) async {}
+
+  @override
+  void syncUpdatedDevotional(Devotional devotional) {}
+}
+
+class _MutableForYouFeedController extends ForYouFeedController {
+  _MutableForYouFeedController(this.initialState);
+
+  final DevotionalsFeedState initialState;
+
+  @override
+  DevotionalsFeedState build() => initialState;
+
+  void replaceState(DevotionalsFeedState nextState) {
+    state = nextState;
+  }
 
   @override
   Future<void> loadInitial({bool forceRefresh = false}) async {}
