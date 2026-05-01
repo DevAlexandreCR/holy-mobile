@@ -798,7 +798,7 @@ void main() {
       await gesture.moveBy(const Offset(0, -120));
       await tester.pump();
 
-      expect(_pageTop(tester, second.id), lessThan(viewportHeight));
+      expect(_pageTop(tester, second.id), lessThan(_pageViewHeight(tester)));
 
       await gesture.up();
       await tester.pumpAndSettle();
