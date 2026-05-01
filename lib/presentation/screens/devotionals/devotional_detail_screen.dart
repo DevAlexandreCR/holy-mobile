@@ -9,12 +9,14 @@ import 'package:holyverso/core/services/app_runtime_storage.dart';
 import 'package:holyverso/core/theme/app_colors.dart';
 import 'package:holyverso/core/theme/app_design_tokens.dart';
 import 'package:holyverso/core/theme/app_text_styles.dart';
+import 'package:holyverso/data/creator_profiles/creator_profiles_repository.dart';
 import 'package:holyverso/data/devotionals/devotionals_repository.dart';
 import 'package:holyverso/data/roles/role_repository.dart';
 import 'package:holyverso/domain/devotionals/devotional.dart';
 import 'package:holyverso/domain/devotionals/devotional_comment.dart';
 import 'package:holyverso/presentation/screens/devotionals/devotional_feed_reader_args.dart';
 import 'package:holyverso/presentation/screens/devotionals/public_devotional_feed_reader_screen.dart';
+import 'package:holyverso/presentation/state/auth/auth_controller.dart';
 import 'package:holyverso/presentation/state/devotionals/devotional_comments_controller.dart';
 import 'package:holyverso/presentation/state/devotionals/devotional_comments_state.dart';
 import 'package:holyverso/presentation/state/devotionals/devotional_detail_controller.dart';
@@ -91,6 +93,7 @@ class _DevotionalDetailScreenState
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _commentController = TextEditingController();
   bool _isBlockingAuthor = false;
+  bool _isTogglingFollow = false;
 
   @override
   void initState() {
@@ -144,6 +147,99 @@ class _DevotionalDetailScreenState
           shareToken: widget.initialShareToken,
           deviceId: deviceId,
         );
+  }
+
+  void _syncCreatorProfile({
+    required String creatorId,
+    required bool following,
+    String? handle,
+    String? avatarUrl,
+  }) {
+    ref
+        .read(forYouFeedControllerProvider.notifier)
+        .syncCreatorProfile(
+          creatorId: creatorId,
+          following: following,
+          handle: handle,
+          avatarUrl: avatarUrl,
+        );
+    ref
+        .read(followingFeedControllerProvider.notifier)
+        .syncCreatorProfile(
+          creatorId: creatorId,
+          following: following,
+          handle: handle,
+          avatarUrl: avatarUrl,
+        );
+    ref
+        .read(devotionalDetailControllerProvider.notifier)
+        .syncCreatorProfile(
+          creatorId: creatorId,
+          following: following,
+          handle: handle,
+          avatarUrl: avatarUrl,
+        );
+  }
+
+  Future<void> _toggleFollow() async {
+    final devotional = ref.read(devotionalDetailControllerProvider).devotional;
+    if (devotional == null ||
+        devotional.author.id.isEmpty ||
+        _isTogglingFollow) {
+      return;
+    }
+
+    final authState = ref.read(authControllerProvider);
+    if (!authState.isAuthenticated) {
+      final message = Uri.encodeComponent(context.l10n.loginRequiredMessage);
+      context.go('/login?message=$message');
+      return;
+    }
+
+    if (authState.user?.id == devotional.author.id) {
+      return;
+    }
+
+    setState(() {
+      _isTogglingFollow = true;
+    });
+
+    try {
+      final repository = ref.read(creatorProfilesRepositoryProvider);
+      final updated = devotional.author.following
+          ? await repository.unfollowCreator(devotional.author.id)
+          : await repository.followCreator(devotional.author.id);
+
+      if (!mounted) {
+        return;
+      }
+
+      _syncCreatorProfile(
+        creatorId: updated.id,
+        following: updated.followedByMe,
+        handle: updated.handle,
+        avatarUrl: updated.avatarUrl,
+      );
+      await ref.read(followingFeedControllerProvider.notifier).refresh();
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      final message = AppErrorMapper.toMessage(
+        error,
+        l10n: context.l10n,
+        fallbackMessage: context.l10n.creatorProfileFollowError,
+      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isTogglingFollow = false;
+        });
+      }
+    }
   }
 
   Future<void> _share(Devotional devotional) async {
@@ -637,6 +733,9 @@ class _DevotionalDetailScreenState
     final state = ref.watch(devotionalDetailControllerProvider);
     final commentsState = ref.watch(devotionalCommentsControllerProvider);
     final isAdmin = ref.watch(isAdminProvider);
+    final currentUserId = ref.watch(
+      authControllerProvider.select((authState) => authState.user?.id),
+    );
     final hasCoverImage =
         state.devotional?.coverImageUrl != null &&
         state.devotional!.coverImageUrl!.isNotEmpty;
@@ -754,6 +853,11 @@ class _DevotionalDetailScreenState
               isAdmin: isAdmin,
               isBlockingAuthor: _isBlockingAuthor,
               onBlockAuthor: _blockAuthor,
+              onToggleFollow: _toggleFollow,
+              isTogglingFollow: _isTogglingFollow,
+              showFollowAction:
+                  state.devotional != null &&
+                  currentUserId != state.devotional!.author.id,
               onOpenAuthor: () async {
                 final authorId = state.devotional?.author.id;
                 if (authorId == null || authorId.isEmpty) return;
@@ -783,6 +887,9 @@ class _DetailContent extends StatelessWidget {
     required this.isAdmin,
     required this.isBlockingAuthor,
     required this.onBlockAuthor,
+    required this.onToggleFollow,
+    required this.isTogglingFollow,
+    required this.showFollowAction,
     required this.onOpenAuthor,
   });
 
@@ -800,6 +907,9 @@ class _DetailContent extends StatelessWidget {
   final bool isAdmin;
   final bool isBlockingAuthor;
   final Future<void> Function() onBlockAuthor;
+  final Future<void> Function() onToggleFollow;
+  final bool isTogglingFollow;
+  final bool showFollowAction;
   final Future<void> Function() onOpenAuthor;
 
   @override
@@ -852,60 +962,89 @@ class _DetailContent extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: AppSpacing.sm),
-                InkWell(
-                  onTap: onOpenAuthor,
-                  borderRadius: BorderRadius.circular(AppBorderRadius.md),
-                  child: Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 18,
-                        backgroundColor: AppColors.holyGold.withValues(
-                          alpha: 0.18,
-                        ),
-                        backgroundImage:
-                            devotional.author.avatarUrl != null &&
-                                devotional.author.avatarUrl!.isNotEmpty
-                            ? CachedNetworkImageProvider(
-                                devotional.author.avatarUrl!,
-                              )
-                            : null,
-                        child:
-                            devotional.author.avatarUrl == null ||
-                                devotional.author.avatarUrl!.isEmpty
-                            ? Text(
-                                devotional.author.name.isNotEmpty
-                                    ? devotional.author.name.characters.first
-                                          .toUpperCase()
-                                    : '?',
-                                style: AppTextStyles.bodyMedium.copyWith(
-                                  color: AppColors.holyGold,
-                                  fontWeight: FontWeight.w700,
+                Row(
+                  children: [
+                    Expanded(
+                      child: InkWell(
+                        onTap: onOpenAuthor,
+                        borderRadius: BorderRadius.circular(AppBorderRadius.md),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 2),
+                          child: Row(
+                            children: [
+                              CircleAvatar(
+                                radius: 18,
+                                backgroundColor: AppColors.holyGold.withValues(
+                                  alpha: 0.18,
                                 ),
-                              )
-                            : null,
-                      ),
-                      const SizedBox(width: AppSpacing.sm),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            devotional.author.name,
-                            style: AppTextStyles.bodyMedium.copyWith(
-                              color: AppColors.holyGold,
-                            ),
-                          ),
-                          if (devotional.author.handle != null &&
-                              devotional.author.handle!.isNotEmpty)
-                            Text(
-                              '@${devotional.author.handle}',
-                              style: AppTextStyles.bodySmall.copyWith(
-                                color: AppColors.softMist,
+                                backgroundImage:
+                                    devotional.author.avatarUrl != null &&
+                                        devotional.author.avatarUrl!.isNotEmpty
+                                    ? CachedNetworkImageProvider(
+                                        devotional.author.avatarUrl!,
+                                      )
+                                    : null,
+                                child:
+                                    devotional.author.avatarUrl == null ||
+                                        devotional.author.avatarUrl!.isEmpty
+                                    ? Text(
+                                        devotional.author.name.isNotEmpty
+                                            ? devotional
+                                                  .author
+                                                  .name
+                                                  .characters
+                                                  .first
+                                                  .toUpperCase()
+                                            : '?',
+                                        style: AppTextStyles.bodyMedium
+                                            .copyWith(
+                                              color: AppColors.holyGold,
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                      )
+                                    : null,
                               ),
-                            ),
-                        ],
+                              const SizedBox(width: AppSpacing.sm),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      devotional.author.name,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: AppTextStyles.bodyMedium.copyWith(
+                                        color: AppColors.holyGold,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    if (devotional.author.handle != null &&
+                                        devotional.author.handle!.isNotEmpty)
+                                      Text(
+                                        '@${devotional.author.handle}',
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: AppTextStyles.bodySmall.copyWith(
+                                          color: AppColors.softMist,
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    if (showFollowAction) ...[
+                      const SizedBox(width: AppSpacing.sm),
+                      _DetailInlineFollowButton(
+                        following: devotional.author.following,
+                        isLoading: isTogglingFollow,
+                        onPressed: onToggleFollow,
                       ),
                     ],
-                  ),
+                  ],
                 ),
                 if (referenceLabel != null) ...[
                   const SizedBox(height: AppSpacing.sm),
@@ -1078,6 +1217,84 @@ class _DetailContent extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _DetailInlineFollowButton extends StatelessWidget {
+  const _DetailInlineFollowButton({
+    required this.following,
+    required this.isLoading,
+    required this.onPressed,
+  });
+
+  final bool following;
+  final bool isLoading;
+  final Future<void> Function() onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final child = isLoading
+        ? SizedBox(
+            width: 14,
+            height: 14,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              valueColor: AlwaysStoppedAnimation<Color>(
+                following ? AppColors.holyGold : AppColors.midnightFaithDark,
+              ),
+            ),
+          )
+        : Text(
+            following
+                ? context.l10n.creatorProfileFollowing
+                : context.l10n.creatorProfileFollow,
+          );
+
+    final buttonStyle = following
+        ? OutlinedButton.styleFrom(
+            foregroundColor: AppColors.holyGold,
+            side: BorderSide(color: AppColors.holyGold.withValues(alpha: 0.58)),
+            backgroundColor: AppColors.holyGold.withValues(alpha: 0.08),
+            minimumSize: const Size(0, 34),
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppBorderRadius.full),
+            ),
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            visualDensity: VisualDensity.compact,
+            textStyle: AppTextStyles.labelMedium.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
+          )
+        : FilledButton.styleFrom(
+            backgroundColor: AppColors.holyGold,
+            foregroundColor: AppColors.midnightFaithDark,
+            minimumSize: const Size(0, 34),
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppBorderRadius.full),
+            ),
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            visualDensity: VisualDensity.compact,
+            textStyle: AppTextStyles.labelMedium.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
+          );
+
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minWidth: 84, maxWidth: 112),
+      child: following
+          ? OutlinedButton(
+              onPressed: isLoading ? null : onPressed,
+              style: buttonStyle,
+              child: child,
+            )
+          : FilledButton(
+              onPressed: isLoading ? null : onPressed,
+              style: buttonStyle,
+              child: child,
+            ),
     );
   }
 }

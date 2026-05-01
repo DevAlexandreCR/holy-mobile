@@ -293,6 +293,64 @@ class DevotionalFeedReaderController
     _updateCachedDevotional(devotional.copyWith(commentsCount: count));
   }
 
+  void syncCreatorProfile({
+    required String creatorId,
+    required bool following,
+    String? handle,
+    String? avatarUrl,
+    bool syncFeed = true,
+  }) {
+    if (state.loadedDevotionals.isEmpty) {
+      if (syncFeed) {
+        final readerArgs = state.readerArgs;
+        if (readerArgs != null) {
+          ref
+              .read(devotionalFeedProviderForMode(readerArgs.feedMode).notifier)
+              .syncCreatorProfile(
+                creatorId: creatorId,
+                following: following,
+                handle: handle,
+                avatarUrl: avatarUrl,
+              );
+        }
+      }
+      return;
+    }
+
+    final updatedDevotionals = <String, Devotional>{
+      for (final entry in state.loadedDevotionals.entries)
+        entry.key: entry.value.author.id == creatorId
+            ? entry.value.copyWith(
+                author: entry.value.author.copyWith(
+                  following: following,
+                  handle: handle ?? entry.value.author.handle,
+                  avatarUrl: avatarUrl ?? entry.value.author.avatarUrl,
+                ),
+              )
+            : entry.value,
+    };
+
+    state = state.copyWith(loadedDevotionals: updatedDevotionals);
+
+    if (!syncFeed) {
+      return;
+    }
+
+    final readerArgs = state.readerArgs;
+    if (readerArgs == null) {
+      return;
+    }
+
+    ref
+        .read(devotionalFeedProviderForMode(readerArgs.feedMode).notifier)
+        .syncCreatorProfile(
+          creatorId: creatorId,
+          following: following,
+          handle: handle,
+          avatarUrl: avatarUrl,
+        );
+  }
+
   Devotional? feedSnapshotFor(String devotionalId) {
     final readerArgs = state.readerArgs;
     if (readerArgs == null) {
