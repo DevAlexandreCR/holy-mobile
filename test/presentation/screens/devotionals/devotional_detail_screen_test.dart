@@ -624,12 +624,12 @@ void main() {
         readerController: readerController,
         initialDevotionalId: second.id,
       ),
-      );
-      await tester.pumpAndSettle();
-      readerController.activateIndexCalls.clear();
+    );
+    await tester.pumpAndSettle();
+    readerController.activateIndexCalls.clear();
 
-      final gesture = await tester.startGesture(
-        tester.getCenter(_scrollFinder(second.id)),
+    final gesture = await tester.startGesture(
+      tester.getCenter(_scrollFinder(second.id)),
     );
     await gesture.moveBy(const Offset(0, 80));
     await tester.pump();
