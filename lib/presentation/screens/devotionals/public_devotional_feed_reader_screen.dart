@@ -756,7 +756,7 @@ class _PublicReaderPage extends StatelessWidget {
           ),
         ),
         PositionedDirectional(
-          end: AppSpacing.md,
+          end: AppSpacing.sm,
           bottom: AppSpacing.lg,
           child: rail,
         ),
