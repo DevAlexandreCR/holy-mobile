@@ -1745,17 +1745,27 @@ class _PublicDevotionalCard extends StatelessWidget {
         devotional.likesCount > 0 ||
         devotional.commentsCount > 0 ||
         devotional.viewCount > 0;
-    final saveButton = _SavePillButton(
+    final saveButton = _FeedActionIconButton(
       key: Key('public-devotional-save-${devotional.id}'),
+      label: devotional.saved
+          ? context.l10n.savedAction
+          : context.l10n.saveAction,
+      icon: devotional.saved
+          ? Icons.bookmark_rounded
+          : Icons.bookmark_border_rounded,
+      color: devotional.saved
+          ? AppColors.holyGold
+          : AppColors.pureWhite.withValues(alpha: 0.9),
       isSaved: devotional.saved,
       isLoading: isSaving,
       onPressed: isSaving ? null : onSave,
     );
-    final shareButton = _GhostActionButton(
+    final shareButton = _FeedActionIconButton(
       key: Key('public-devotional-share-${devotional.id}'),
+      label: context.l10n.shareAction,
       onPressed: onShare,
-      tooltip: context.l10n.shareAction,
       icon: Icons.share_outlined,
+      color: AppColors.pureWhite.withValues(alpha: 0.9),
     );
     final inlineStats = _PublicFeedStats(
       likesCount: devotional.likesCount,
@@ -2801,119 +2811,58 @@ class _FeedImageStrip extends StatelessWidget {
   }
 }
 
-class _SavePillButton extends StatelessWidget {
-  const _SavePillButton({
+class _FeedActionIconButton extends StatelessWidget {
+  const _FeedActionIconButton({
     super.key,
-    required this.isSaved,
-    required this.isLoading,
     required this.onPressed,
+    required this.label,
+    required this.icon,
+    required this.color,
+    this.isSaved = false,
+    this.isLoading = false,
   });
 
+  final VoidCallback? onPressed;
+  final IconData icon;
+  final String label;
+  final Color color;
   final bool isSaved;
   final bool isLoading;
-  final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context) {
-    final inactiveForeground = AppColors.holyGold.withValues(alpha: 0.88);
-
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 170),
-      curve: Curves.easeOutCubic,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(AppBorderRadius.full),
-        gradient: LinearGradient(
-          colors: isSaved
-              ? [
-                  AppColors.holyGold.withValues(alpha: 0.94),
-                  const Color(0xFFE7C565),
-                ]
-              : [
-                  AppColors.holyGold.withValues(alpha: 0.16),
-                  AppColors.holyGold.withValues(alpha: 0.10),
-                ],
-        ),
-        border: Border.all(
-          color: AppColors.holyGold.withValues(alpha: isSaved ? 0.24 : 0.12),
-        ),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(AppBorderRadius.full),
-          onTap: onPressed,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (isLoading)
-                  SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        isSaved
-                            ? AppColors.midnightFaithDark
-                            : inactiveForeground,
-                      ),
-                    ),
-                  )
-                else
-                  Icon(
-                    isSaved
-                        ? Icons.bookmark_rounded
-                        : Icons.bookmark_border_rounded,
-                    size: 17,
-                    color: isSaved
-                        ? AppColors.midnightFaithDark
-                        : inactiveForeground,
-                  ),
-                const SizedBox(width: 6),
-                Text(
-                  isSaved ? context.l10n.savedAction : context.l10n.saveAction,
-                  style: AppTextStyles.labelMedium.copyWith(
-                    color: isSaved
-                        ? AppColors.midnightFaithDark
-                        : inactiveForeground,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
+    return Semantics(
+      button: true,
+      enabled: onPressed != null,
+      label: label,
+      selected: isSaved,
+      child: Tooltip(
+        message: label,
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onPressed,
+            borderRadius: BorderRadius.circular(AppBorderRadius.full),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.sm,
+                vertical: AppSpacing.xs,
+              ),
+              child: ExcludeSemantics(
+                child: isLoading
+                    ? SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(color),
+                        ),
+                      )
+                    : Icon(icon, color: color, size: 24),
+              ),
             ),
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _GhostActionButton extends StatelessWidget {
-  const _GhostActionButton({
-    super.key,
-    required this.onPressed,
-    required this.tooltip,
-    required this.icon,
-  });
-
-  final VoidCallback onPressed;
-  final String tooltip;
-  final IconData icon;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: AppColors.pureWhite.withValues(alpha: 0.04),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppBorderRadius.full),
-        side: BorderSide(color: AppColors.pureWhite.withValues(alpha: 0.08)),
-      ),
-      child: IconButton(
-        onPressed: onPressed,
-        tooltip: tooltip,
-        visualDensity: VisualDensity.compact,
-        icon: Icon(icon, color: AppColors.softMist),
       ),
     );
   }

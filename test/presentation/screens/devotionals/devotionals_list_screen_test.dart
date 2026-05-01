@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:holyverso/core/l10n/app_localizations.dart';
 import 'package:holyverso/core/theme/app_colors.dart';
+import 'package:holyverso/core/theme/app_design_tokens.dart';
 import 'package:holyverso/core/theme/app_theme.dart';
 import 'package:holyverso/data/auth/models/user.dart';
 import 'package:holyverso/data/devotionals/devotionals_api_client.dart';
@@ -578,7 +579,8 @@ void main() {
     expect(find.text('Recomendado'), findsOneWidget);
     expect(find.text('Destacado en HolyVerso'), findsNothing);
     expect(find.text('4'), findsOneWidget);
-    expect(find.text('Guardar'), findsOneWidget);
+    expect(find.text('Guardar'), findsNothing);
+    expect(find.text('Guardado'), findsNothing);
     expect(
       find.byKey(const Key('public-devotional-overlay-bar-share-card')),
       findsOneWidget,
@@ -624,6 +626,17 @@ void main() {
     final saveCenter = tester.getCenter(saveFinder).dy;
     final shareCenter = tester.getCenter(shareFinder).dy;
 
+    expect(
+      find.descendant(of: saveFinder, matching: find.byType(Text)),
+      findsNothing,
+    );
+    expect(
+      find.descendant(of: shareFinder, matching: find.byType(Text)),
+      findsNothing,
+    );
+    expect(find.byTooltip('Guardar'), findsOneWidget);
+    expect(find.byTooltip('Compartir'), findsOneWidget);
+
     expect(find.byKey(const Key('public-devotional-likes')), findsOneWidget);
     expect(find.byKey(const Key('public-devotional-comments')), findsOneWidget);
     expect(find.byKey(const Key('public-devotional-views')), findsOneWidget);
@@ -665,9 +678,7 @@ void main() {
     expect(find.text('Esto es para ti ->'), findsNothing);
   });
 
-  testWidgets('save button uses the softened inactive footprint and styling', (
-    tester,
-  ) async {
+  testWidgets('save button uses icon-only inactive styling', (tester) async {
     await tester.pumpWidget(
       _TestApp(
         forYouState: DevotionalsFeedState(
@@ -690,11 +701,6 @@ void main() {
     final icon = tester.widget<Icon>(
       find.descendant(of: saveButton, matching: find.byType(Icon)).first,
     );
-    final container = tester.widget<AnimatedContainer>(
-      find.descendant(of: saveButton, matching: find.byType(AnimatedContainer)),
-    );
-    final decoration = container.decoration! as BoxDecoration;
-    final gradient = decoration.gradient! as LinearGradient;
 
     expect(
       find.descendant(
@@ -703,34 +709,29 @@ void main() {
           (widget) =>
               widget is Padding &&
               widget.padding ==
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.sm,
+                    vertical: AppSpacing.xs,
+                  ),
         ),
       ),
       findsOneWidget,
     );
+    expect(find.byTooltip('Guardar'), findsOneWidget);
     expect(icon.icon, Icons.bookmark_border_rounded);
-    expect(icon.size, 17);
-    expect(icon.color, AppColors.holyGold.withValues(alpha: 0.88));
+    expect(icon.size, 24);
+    expect(icon.color, AppColors.pureWhite.withValues(alpha: 0.9));
     expect(
-      find.descendant(
-        of: saveButton,
-        matching: find.byWidgetPredicate(
-          (widget) => widget is SizedBox && widget.width == 6,
-        ),
-      ),
-      findsOneWidget,
+      find.descendant(of: saveButton, matching: find.byType(Text)),
+      findsNothing,
     );
     expect(
-      decoration.border!.top.color,
-      AppColors.holyGold.withValues(alpha: 0.12),
+      find.descendant(of: saveButton, matching: find.byType(AnimatedContainer)),
+      findsNothing,
     );
-    expect(gradient.colors, [
-      AppColors.holyGold.withValues(alpha: 0.16),
-      AppColors.holyGold.withValues(alpha: 0.10),
-    ]);
   });
 
-  testWidgets('save button keeps the stronger active saved treatment', (
+  testWidgets('save button reflects saved state through icon color only', (
     tester,
   ) async {
     await tester.pumpWidget(
@@ -761,24 +762,80 @@ void main() {
     final icon = tester.widget<Icon>(
       find.descendant(of: saveButton, matching: find.byType(Icon)).first,
     );
-    final container = tester.widget<AnimatedContainer>(
-      find.descendant(of: saveButton, matching: find.byType(AnimatedContainer)),
-    );
-    final decoration = container.decoration! as BoxDecoration;
-    final gradient = decoration.gradient! as LinearGradient;
 
-    expect(find.text('Guardado'), findsOneWidget);
+    expect(find.text('Guardado'), findsNothing);
+    expect(find.byTooltip('Guardado'), findsOneWidget);
     expect(icon.icon, Icons.bookmark_rounded);
-    expect(icon.color, AppColors.midnightFaithDark);
+    expect(icon.size, 24);
+    expect(icon.color, AppColors.holyGold);
     expect(
-      decoration.border!.top.color,
-      AppColors.holyGold.withValues(alpha: 0.24),
+      find.descendant(of: saveButton, matching: find.byType(Text)),
+      findsNothing,
     );
-    expect(gradient.colors, [
-      AppColors.holyGold.withValues(alpha: 0.94),
-      const Color(0xFFE7C565),
-    ]);
+    expect(
+      find.descendant(of: saveButton, matching: find.byType(AnimatedContainer)),
+      findsNothing,
+    );
   });
+
+  testWidgets(
+    'feed save and share buttons remain tappable without visible labels',
+    (tester) async {
+      final controller = _MutableForYouFeedController(
+        DevotionalsFeedState(
+          status: DevotionalsFeedStatus.success,
+          items: [_buildDevotional(id: 'icon-actions', title: 'Icon actions')],
+        ),
+      );
+      MethodCall? capturedCall;
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(shareChannel, (call) async {
+            capturedCall = call;
+            return null;
+          });
+
+      await tester.pumpWidget(
+        _TestApp(
+          forYouState: controller.initialState,
+          forYouController: controller,
+          followingState: const DevotionalsFeedState(
+            status: DevotionalsFeedStatus.success,
+          ),
+          mineState: const DevotionalsListState(
+            status: DevotionalsListStatus.success,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final saveButton = find.byKey(
+        const Key('public-devotional-save-icon-actions'),
+      );
+      final shareButton = find.byKey(
+        const Key('public-devotional-share-icon-actions'),
+      );
+
+      expect(
+        find.descendant(of: saveButton, matching: find.byType(Text)),
+        findsNothing,
+      );
+      expect(
+        find.descendant(of: shareButton, matching: find.byType(Text)),
+        findsNothing,
+      );
+
+      await tester.tap(saveButton);
+      await tester.pump();
+
+      expect(controller.toggleSaveCalls, 1);
+      expect(controller.lastToggleSaveId, 'icon-actions');
+
+      await tester.tap(shareButton);
+      await tester.pumpAndSettle();
+
+      expect(capturedCall?.method, 'share');
+    },
+  );
 
   testWidgets('hides stats cluster when likes and comments are zero', (
     tester,
@@ -1370,6 +1427,8 @@ class _MutableForYouFeedController extends ForYouFeedController {
   _MutableForYouFeedController(this.initialState);
 
   final DevotionalsFeedState initialState;
+  int toggleSaveCalls = 0;
+  String? lastToggleSaveId;
 
   @override
   DevotionalsFeedState build() => initialState;
@@ -1391,7 +1450,11 @@ class _MutableForYouFeedController extends ForYouFeedController {
   Future<void> toggleLike(String devotionalId) async {}
 
   @override
-  Future<bool> toggleSave(String devotionalId) async => true;
+  Future<bool> toggleSave(String devotionalId) async {
+    toggleSaveCalls += 1;
+    lastToggleSaveId = devotionalId;
+    return true;
+  }
 
   @override
   Future<void> registerImpression(Devotional devotional) async {}
