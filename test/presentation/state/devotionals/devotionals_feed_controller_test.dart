@@ -19,7 +19,10 @@ import 'package:holyverso/domain/devotionals/devotional_verse_reference.dart';
 import 'package:holyverso/domain/roles/user_role.dart';
 import 'package:holyverso/presentation/state/auth/auth_controller.dart';
 import 'package:holyverso/presentation/state/auth/auth_state.dart';
+import 'package:holyverso/presentation/screens/devotionals/devotional_feed_reader_args.dart';
+import 'package:holyverso/presentation/state/devotionals/devotional_feed_reader_controller.dart';
 import 'package:holyverso/presentation/state/devotionals/devotionals_feed_controller.dart';
+import 'package:holyverso/presentation/state/devotionals/devotionals_feed_state.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -156,6 +159,151 @@ void main() {
       expect(state.items.single.deliveryToken, 'token-stable');
     });
   });
+
+  group('DevotionalFeedReaderController', () {
+    late _FakeAuthController authController;
+    late _FakeDevotionalsRepository repository;
+    late _MutableForYouFeedController feedController;
+    late ProviderContainer container;
+
+    setUp(() {
+      authController = _FakeAuthController('user-1');
+      repository = _FakeDevotionalsRepository();
+      feedController = _MutableForYouFeedController(
+        DevotionalsFeedState(
+          status: DevotionalsFeedStatus.success,
+          items: [
+            _buildDevotional(id: 'one', token: 'token-1'),
+            _buildDevotional(id: 'two', token: 'token-2'),
+          ],
+          hasMore: false,
+        ),
+      );
+      container = ProviderContainer(
+        overrides: [
+          authControllerProvider.overrideWith(() => authController),
+          devotionalsRepositoryProvider.overrideWith((ref) => repository),
+          forYouFeedControllerProvider.overrideWith(() => feedController),
+        ],
+      );
+      addTearDown(container.dispose);
+    });
+
+    test('next devotional comes from the same feed', () async {
+      repository.stubDevotional(_buildDevotional(id: 'one', token: 'token-1'));
+      repository.stubDevotional(_buildDevotional(id: 'two', token: 'token-2'));
+
+      final controller = container.read(
+        devotionalFeedReaderControllerProvider.notifier,
+      );
+      await controller.configure(
+        readerArgs: const DevotionalFeedReaderArgs(
+          feedMode: DevotionalFeedMode.forYou,
+          initialDevotionalId: 'one',
+          initialDeliveryToken: 'token-1',
+        ),
+        devotionalId: 'one',
+        deliveryToken: 'token-1',
+        deviceId: 'device-1',
+      );
+
+      final nextIndex = await controller.resolveNextIndex();
+      expect(nextIndex, 1);
+
+      await controller.activateIndex(nextIndex!);
+
+      final state = container.read(devotionalFeedReaderControllerProvider);
+      expect(state.activeDevotionalId, 'two');
+      expect(repository.getDevotionalCalls, ['one', 'two']);
+    });
+
+    test(
+      'loadMore is called when scrolling beyond the last loaded item',
+      () async {
+        repository.stubDevotional(
+          _buildDevotional(id: 'one', token: 'token-1'),
+        );
+        container.read(forYouFeedControllerProvider);
+        feedController.replaceState(
+          DevotionalsFeedState(
+            status: DevotionalsFeedStatus.success,
+            items: [_buildDevotional(id: 'one', token: 'token-1')],
+            hasMore: true,
+          ),
+        );
+        feedController.onLoadMore = () async {
+          feedController.replaceState(
+            DevotionalsFeedState(
+              status: DevotionalsFeedStatus.success,
+              items: [
+                _buildDevotional(id: 'one', token: 'token-1'),
+                _buildDevotional(id: 'two', token: 'token-2'),
+              ],
+              hasMore: false,
+            ),
+          );
+        };
+
+        final controller = container.read(
+          devotionalFeedReaderControllerProvider.notifier,
+        );
+        await controller.configure(
+          readerArgs: const DevotionalFeedReaderArgs(
+            feedMode: DevotionalFeedMode.forYou,
+            initialDevotionalId: 'one',
+            initialDeliveryToken: 'token-1',
+          ),
+          devotionalId: 'one',
+          deliveryToken: 'token-1',
+          deviceId: 'device-1',
+        );
+
+        final nextIndex = await controller.resolveNextIndex();
+
+        expect(nextIndex, 1);
+        expect(feedController.loadMoreCalls, 1);
+      },
+    );
+
+    test('direct detail mode does not auto-chain', () async {
+      repository.stubDevotional(_buildDevotional(id: 'one', token: 'token-1'));
+
+      final controller = container.read(
+        devotionalFeedReaderControllerProvider.notifier,
+      );
+      await controller.configure(devotionalId: 'one', deviceId: 'device-1');
+
+      final nextIndex = await controller.resolveNextIndex();
+
+      expect(nextIndex, isNull);
+    });
+
+    test('read-complete is still reported once per devotional', () async {
+      repository.stubDevotional(_buildDevotional(id: 'one', token: 'token-1'));
+      repository.stubDevotional(_buildDevotional(id: 'two', token: 'token-2'));
+
+      final controller = container.read(
+        devotionalFeedReaderControllerProvider.notifier,
+      );
+      await controller.configure(
+        readerArgs: const DevotionalFeedReaderArgs(
+          feedMode: DevotionalFeedMode.forYou,
+          initialDevotionalId: 'one',
+          initialDeliveryToken: 'token-1',
+        ),
+        devotionalId: 'one',
+        deliveryToken: 'token-1',
+        deviceId: 'device-1',
+      );
+
+      await controller.reportReadComplete();
+      await controller.reportReadComplete();
+      await controller.activateIndex(1);
+      await controller.reportReadComplete();
+
+      expect(repository.markReadCompleteCalls, ['one', 'two']);
+    });
+  });
 }
 
 class _FakeAuthController extends AuthController {
@@ -192,12 +340,19 @@ class _FakeDevotionalsRepository extends DevotionalsRepository {
 
   final Queue<CursorPagedResult<Devotional>> _feedQueue =
       Queue<CursorPagedResult<Devotional>>();
+  final Map<String, Devotional> _devotionalsById = <String, Devotional>{};
   int fetchFeedCalls = 0;
   int fetchFeedHeaderCalls = 0;
+  final List<String> getDevotionalCalls = <String>[];
+  final List<String> markReadCompleteCalls = <String>[];
   Object? recordFeedEventsError;
 
   void enqueueFeed(CursorPagedResult<Devotional> result) {
     _feedQueue.add(result);
+  }
+
+  void stubDevotional(Devotional devotional) {
+    _devotionalsById[devotional.id] = devotional;
   }
 
   @override
@@ -245,6 +400,75 @@ class _FakeDevotionalsRepository extends DevotionalsRepository {
       throw error;
     }
   }
+
+  @override
+  Future<Devotional> getDevotional(
+    String id, {
+    String? shareToken,
+    String? deviceId,
+  }) async {
+    getDevotionalCalls.add(id);
+    return _devotionalsById[id] ?? _buildDevotional(id: id, token: 'token-$id');
+  }
+
+  @override
+  Future<int> markReadComplete(
+    String devotionalId, {
+    String? deliveryToken,
+    String? shareToken,
+    String? deviceId,
+  }) async {
+    markReadCompleteCalls.add(devotionalId);
+    return markReadCompleteCalls.where((id) => id == devotionalId).length;
+  }
+}
+
+class _MutableForYouFeedController extends ForYouFeedController {
+  _MutableForYouFeedController(this.initialState);
+
+  final DevotionalsFeedState initialState;
+  int loadMoreCalls = 0;
+  Future<void> Function()? onLoadMore;
+
+  @override
+  DevotionalsFeedState build() => initialState;
+
+  void replaceState(DevotionalsFeedState nextState) {
+    state = nextState;
+  }
+
+  @override
+  Future<void> loadInitial({bool forceRefresh = false}) async {}
+
+  @override
+  Future<void> refresh() async {}
+
+  @override
+  Future<void> refreshHeader() async {}
+
+  @override
+  Future<void> loadMore() async {
+    loadMoreCalls += 1;
+    await onLoadMore?.call();
+  }
+
+  @override
+  Future<void> toggleLike(String devotionalId) async {}
+
+  @override
+  Future<bool> toggleSave(String devotionalId) async => true;
+
+  @override
+  Future<void> registerImpression(Devotional devotional) async {}
+
+  @override
+  Future<void> registerOpen(Devotional devotional) async {}
+
+  @override
+  Future<void> registerShare(Devotional devotional, {int? shareCount}) async {}
+
+  @override
+  void syncUpdatedDevotional(Devotional devotional) {}
 }
 
 class _NoopDevotionalsApiClient extends DevotionalsApiClient {

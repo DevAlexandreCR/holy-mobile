@@ -7,15 +7,21 @@ import 'package:holyverso/core/theme/app_theme.dart';
 import 'package:holyverso/domain/devotionals/devotional.dart';
 import 'package:holyverso/domain/devotionals/devotional_author.dart';
 import 'package:holyverso/domain/devotionals/devotional_comment.dart';
+import 'package:holyverso/domain/devotionals/devotional_feed_mode.dart';
 import 'package:holyverso/domain/devotionals/devotional_moderation_status.dart';
 import 'package:holyverso/domain/devotionals/devotional_publication_state.dart';
 import 'package:holyverso/domain/devotionals/devotional_status.dart';
 import 'package:holyverso/domain/devotionals/devotional_verse_reference.dart';
 import 'package:holyverso/presentation/screens/devotionals/devotional_detail_screen.dart';
+import 'package:holyverso/presentation/screens/devotionals/devotional_feed_reader_args.dart';
 import 'package:holyverso/presentation/state/devotionals/devotional_comments_controller.dart';
 import 'package:holyverso/presentation/state/devotionals/devotional_comments_state.dart';
 import 'package:holyverso/presentation/state/devotionals/devotional_detail_controller.dart';
 import 'package:holyverso/presentation/state/devotionals/devotional_detail_state.dart';
+import 'package:holyverso/presentation/state/devotionals/devotional_feed_reader_controller.dart';
+import 'package:holyverso/presentation/state/devotionals/devotional_feed_reader_state.dart';
+import 'package:holyverso/presentation/state/devotionals/devotionals_feed_controller.dart';
+import 'package:holyverso/presentation/state/devotionals/devotionals_feed_state.dart';
 import 'package:holyverso/presentation/widgets/devotionals/devotional_content_view.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -162,15 +168,164 @@ void main() {
     expect(heroImage.fit, BoxFit.cover);
     expect(heroImage.alignment, const Alignment(0, 0.45));
   });
+
+  testWidgets(
+    'public reader shows action rail counters and removes inline comments',
+    (tester) async {
+      final devotional = _buildDevotional(withCover: true);
+      final readerArgs = const DevotionalFeedReaderArgs(
+        feedMode: DevotionalFeedMode.forYou,
+        initialDevotionalId: 'devotional-1',
+        initialDeliveryToken: 'delivery-1',
+        heroTag: 'hero-1',
+      );
+
+      await tester.pumpWidget(
+        _TestApp(
+          devotional: devotional,
+          readerArgs: readerArgs,
+          readerState: DevotionalFeedReaderState(
+            readerArgs: readerArgs,
+            activeDevotionalId: 'devotional-1',
+            activeIndex: 0,
+            status: DevotionalFeedReaderStatus.success,
+            loadedDevotionals: {'devotional-1': devotional},
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const Key('public-feed-reader-action-rail')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('public-feed-reader-save-button')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('public-feed-reader-like-button')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('public-feed-reader-comment-button')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('public-feed-reader-share-button')),
+        findsOneWidget,
+      );
+      expect(find.text(devotional.likesCount.toString()), findsOneWidget);
+      expect(find.text(devotional.shareCount.toString()), findsOneWidget);
+      expect(find.text('Comentarios'), findsNothing);
+      expect(find.text('Escribe un comentario...'), findsNothing);
+    },
+  );
+
+  testWidgets('public reader opens comments bottom sheet', (tester) async {
+    final devotional = _buildDevotional();
+    final readerArgs = const DevotionalFeedReaderArgs(
+      feedMode: DevotionalFeedMode.forYou,
+      initialDevotionalId: 'devotional-1',
+      initialDeliveryToken: 'delivery-1',
+    );
+
+    await tester.pumpWidget(
+      _TestApp(
+        devotional: devotional,
+        readerArgs: readerArgs,
+        readerState: DevotionalFeedReaderState(
+          readerArgs: readerArgs,
+          activeDevotionalId: 'devotional-1',
+          activeIndex: 0,
+          status: DevotionalFeedReaderStatus.success,
+          loadedDevotionals: {'devotional-1': devotional},
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(
+      find.byKey(const Key('public-feed-reader-comment-button')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const Key('public-feed-reader-comments-sheet')),
+      findsOneWidget,
+    );
+    expect(find.text('Comentarios'), findsOneWidget);
+  });
+
+  testWidgets('public reader submits comments through comments controller', (
+    tester,
+  ) async {
+    final devotional = _buildDevotional();
+    final readerArgs = const DevotionalFeedReaderArgs(
+      feedMode: DevotionalFeedMode.forYou,
+      initialDevotionalId: 'devotional-1',
+      initialDeliveryToken: 'delivery-1',
+    );
+    final commentsController = _TrackingCommentsController(
+      const DevotionalCommentsState(
+        status: DevotionalCommentsStatus.success,
+        devotionalId: 'devotional-1',
+      ),
+    );
+
+    await tester.pumpWidget(
+      _TestApp(
+        devotional: devotional,
+        readerArgs: readerArgs,
+        readerState: DevotionalFeedReaderState(
+          readerArgs: readerArgs,
+          activeDevotionalId: 'devotional-1',
+          activeIndex: 0,
+          status: DevotionalFeedReaderStatus.success,
+          loadedDevotionals: {'devotional-1': devotional},
+        ),
+        commentsController: commentsController,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(
+      find.byKey(const Key('public-feed-reader-comment-button')),
+    );
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).last, 'Amén');
+    await tester.tap(find.byIcon(Icons.send_rounded).last);
+    await tester.pumpAndSettle();
+
+    expect(commentsController.addCommentCalls, 1);
+    expect(commentsController.lastCommentContent, 'Amén');
+  });
 }
 
 class _TestApp extends StatelessWidget {
-  const _TestApp({required this.devotional});
+  const _TestApp({
+    required this.devotional,
+    this.readerArgs,
+    this.readerState,
+    this.commentsController,
+  });
 
   final Devotional devotional;
+  final DevotionalFeedReaderArgs? readerArgs;
+  final DevotionalFeedReaderState? readerState;
+  final DevotionalCommentsController? commentsController;
 
   @override
   Widget build(BuildContext context) {
+    final commentsOverride =
+        commentsController ??
+        _StaticDevotionalCommentsController(
+          const DevotionalCommentsState(
+            status: DevotionalCommentsStatus.success,
+            devotionalId: 'devotional-1',
+          ),
+        );
+
     return ProviderScope(
       overrides: [
         devotionalDetailControllerProvider.overrideWith(
@@ -182,10 +337,33 @@ class _TestApp extends StatelessWidget {
           ),
         ),
         devotionalCommentsControllerProvider.overrideWith(
-          () => _StaticDevotionalCommentsController(
-            const DevotionalCommentsState(
-              status: DevotionalCommentsStatus.success,
-              devotionalId: 'devotional-1',
+          () => commentsOverride,
+        ),
+        devotionalFeedReaderControllerProvider.overrideWith(
+          () => _StaticDevotionalFeedReaderController(
+            readerState ??
+                DevotionalFeedReaderState(
+                  readerArgs: readerArgs,
+                  activeDevotionalId: 'devotional-1',
+                  activeIndex: 0,
+                  status: DevotionalFeedReaderStatus.success,
+                  loadedDevotionals: {'devotional-1': devotional},
+                ),
+          ),
+        ),
+        forYouFeedControllerProvider.overrideWith(
+          () => _StaticForYouFeedController(
+            DevotionalsFeedState(
+              status: DevotionalsFeedStatus.success,
+              items: [devotional],
+            ),
+          ),
+        ),
+        followingFeedControllerProvider.overrideWith(
+          () => _StaticFollowingFeedController(
+            DevotionalsFeedState(
+              status: DevotionalsFeedStatus.success,
+              items: [devotional],
             ),
           ),
         ),
@@ -196,7 +374,10 @@ class _TestApp extends StatelessWidget {
         locale: const Locale('es'),
         theme: AppTheme.light(),
         darkTheme: AppTheme.dark(),
-        home: const DevotionalDetailScreen(devotionalId: 'devotional-1'),
+        home: DevotionalDetailScreen(
+          devotionalId: 'devotional-1',
+          readerArgs: readerArgs,
+        ),
       ),
     );
   }
@@ -264,6 +445,165 @@ class _StaticDevotionalCommentsController extends DevotionalCommentsController {
   Future<void> deleteComment(DevotionalComment comment) async {}
 }
 
+class _TrackingCommentsController extends DevotionalCommentsController {
+  _TrackingCommentsController(this._initialState);
+
+  final DevotionalCommentsState _initialState;
+  int addCommentCalls = 0;
+  String? lastCommentContent;
+
+  @override
+  DevotionalCommentsState build() => _initialState;
+
+  @override
+  Future<void> load(String devotionalId) async {}
+
+  @override
+  Future<void> refresh() async {}
+
+  @override
+  Future<void> loadMore() async {}
+
+  @override
+  Future<void> addComment(String content) async {
+    addCommentCalls += 1;
+    lastCommentContent = content;
+    state = state.copyWith(
+      items: [
+        _buildComment(id: 'comment-$addCommentCalls', content: content),
+        ...state.items,
+      ],
+      total: state.total + 1,
+    );
+  }
+
+  @override
+  Future<void> deleteComment(DevotionalComment comment) async {}
+}
+
+class _StaticDevotionalFeedReaderController
+    extends DevotionalFeedReaderController {
+  _StaticDevotionalFeedReaderController(this._initialState);
+
+  final DevotionalFeedReaderState _initialState;
+
+  @override
+  DevotionalFeedReaderState build() => _initialState;
+
+  @override
+  Future<void> configure({
+    DevotionalFeedReaderArgs? readerArgs,
+    required String devotionalId,
+    String? deliveryToken,
+    required String deviceId,
+  }) async {}
+
+  @override
+  Future<void> activateIndex(int index) async {}
+
+  @override
+  Future<int?> resolveNextIndex() async => null;
+
+  @override
+  Future<void> reloadActive() async {}
+
+  @override
+  Future<void> toggleLike() async {}
+
+  @override
+  Future<void> toggleSave() async {}
+
+  @override
+  Future<void> registerShare({int? shareCount}) async {}
+
+  @override
+  Future<bool> report({required String reason, String? details}) async => true;
+
+  @override
+  Future<void> reportReadComplete() async {}
+
+  @override
+  void acknowledgeReadComplete() {}
+
+  @override
+  void syncCommentCount(int count) {}
+}
+
+class _StaticForYouFeedController extends ForYouFeedController {
+  _StaticForYouFeedController(this.initialState);
+
+  final DevotionalsFeedState initialState;
+
+  @override
+  DevotionalsFeedState build() => initialState;
+
+  @override
+  Future<void> loadInitial({bool forceRefresh = false}) async {}
+
+  @override
+  Future<void> refresh() async {}
+
+  @override
+  Future<void> refreshHeader() async {}
+
+  @override
+  Future<void> loadMore() async {}
+
+  @override
+  Future<void> toggleLike(String devotionalId) async {}
+
+  @override
+  Future<bool> toggleSave(String devotionalId) async => true;
+
+  @override
+  Future<void> registerImpression(Devotional devotional) async {}
+
+  @override
+  Future<void> registerOpen(Devotional devotional) async {}
+
+  @override
+  Future<void> registerShare(Devotional devotional, {int? shareCount}) async {}
+
+  @override
+  void syncUpdatedDevotional(Devotional devotional) {}
+}
+
+class _StaticFollowingFeedController extends FollowingFeedController {
+  _StaticFollowingFeedController(this.initialState);
+
+  final DevotionalsFeedState initialState;
+
+  @override
+  DevotionalsFeedState build() => initialState;
+
+  @override
+  Future<void> loadInitial({bool forceRefresh = false}) async {}
+
+  @override
+  Future<void> refresh() async {}
+
+  @override
+  Future<void> loadMore() async {}
+
+  @override
+  Future<void> toggleLike(String devotionalId) async {}
+
+  @override
+  Future<bool> toggleSave(String devotionalId) async => true;
+
+  @override
+  Future<void> registerImpression(Devotional devotional) async {}
+
+  @override
+  Future<void> registerOpen(Devotional devotional) async {}
+
+  @override
+  Future<void> registerShare(Devotional devotional, {int? shareCount}) async {}
+
+  @override
+  void syncUpdatedDevotional(Devotional devotional) {}
+}
+
 Devotional _buildDevotional({
   String? feedContextReason,
   String? recommendationReason,
@@ -324,5 +664,22 @@ Devotional _buildDevotional({
     content: const [
       {'insert': 'Primer párrafo de apertura.\nSegundo párrafo final.\n'},
     ],
+  );
+}
+
+DevotionalComment _buildComment({required String id, required String content}) {
+  return DevotionalComment(
+    id: id,
+    devotionalId: 'devotional-1',
+    content: content,
+    createdAt: DateTime(2026, 4, 30),
+    updatedAt: DateTime(2026, 4, 30),
+    author: const DevotionalAuthor(
+      id: 'comment-author',
+      name: 'Ana',
+      handle: 'ana',
+      avatarUrl: null,
+      following: false,
+    ),
   );
 }

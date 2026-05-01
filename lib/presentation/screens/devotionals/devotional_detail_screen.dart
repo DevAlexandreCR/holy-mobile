@@ -13,6 +13,8 @@ import 'package:holyverso/data/devotionals/devotionals_repository.dart';
 import 'package:holyverso/data/roles/role_repository.dart';
 import 'package:holyverso/domain/devotionals/devotional.dart';
 import 'package:holyverso/domain/devotionals/devotional_comment.dart';
+import 'package:holyverso/presentation/screens/devotionals/devotional_feed_reader_args.dart';
+import 'package:holyverso/presentation/screens/devotionals/public_devotional_feed_reader_screen.dart';
 import 'package:holyverso/presentation/state/devotionals/devotional_comments_controller.dart';
 import 'package:holyverso/presentation/state/devotionals/devotional_comments_state.dart';
 import 'package:holyverso/presentation/state/devotionals/devotional_detail_controller.dart';
@@ -36,9 +38,40 @@ const SystemUiOverlayStyle _lightTopOverlayStyle = SystemUiOverlayStyle(
 
 enum _DetailMenuAction { report }
 
-class DevotionalDetailScreen extends ConsumerStatefulWidget {
+class DevotionalDetailScreen extends StatelessWidget {
   const DevotionalDetailScreen({
     super.key,
+    required this.devotionalId,
+    this.initialDeliveryToken,
+    this.initialShareToken,
+    this.readerArgs,
+  });
+
+  final String devotionalId;
+  final String? initialDeliveryToken;
+  final String? initialShareToken;
+  final DevotionalFeedReaderArgs? readerArgs;
+
+  @override
+  Widget build(BuildContext context) {
+    final readerArgs = this.readerArgs;
+    if (readerArgs != null) {
+      return PublicDevotionalFeedReaderScreen(
+        devotionalId: devotionalId,
+        readerArgs: readerArgs,
+      );
+    }
+
+    return _LegacyDevotionalDetailScreen(
+      devotionalId: devotionalId,
+      initialDeliveryToken: initialDeliveryToken,
+      initialShareToken: initialShareToken,
+    );
+  }
+}
+
+class _LegacyDevotionalDetailScreen extends ConsumerStatefulWidget {
+  const _LegacyDevotionalDetailScreen({
     required this.devotionalId,
     this.initialDeliveryToken,
     this.initialShareToken,
@@ -49,12 +82,12 @@ class DevotionalDetailScreen extends ConsumerStatefulWidget {
   final String? initialShareToken;
 
   @override
-  ConsumerState<DevotionalDetailScreen> createState() =>
+  ConsumerState<_LegacyDevotionalDetailScreen> createState() =>
       _DevotionalDetailScreenState();
 }
 
 class _DevotionalDetailScreenState
-    extends ConsumerState<DevotionalDetailScreen> {
+    extends ConsumerState<_LegacyDevotionalDetailScreen> {
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _commentController = TextEditingController();
   bool _isBlockingAuthor = false;

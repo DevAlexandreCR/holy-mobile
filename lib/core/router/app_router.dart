@@ -10,6 +10,7 @@ import 'package:holyverso/presentation/screens/auth/register_screen.dart';
 import 'package:holyverso/presentation/screens/auth/reset_password_screen.dart';
 import 'package:holyverso/presentation/screens/devotionals/devotional_editor_screen.dart';
 import 'package:holyverso/presentation/screens/devotionals/devotional_detail_screen.dart';
+import 'package:holyverso/presentation/screens/devotionals/devotional_feed_reader_args.dart';
 import 'package:holyverso/presentation/screens/devotionals/devotional_preview_screen.dart';
 import 'package:holyverso/presentation/screens/devotionals/devotionals_list_screen.dart';
 import 'package:holyverso/presentation/screens/creator_profiles/creator_profile_edit_screen.dart';
@@ -212,14 +213,40 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               ),
               GoRoute(
                 path: '/devotionals/:id',
-                builder: (context, state) {
+                pageBuilder: (context, state) {
                   final id = state.pathParameters['id']!;
-                  return DevotionalDetailScreen(
+                  final readerArgs = state.extra is DevotionalFeedReaderArgs
+                      ? state.extra as DevotionalFeedReaderArgs
+                      : null;
+                  final child = DevotionalDetailScreen(
                     devotionalId: id,
                     initialDeliveryToken:
                         state.uri.queryParameters['delivery_token'],
                     initialShareToken: state.uri.queryParameters['share_token'],
+                    readerArgs: readerArgs,
                   );
+                  if (readerArgs?.heroTag != null) {
+                    return CustomTransitionPage<void>(
+                      key: state.pageKey,
+                      child: child,
+                      transitionDuration: const Duration(milliseconds: 260),
+                      reverseTransitionDuration: const Duration(
+                        milliseconds: 220,
+                      ),
+                      transitionsBuilder:
+                          (context, animation, secondaryAnimation, child) {
+                            return FadeTransition(
+                              opacity: CurvedAnimation(
+                                parent: animation,
+                                curve: Curves.easeOutCubic,
+                              ),
+                              child: child,
+                            );
+                          },
+                    );
+                  }
+
+                  return MaterialPage<void>(key: state.pageKey, child: child);
                 },
               ),
               GoRoute(

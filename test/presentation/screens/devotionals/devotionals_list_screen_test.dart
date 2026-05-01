@@ -20,6 +20,7 @@ import 'package:holyverso/domain/devotionals/devotional_publication_state.dart';
 import 'package:holyverso/domain/devotionals/devotional_status.dart';
 import 'package:holyverso/domain/devotionals/devotional_verse_reference.dart';
 import 'package:holyverso/domain/roles/user_role.dart';
+import 'package:holyverso/presentation/screens/devotionals/devotional_feed_reader_args.dart';
 import 'package:holyverso/presentation/screens/devotionals/devotionals_list_screen.dart';
 import 'package:holyverso/presentation/state/auth/auth_controller.dart';
 import 'package:holyverso/presentation/state/auth/auth_state.dart';
@@ -834,7 +835,7 @@ void main() {
     expect(find.byType(BackButton), findsOneWidget);
   });
 
-  testWidgets('opens devotional detail with secondary navigation app bar', (
+  testWidgets('opens public feed entries with feed reader args', (
     tester,
   ) async {
     await tester.pumpWidget(
@@ -864,8 +865,43 @@ void main() {
     await tester.tap(find.text('Esto es para ti ->'));
     await tester.pumpAndSettle();
 
-    expect(find.text('detail-screen'), findsOneWidget);
+    expect(find.text('public-reader-screen'), findsOneWidget);
+    expect(find.text('reader:forYou:detail-card:true'), findsOneWidget);
     expect(find.byType(BackButton), findsOneWidget);
+  });
+
+  testWidgets('following tab also uses the public reader transition path', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _TestApp(
+        forYouState: const DevotionalsFeedState(
+          status: DevotionalsFeedStatus.success,
+        ),
+        followingState: DevotionalsFeedState(
+          status: DevotionalsFeedStatus.success,
+          items: [
+            _buildDevotional(
+              id: 'following-card',
+              title: 'Siguiendo detalle',
+              feedContextReason: 'FOLLOWED_AUTHOR',
+            ),
+          ],
+        ),
+        mineState: const DevotionalsListState(
+          status: DevotionalsListStatus.success,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('devotionals-tab-following')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Viene de alguien que sigues ->'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('public-reader-screen'), findsOneWidget);
+    expect(find.text('reader:following:following-card:true'), findsOneWidget);
   });
 
   testWidgets('prioritizes hook and keeps title as secondary metadata', (
@@ -1192,8 +1228,23 @@ class _TestApp extends StatelessWidget {
         ),
         GoRoute(
           path: '/devotionals/:id',
-          builder: (context, state) =>
-              const Scaffold(appBar: HolyChildAppBar(title: 'detail-screen')),
+          builder: (context, state) {
+            final extra = state.extra;
+            if (extra is DevotionalFeedReaderArgs) {
+              return Scaffold(
+                appBar: const HolyChildAppBar(title: 'public-reader-screen'),
+                body: Center(
+                  child: Text(
+                    'reader:${extra.feedMode == DevotionalFeedMode.forYou ? 'forYou' : 'following'}:${extra.initialDevotionalId}:${extra.heroTag != null}',
+                  ),
+                ),
+              );
+            }
+
+            return const Scaffold(
+              appBar: HolyChildAppBar(title: 'detail-screen'),
+            );
+          },
         ),
         GoRoute(
           path: '/devotionals/:id/edit',

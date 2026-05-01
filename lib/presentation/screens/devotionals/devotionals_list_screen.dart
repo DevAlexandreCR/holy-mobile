@@ -19,6 +19,7 @@ import 'package:holyverso/domain/devotionals/devotional_publication_state.dart';
 import 'package:holyverso/domain/devotionals/devotional_status.dart';
 import 'package:holyverso/domain/devotionals/devotional_verse_reference.dart';
 import 'package:holyverso/presentation/screens/devotionals/devotional_editor_screen.dart';
+import 'package:holyverso/presentation/screens/devotionals/devotional_feed_reader_args.dart';
 import 'package:holyverso/presentation/state/auth/auth_controller.dart';
 import 'package:holyverso/presentation/state/devotionals/devotionals_feed_controller.dart';
 import 'package:holyverso/presentation/state/devotionals/devotionals_feed_state.dart';
@@ -451,7 +452,11 @@ class _PublicFeedModeViewState extends ConsumerState<_PublicFeedModeView> {
     );
   }
 
-  Future<void> _openDetail(Devotional devotional) async {
+  String _heroTagFor(Devotional devotional) {
+    return 'public-feed-${widget.mode.name}-${devotional.id}';
+  }
+
+  Future<void> _openDetail(Devotional devotional, {String? heroTag}) async {
     await ref.read(widget.provider.notifier).registerOpen(devotional);
     if (!mounted) return;
     final query = devotional.deliveryToken != null
@@ -459,6 +464,12 @@ class _PublicFeedModeViewState extends ConsumerState<_PublicFeedModeView> {
         : '';
     final updated = await context.push<Devotional>(
       '/devotionals/${devotional.id}$query',
+      extra: DevotionalFeedReaderArgs(
+        feedMode: widget.mode,
+        initialDevotionalId: devotional.id,
+        initialDeliveryToken: devotional.deliveryToken,
+        heroTag: heroTag,
+      ),
     );
     if (mounted && widget.mode == DevotionalFeedMode.forYou) {
       await ref.read(widget.provider.notifier).refreshHeader();
@@ -671,7 +682,11 @@ class _PublicFeedModeViewState extends ConsumerState<_PublicFeedModeView> {
                   child: _PublicDevotionalCard(
                     devotional: devotional,
                     isSaving: state.savingDevotionalId == devotional.id,
-                    onOpen: () => _openDetail(devotional),
+                    heroTag: _heroTagFor(devotional),
+                    onOpen: () => _openDetail(
+                      devotional,
+                      heroTag: _heroTagFor(devotional),
+                    ),
                     onOpenAuthor: () => _openAuthor(devotional),
                     onSave: () => _toggleSave(devotional),
                     onShare: () => _share(devotional),
@@ -1677,6 +1692,7 @@ class _PublicDevotionalCard extends StatelessWidget {
   const _PublicDevotionalCard({
     required this.devotional,
     required this.isSaving,
+    required this.heroTag,
     required this.onOpen,
     required this.onOpenAuthor,
     required this.onSave,
@@ -1685,6 +1701,7 @@ class _PublicDevotionalCard extends StatelessWidget {
 
   final Devotional devotional;
   final bool isSaving;
+  final String heroTag;
   final VoidCallback onOpen;
   final VoidCallback onOpenAuthor;
   final VoidCallback onSave;
@@ -1735,137 +1752,146 @@ class _PublicDevotionalCard extends StatelessWidget {
       singleLine: true,
     );
 
-    return _DevotionalSurfaceCard(
-      featured:
-          devotional.publicationState == DevotionalPublicationState.featured,
-      child: _FeedOpenSurface(
-        onTap: onOpen,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: EdgeInsets.fromLTRB(
-                AppSpacing.md,
-                AppSpacing.lg,
-                AppSpacing.md,
-                hasImage ? 0 : AppSpacing.md,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    devotional.primaryHook,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTextStyles.headline2.copyWith(
-                      color: AppColors.pureWhite,
-                      fontWeight: FontWeight.w700,
-                      height: 1.22,
-                    ),
+    return Hero(
+      tag: heroTag,
+      child: Material(
+        color: Colors.transparent,
+        child: _DevotionalSurfaceCard(
+          featured:
+              devotional.publicationState ==
+              DevotionalPublicationState.featured,
+          child: _FeedOpenSurface(
+            onTap: onOpen,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: EdgeInsets.fromLTRB(
+                    AppSpacing.md,
+                    AppSpacing.lg,
+                    AppSpacing.md,
+                    hasImage ? 0 : AppSpacing.md,
                   ),
-                  const SizedBox(height: AppSpacing.md),
-                  _PublicAuthorContext(
-                    authorName: devotional.author.name,
-                    handle: devotional.author.handle,
-                    avatarUrl: devotional.author.avatarUrl,
-                    following: devotional.author.following,
-                    referenceLabel: referenceLabel,
-                    onTap: onOpenAuthor,
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  if (secondaryTitleVisible) ...[
-                    Text(
-                      devotional.title.trim(),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTextStyles.bodySmall.copyWith(
-                        color: AppColors.pureWhite.withValues(alpha: 0.72),
-                        fontWeight: FontWeight.w600,
-                        height: 1.35,
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                  ],
-                  if (previewText.isNotEmpty) ...[
-                    Text(
-                      previewText,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        color: AppColors.softMist.withValues(alpha: 0.82),
-                        height: 1.55,
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                  ],
-                  Wrap(
-                    spacing: AppSpacing.sm,
-                    runSpacing: AppSpacing.xs,
-                    crossAxisAlignment: WrapCrossAlignment.center,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _PublicFeedInterpretation(label: feedInterpretation),
-                      if (inlineStateMarker != null)
-                        _PublicFeedStateMarker(
-                          label: inlineStateMarker.label,
-                          highlighted: inlineStateMarker.highlighted,
-                          icon: inlineStateMarker.icon,
+                      Text(
+                        devotional.primaryHook,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTextStyles.headline2.copyWith(
+                          color: AppColors.pureWhite,
+                          fontWeight: FontWeight.w700,
+                          height: 1.22,
                         ),
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      _PublicAuthorContext(
+                        authorName: devotional.author.name,
+                        handle: devotional.author.handle,
+                        avatarUrl: devotional.author.avatarUrl,
+                        following: devotional.author.following,
+                        referenceLabel: referenceLabel,
+                        onTap: onOpenAuthor,
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      if (secondaryTitleVisible) ...[
+                        Text(
+                          devotional.title.trim(),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: AppColors.pureWhite.withValues(alpha: 0.72),
+                            fontWeight: FontWeight.w600,
+                            height: 1.35,
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+                      ],
+                      if (previewText.isNotEmpty) ...[
+                        Text(
+                          previewText,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            color: AppColors.softMist.withValues(alpha: 0.82),
+                            height: 1.55,
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                      ],
+                      Wrap(
+                        spacing: AppSpacing.sm,
+                        runSpacing: AppSpacing.xs,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          _PublicFeedInterpretation(label: feedInterpretation),
+                          if (inlineStateMarker != null)
+                            _PublicFeedStateMarker(
+                              label: inlineStateMarker.label,
+                              highlighted: inlineStateMarker.highlighted,
+                              icon: inlineStateMarker.icon,
+                            ),
+                        ],
+                      ),
+                      if (!hasImage) ...[
+                        const SizedBox(height: AppSpacing.md),
+                        Row(
+                          children: [
+                            if (showEngagementStats)
+                              Expanded(child: inlineStats)
+                            else
+                              const Spacer(),
+                            saveButton,
+                            const SizedBox(width: AppSpacing.sm),
+                            shareButton,
+                          ],
+                        ),
+                      ],
                     ],
                   ),
-                  if (!hasImage) ...[
-                    const SizedBox(height: AppSpacing.md),
-                    Row(
+                ),
+                if (hasImage) ...[
+                  const SizedBox(height: AppSpacing.lg),
+                  _FeedImageStrip(
+                    key: Key('public-devotional-image-${devotional.id}'),
+                    imageUrl:
+                        devotional.previewImageUrl ?? devotional.coverImageUrl,
+                    focusY: devotional.coverImageFocusY,
+                    stateMarker: stateMarker,
+                    overlayBar: Row(
+                      key: Key(
+                        'public-devotional-overlay-bar-${devotional.id}',
+                      ),
                       children: [
                         if (showEngagementStats)
-                          Expanded(child: inlineStats)
+                          Expanded(
+                            child: Align(
+                              alignment: Alignment.centerLeft,
+                              child: overlayStats,
+                            ),
+                          )
                         else
                           const Spacer(),
-                        saveButton,
-                        const SizedBox(width: AppSpacing.sm),
-                        shareButton,
-                      ],
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            if (hasImage) ...[
-              const SizedBox(height: AppSpacing.lg),
-              _FeedImageStrip(
-                key: Key('public-devotional-image-${devotional.id}'),
-                imageUrl:
-                    devotional.previewImageUrl ?? devotional.coverImageUrl,
-                focusY: devotional.coverImageFocusY,
-                stateMarker: stateMarker,
-                overlayBar: Row(
-                  key: Key('public-devotional-overlay-bar-${devotional.id}'),
-                  children: [
-                    if (showEngagementStats)
-                      Expanded(
-                        child: Align(
-                          alignment: Alignment.centerLeft,
-                          child: overlayStats,
+                        const SizedBox(width: AppSpacing.md),
+                        Row(
+                          key: Key(
+                            'public-devotional-overlay-actions-${devotional.id}',
+                          ),
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            saveButton,
+                            const SizedBox(width: AppSpacing.sm),
+                            shareButton,
+                          ],
                         ),
-                      )
-                    else
-                      const Spacer(),
-                    const SizedBox(width: AppSpacing.md),
-                    Row(
-                      key: Key(
-                        'public-devotional-overlay-actions-${devotional.id}',
-                      ),
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        saveButton,
-                        const SizedBox(width: AppSpacing.sm),
-                        shareButton,
                       ],
                     ),
-                  ],
-                ),
-              ),
-            ],
-          ],
+                  ),
+                ],
+              ],
+            ),
+          ),
         ),
       ),
     );
