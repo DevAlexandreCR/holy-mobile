@@ -238,6 +238,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     bool? streakRiskNotificationsEnabled,
     bool? authorModerationNotificationsEnabled,
     bool? editorReviewNotificationsEnabled,
+    bool? socialActivityNotificationsEnabled,
+    bool? commentNotificationsEnabled,
+    bool? followNotificationsEnabled,
+    bool? reactionNotificationsEnabled,
   }) async {
     final settings = ref.read(authControllerProvider).settings;
     if (settings == null) {
@@ -255,6 +259,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final targetEditorReviewNotificationsEnabled =
         editorReviewNotificationsEnabled ??
         settings.editorReviewNotificationsEnabled;
+    final targetSocialActivityNotificationsEnabled =
+        socialActivityNotificationsEnabled ??
+        settings.socialActivityNotificationsEnabled;
+    final targetCommentNotificationsEnabled =
+        commentNotificationsEnabled ?? settings.commentNotificationsEnabled;
+    final targetFollowNotificationsEnabled =
+        followNotificationsEnabled ?? settings.followNotificationsEnabled;
+    final targetReactionNotificationsEnabled =
+        reactionNotificationsEnabled ?? settings.reactionNotificationsEnabled;
     PushPermissionRequestResult permissionResult =
         PushPermissionRequestResult.unavailable;
 
@@ -266,7 +279,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         (!settings.authorModerationNotificationsEnabled &&
             targetAuthorModerationNotificationsEnabled) ||
         (!settings.editorReviewNotificationsEnabled &&
-            targetEditorReviewNotificationsEnabled);
+            targetEditorReviewNotificationsEnabled) ||
+        (!settings.socialActivityNotificationsEnabled &&
+            targetSocialActivityNotificationsEnabled) ||
+        (!settings.commentNotificationsEnabled &&
+            targetCommentNotificationsEnabled) ||
+        (!settings.followNotificationsEnabled &&
+            targetFollowNotificationsEnabled) ||
+        (!settings.reactionNotificationsEnabled &&
+            targetReactionNotificationsEnabled);
 
     if (shouldRequestPermission) {
       permissionResult = await ref
@@ -289,6 +310,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               targetAuthorModerationNotificationsEnabled,
           editorReviewNotificationsEnabled:
               targetEditorReviewNotificationsEnabled,
+          socialActivityNotificationsEnabled:
+              targetSocialActivityNotificationsEnabled,
+          commentNotificationsEnabled: targetCommentNotificationsEnabled,
+          followNotificationsEnabled: targetFollowNotificationsEnabled,
+          reactionNotificationsEnabled: targetReactionNotificationsEnabled,
         );
 
     if (!mounted) return;
@@ -539,6 +565,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         notificationSettings?.authorModerationNotificationsEnabled ?? true;
     final editorReviewNotificationsEnabled =
         notificationSettings?.editorReviewNotificationsEnabled ?? true;
+    final socialActivityNotificationsEnabled =
+        notificationSettings?.socialActivityNotificationsEnabled ?? true;
+    final commentNotificationsEnabled =
+        notificationSettings?.commentNotificationsEnabled ?? true;
+    final followNotificationsEnabled =
+        notificationSettings?.followNotificationsEnabled ?? true;
+    final reactionNotificationsEnabled =
+        notificationSettings?.reactionNotificationsEnabled ?? true;
     final canEditContent = authState.user?.role.canEditContent ?? false;
 
     return Scaffold(
@@ -750,6 +784,111 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             : () => _updateNotificationPreferences(
                                 streakRiskNotificationsEnabled:
                                     !streakRiskNotificationsEnabled,
+                              ),
+                      ),
+                      SettingTile(
+                        icon: Icons.favorite_border_rounded,
+                        title: 'Actividad social',
+                        subtitle:
+                            'Activa alertas cuando otros reaccionen a tu contenido',
+                        trailing: Switch.adaptive(
+                          value: socialActivityNotificationsEnabled,
+                          activeThumbColor: AppColors.holyGold,
+                          activeTrackColor: AppColors.holyGold.withValues(
+                            alpha: 0.3,
+                          ),
+                          onChanged: isUpdating
+                              ? null
+                              : (value) => _updateNotificationPreferences(
+                                  socialActivityNotificationsEnabled: value,
+                                ),
+                        ),
+                        onTap: isUpdating
+                            ? null
+                            : () => _updateNotificationPreferences(
+                                socialActivityNotificationsEnabled:
+                                    !socialActivityNotificationsEnabled,
+                              ),
+                      ),
+                      SettingTile(
+                        icon: Icons.mode_comment_outlined,
+                        title: 'Comentarios',
+                        subtitle:
+                            'Recibe una alerta cuando comenten uno de tus devocionales',
+                        trailing: Switch.adaptive(
+                          value:
+                              socialActivityNotificationsEnabled &&
+                              commentNotificationsEnabled,
+                          activeThumbColor: AppColors.holyGold,
+                          activeTrackColor: AppColors.holyGold.withValues(
+                            alpha: 0.3,
+                          ),
+                          onChanged:
+                              isUpdating || !socialActivityNotificationsEnabled
+                              ? null
+                              : (value) => _updateNotificationPreferences(
+                                  commentNotificationsEnabled: value,
+                                ),
+                        ),
+                        onTap: isUpdating || !socialActivityNotificationsEnabled
+                            ? null
+                            : () => _updateNotificationPreferences(
+                                commentNotificationsEnabled:
+                                    !commentNotificationsEnabled,
+                              ),
+                      ),
+                      SettingTile(
+                        icon: Icons.person_add_alt_rounded,
+                        title: 'Nuevos seguidores',
+                        subtitle:
+                            'Recibe una alerta cuando alguien comience a seguirte',
+                        trailing: Switch.adaptive(
+                          value:
+                              socialActivityNotificationsEnabled &&
+                              followNotificationsEnabled,
+                          activeThumbColor: AppColors.holyGold,
+                          activeTrackColor: AppColors.holyGold.withValues(
+                            alpha: 0.3,
+                          ),
+                          onChanged:
+                              isUpdating || !socialActivityNotificationsEnabled
+                              ? null
+                              : (value) => _updateNotificationPreferences(
+                                  followNotificationsEnabled: value,
+                                ),
+                        ),
+                        onTap: isUpdating || !socialActivityNotificationsEnabled
+                            ? null
+                            : () => _updateNotificationPreferences(
+                                followNotificationsEnabled:
+                                    !followNotificationsEnabled,
+                              ),
+                      ),
+                      SettingTile(
+                        icon: Icons.thumb_up_alt_outlined,
+                        title: 'Likes y compartidos',
+                        subtitle:
+                            'Agrupa reacciones a tus devocionales y te avisa con un resumen',
+                        trailing: Switch.adaptive(
+                          value:
+                              socialActivityNotificationsEnabled &&
+                              reactionNotificationsEnabled,
+                          activeThumbColor: AppColors.holyGold,
+                          activeTrackColor: AppColors.holyGold.withValues(
+                            alpha: 0.3,
+                          ),
+                          onChanged:
+                              isUpdating || !socialActivityNotificationsEnabled
+                              ? null
+                              : (value) => _updateNotificationPreferences(
+                                  reactionNotificationsEnabled: value,
+                                ),
+                        ),
+                        onTap: isUpdating || !socialActivityNotificationsEnabled
+                            ? null
+                            : () => _updateNotificationPreferences(
+                                reactionNotificationsEnabled:
+                                    !reactionNotificationsEnabled,
                               ),
                       ),
                       SettingTile(

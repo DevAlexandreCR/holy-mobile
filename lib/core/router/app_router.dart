@@ -16,6 +16,7 @@ import 'package:holyverso/presentation/screens/creator_profiles/creator_profile_
 import 'package:holyverso/presentation/screens/creator_profiles/creator_profile_screen.dart';
 import 'package:holyverso/presentation/screens/insights/creator_insights_screen.dart';
 import 'package:holyverso/presentation/screens/insights/devotional_insight_detail_screen.dart';
+import 'package:holyverso/presentation/screens/notifications/notification_inbox_screen.dart';
 import 'package:holyverso/presentation/screens/search/search_screen.dart';
 import 'package:holyverso/presentation/screens/settings/settings_screen.dart';
 import 'package:holyverso/presentation/screens/splash/splash_screen.dart';
@@ -75,6 +76,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => ResetPasswordScreen(
           initialToken: state.uri.queryParameters['token'],
         ),
+      ),
+      GoRoute(
+        path: '/notifications',
+        builder: (context, state) => const NotificationInboxScreen(),
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) =>
@@ -251,6 +256,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           pathSegments[1] != 'create' &&
           pathSegments[1] != 'preview';
       final isProtectedRoute =
+          location == '/notifications' ||
           location == '/saved' ||
           location == '/profile' ||
           location.startsWith('/profile/') ||

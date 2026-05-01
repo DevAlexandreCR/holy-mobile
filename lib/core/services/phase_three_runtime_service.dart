@@ -247,8 +247,37 @@ class PhaseThreeRuntimeService {
   }
 
   Future<void> _handleNotificationOpen(PushNotificationMessage message) async {
+    final notificationId = message.data['notification_id'];
+    final destinationType = message.data['destination_type'];
+    final creatorId = message.data['creator_id'];
     final devotionalId = message.data['devotional_id'];
     final type = message.data['type'];
+
+    if (_isAuthenticated &&
+        notificationId != null &&
+        notificationId.isNotEmpty &&
+        _currentUserId != null) {
+      try {
+        await _notificationApiClient.markInboxItemRead(
+          notificationId,
+          opened: true,
+        );
+      } catch (_) {}
+    }
+
+    if (destinationType == 'creator_profile' &&
+        creatorId != null &&
+        creatorId.isNotEmpty) {
+      _navigate('/users/$creatorId');
+      return;
+    }
+
+    if (destinationType == 'devotional' &&
+        devotionalId != null &&
+        devotionalId.isNotEmpty) {
+      _navigate('/devotionals/$devotionalId');
+      return;
+    }
 
     if (devotionalId == null || devotionalId.isEmpty) {
       return;

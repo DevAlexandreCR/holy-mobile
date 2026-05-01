@@ -288,6 +288,10 @@ class AuthController extends Notifier<AuthState> {
     required bool streakRiskNotificationsEnabled,
     required bool authorModerationNotificationsEnabled,
     required bool editorReviewNotificationsEnabled,
+    required bool socialActivityNotificationsEnabled,
+    required bool commentNotificationsEnabled,
+    required bool followNotificationsEnabled,
+    required bool reactionNotificationsEnabled,
   }) async {
     if (state.user == null) return false;
 
@@ -307,6 +311,10 @@ class AuthController extends Notifier<AuthState> {
         authorModerationNotificationsEnabled:
             authorModerationNotificationsEnabled,
         editorReviewNotificationsEnabled: editorReviewNotificationsEnabled,
+        socialActivityNotificationsEnabled: socialActivityNotificationsEnabled,
+        commentNotificationsEnabled: commentNotificationsEnabled,
+        followNotificationsEnabled: followNotificationsEnabled,
+        reactionNotificationsEnabled: reactionNotificationsEnabled,
       );
       await _repository.persistSessionSnapshot(
         user: state.user!,

@@ -107,6 +107,10 @@ class AuthApiClient {
     required bool streakRiskNotificationsEnabled,
     required bool authorModerationNotificationsEnabled,
     required bool editorReviewNotificationsEnabled,
+    required bool socialActivityNotificationsEnabled,
+    required bool commentNotificationsEnabled,
+    required bool followNotificationsEnabled,
+    required bool reactionNotificationsEnabled,
   }) async {
     final response = await _dio.put(
       '/users/me/notification-preferences',
@@ -120,6 +124,11 @@ class AuthApiClient {
         'author_moderation_notifications_enabled':
             authorModerationNotificationsEnabled,
         'editor_review_notifications_enabled': editorReviewNotificationsEnabled,
+        'social_activity_notifications_enabled':
+            socialActivityNotificationsEnabled,
+        'comment_notifications_enabled': commentNotificationsEnabled,
+        'follow_notifications_enabled': followNotificationsEnabled,
+        'reaction_notifications_enabled': reactionNotificationsEnabled,
       },
     );
 

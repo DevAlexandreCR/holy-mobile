@@ -127,6 +127,10 @@ class AuthRepository {
     required bool streakRiskNotificationsEnabled,
     required bool authorModerationNotificationsEnabled,
     required bool editorReviewNotificationsEnabled,
+    required bool socialActivityNotificationsEnabled,
+    required bool commentNotificationsEnabled,
+    required bool followNotificationsEnabled,
+    required bool reactionNotificationsEnabled,
   }) {
     return _client.updateNotificationPreferences(
       devotionalNotificationsEnabled: devotionalNotificationsEnabled,
@@ -138,6 +142,10 @@ class AuthRepository {
       authorModerationNotificationsEnabled:
           authorModerationNotificationsEnabled,
       editorReviewNotificationsEnabled: editorReviewNotificationsEnabled,
+      socialActivityNotificationsEnabled: socialActivityNotificationsEnabled,
+      commentNotificationsEnabled: commentNotificationsEnabled,
+      followNotificationsEnabled: followNotificationsEnabled,
+      reactionNotificationsEnabled: reactionNotificationsEnabled,
     );
   }
 

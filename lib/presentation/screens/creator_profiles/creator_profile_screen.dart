@@ -16,6 +16,7 @@ import 'package:holyverso/presentation/state/auth/auth_controller.dart';
 import 'package:holyverso/presentation/state/devotionals/devotional_detail_controller.dart';
 import 'package:holyverso/presentation/state/devotionals/devotionals_feed_controller.dart';
 import 'package:holyverso/presentation/widgets/common/holy_child_app_bar.dart';
+import 'package:holyverso/presentation/widgets/notifications/notification_inbox_bell_button.dart';
 
 class CreatorProfileScreen extends ConsumerStatefulWidget {
   const CreatorProfileScreen({super.key, required this.creatorId});
@@ -242,6 +243,7 @@ class _CreatorProfileScreenState extends ConsumerState<CreatorProfileScreen> {
           ? null
           : HolyChildAppBar(
               title: _profile?.name ?? context.l10n.creatorProfileTitle,
+              actions: const [NotificationInboxBellButton()],
             ),
       body: Stack(
         children: [
@@ -275,6 +277,8 @@ class _CreatorProfileScreenState extends ConsumerState<CreatorProfileScreen> {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
+                          const NotificationInboxBellButton(),
+                          const SizedBox(width: AppSpacing.sm),
                           _IconActionButton(
                             icon: Icons.insights_outlined,
                             tooltip: 'Insights',

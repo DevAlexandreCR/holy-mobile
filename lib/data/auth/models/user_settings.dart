@@ -38,6 +38,10 @@ class UserSettings {
     this.streakRiskNotificationsEnabled = true,
     this.authorModerationNotificationsEnabled = true,
     this.editorReviewNotificationsEnabled = true,
+    this.socialActivityNotificationsEnabled = true,
+    this.commentNotificationsEnabled = true,
+    this.followNotificationsEnabled = true,
+    this.reactionNotificationsEnabled = true,
   });
 
   final int? preferredVersionId;
@@ -49,6 +53,10 @@ class UserSettings {
   final bool streakRiskNotificationsEnabled;
   final bool authorModerationNotificationsEnabled;
   final bool editorReviewNotificationsEnabled;
+  final bool socialActivityNotificationsEnabled;
+  final bool commentNotificationsEnabled;
+  final bool followNotificationsEnabled;
+  final bool reactionNotificationsEnabled;
 
   factory UserSettings.fromMap(Map<String, dynamic> map) {
     final rawPreferred =
@@ -77,6 +85,14 @@ class UserSettings {
           map['author_moderation_notifications_enabled'] as bool? ?? true,
       editorReviewNotificationsEnabled:
           map['editor_review_notifications_enabled'] as bool? ?? true,
+      socialActivityNotificationsEnabled:
+          map['social_activity_notifications_enabled'] as bool? ?? true,
+      commentNotificationsEnabled:
+          map['comment_notifications_enabled'] as bool? ?? true,
+      followNotificationsEnabled:
+          map['follow_notifications_enabled'] as bool? ?? true,
+      reactionNotificationsEnabled:
+          map['reaction_notifications_enabled'] as bool? ?? true,
     );
   }
 
@@ -94,6 +110,11 @@ class UserSettings {
       'author_moderation_notifications_enabled':
           authorModerationNotificationsEnabled,
       'editor_review_notifications_enabled': editorReviewNotificationsEnabled,
+      'social_activity_notifications_enabled':
+          socialActivityNotificationsEnabled,
+      'comment_notifications_enabled': commentNotificationsEnabled,
+      'follow_notifications_enabled': followNotificationsEnabled,
+      'reaction_notifications_enabled': reactionNotificationsEnabled,
     };
   }
 }

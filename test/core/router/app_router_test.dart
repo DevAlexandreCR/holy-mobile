@@ -9,13 +9,18 @@ import 'package:holyverso/core/router/app_router.dart';
 import 'package:holyverso/core/theme/app_theme.dart';
 import 'package:holyverso/data/auth/models/user.dart';
 import 'package:holyverso/data/auth/models/user_settings.dart';
+import 'package:holyverso/data/notifications/notification_api_client.dart';
+import 'package:holyverso/data/notifications/notification_inbox_repository.dart';
 import 'package:holyverso/data/roles/role_repository.dart';
 import 'package:holyverso/data/roles/roles_api_client.dart';
+import 'package:holyverso/domain/core/cursor_paged_result.dart';
+import 'package:holyverso/domain/notifications/notification_inbox_item.dart';
 import 'package:holyverso/domain/verse/verse_of_the_day.dart';
 import 'package:holyverso/domain/roles/user_role.dart';
 import 'package:holyverso/presentation/providers/whats_new_provider.dart';
 import 'package:holyverso/presentation/screens/auth/login_screen.dart';
 import 'package:holyverso/presentation/screens/devotionals/devotionals_list_screen.dart';
+import 'package:holyverso/presentation/screens/notifications/notification_inbox_screen.dart';
 import 'package:holyverso/presentation/screens/settings/settings_screen.dart';
 import 'package:holyverso/presentation/screens/search/search_screen.dart';
 import 'package:holyverso/presentation/screens/users/users_list_screen.dart';
@@ -88,11 +93,31 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    for (final route in ['/saved', '/settings', '/devotionals']) {
+    for (final route in ['/saved', '/settings', '/devotionals', '/notifications']) {
       container.read(appRouterProvider).go(route);
       await tester.pumpAndSettle();
       expect(find.byType(LoginScreen), findsOneWidget);
     }
+  });
+
+  testWidgets('authenticated users can open notification inbox', (tester) async {
+    final container = _buildContainer(
+      const AuthState(
+        user: _user,
+        sessionStatus: AuthSessionStatus.authenticated,
+      ),
+    );
+    addTearDown(container.dispose);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(container: container, child: const _TestApp()),
+    );
+    await tester.pumpAndSettle();
+
+    container.read(appRouterProvider).go('/notifications');
+    await tester.pumpAndSettle();
+
+    expect(find.byType(NotificationInboxScreen), findsOneWidget);
   });
 
   testWidgets('authenticatedStale can remain on protected routes', (
@@ -363,6 +388,9 @@ ProviderContainer _buildContainer(
       roleRepositoryProvider.overrideWith(
         (ref) => roleRepository ?? _StaticRoleRepository(authState.user?.role),
       ),
+      notificationInboxRepositoryProvider.overrideWith(
+        (ref) => _StaticNotificationInboxRepository(),
+      ),
       whatsNewProvider.overrideWith((ref) async => null),
     ],
   );
@@ -492,6 +520,30 @@ class _StaticRoleRepository extends RoleRepository {
 
   @override
   Future<UserRole> getMyRole() async => _role ?? UserRole.user;
+}
+
+class _StaticNotificationInboxRepository extends NotificationInboxRepository {
+  _StaticNotificationInboxRepository() : super(_StaticNotificationApiClient());
+
+  @override
+  Future<CursorPagedResult<NotificationInboxItem>> fetchInbox({
+    String? cursor,
+    int limit = 20,
+    NotificationInboxFilter filter = NotificationInboxFilter.all,
+  }) async {
+    return const CursorPagedResult(
+      items: [],
+      nextCursor: null,
+      hasMore: false,
+    );
+  }
+
+  @override
+  Future<int> fetchUnreadCount() async => 0;
+}
+
+class _StaticNotificationApiClient extends NotificationApiClient {
+  _StaticNotificationApiClient() : super(Dio());
 }
 
 class _DelayedRoleRepository extends RoleRepository {

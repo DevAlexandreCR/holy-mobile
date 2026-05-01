@@ -27,6 +27,7 @@ import 'package:holyverso/presentation/state/devotionals/devotionals_list_state.
 import 'package:holyverso/presentation/state/devotionals/devotional_review_queue_controller.dart';
 import 'package:holyverso/presentation/widgets/common/holy_child_app_bar.dart';
 import 'package:holyverso/presentation/widgets/devotionals/devotional_feed_context_copy.dart';
+import 'package:holyverso/presentation/widgets/notifications/notification_inbox_bell_button.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
@@ -153,6 +154,7 @@ class _DevotionalsListScreenState extends ConsumerState<DevotionalsListScreen> {
       appBar: HolyChildAppBar(
         title: l10n.navDevotionalsLabel,
         showBackButton: false,
+        actions: const [NotificationInboxBellButton()],
         bottom: _DevotionalsTopTabsBar(
           selectedIndex: selectedIndex,
           onSelected: (index) {
