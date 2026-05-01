@@ -230,7 +230,12 @@ class _NotificationInboxBody extends StatelessWidget {
       physics: const AlwaysScrollableScrollPhysics(
         parent: BouncingScrollPhysics(),
       ),
-      padding: const EdgeInsets.all(AppSpacing.lg),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.md,
+        AppSpacing.md,
+        AppSpacing.lg,
+      ),
       itemBuilder: (context, index) {
         if (index == state.items.length) {
           return const Padding(
@@ -244,7 +249,7 @@ class _NotificationInboxBody extends StatelessWidget {
         final item = state.items[index];
         return _InboxCard(item: item, onTap: () => onOpen(item));
       },
-      separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.md),
+      separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.sm),
       itemCount: state.items.length + (state.isLoadingMore ? 1 : 0),
     );
   }
@@ -266,15 +271,15 @@ class _InboxCard extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+        borderRadius: BorderRadius.circular(AppBorderRadius.md),
         onTap: onTap,
         child: Ink(
-          padding: const EdgeInsets.all(AppSpacing.md),
+          padding: const EdgeInsets.all(AppSpacing.sm),
           decoration: BoxDecoration(
             color: item.isRead
                 ? AppColors.midnightFaith.withValues(alpha: 0.62)
                 : AppColors.midnightFaith.withValues(alpha: 0.88),
-            borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+            borderRadius: BorderRadius.circular(AppBorderRadius.md),
             border: Border.all(
               color: item.isRead
                   ? AppColors.softMist.withValues(alpha: 0.12)
@@ -291,10 +296,11 @@ class _InboxCard extends StatelessWidget {
                     ? item.aggregateCount - 1
                     : 0,
               ),
-              const SizedBox(width: AppSpacing.md),
+              const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -302,38 +308,50 @@ class _InboxCard extends StatelessWidget {
                         Expanded(
                           child: Text(
                             item.title,
-                            style: AppTextStyles.headline3.copyWith(
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTextStyles.labelLarge.copyWith(
                               color: AppColors.pureWhite,
+                              fontSize: 17,
+                              height: 1.1,
                               fontWeight: item.isRead
                                   ? FontWeight.w600
                                   : FontWeight.w800,
                             ),
                           ),
                         ),
-                        const SizedBox(width: AppSpacing.sm),
+                        const SizedBox(width: AppSpacing.xs),
                         Text(
                           _formatRelativeTime(item.createdAt),
                           style: AppTextStyles.labelSmall.copyWith(
+                            fontSize: 11,
                             color: AppColors.softMist.withValues(alpha: 0.74),
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: AppSpacing.xs),
+                    const SizedBox(height: 2),
                     Text(
                       item.body,
-                      style: AppTextStyles.bodyMedium.copyWith(
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.bodySmall.copyWith(
                         color: AppColors.softMist.withValues(alpha: 0.94),
-                        height: 1.35,
+                        fontSize: 12.5,
+                        height: 1.25,
                       ),
                     ),
                     if (item.devotional?.title != null &&
                         item.devotional!.title.isNotEmpty) ...[
-                      const SizedBox(height: AppSpacing.sm),
+                      const SizedBox(height: 4),
                       Text(
                         item.devotional!.title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                         style: AppTextStyles.labelMedium.copyWith(
                           color: AppColors.holyGold,
+                          fontSize: 13,
+                          height: 1.2,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -342,27 +360,27 @@ class _InboxCard extends StatelessWidget {
                 ),
               ),
               if (previewImage != null && previewImage.isNotEmpty) ...[
-                const SizedBox(width: AppSpacing.md),
+                const SizedBox(width: AppSpacing.sm),
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(AppBorderRadius.md),
+                  borderRadius: BorderRadius.circular(AppBorderRadius.sm),
                   child: CachedNetworkImage(
                     imageUrl: previewImage,
-                    width: 58,
-                    height: 58,
+                    width: 44,
+                    height: 44,
                     fit: BoxFit.cover,
                     placeholder: (context, _) => Container(
-                      width: 58,
-                      height: 58,
+                      width: 44,
+                      height: 44,
                       color: AppColors.midnightFaithDark,
                     ),
                     errorWidget: (context, _, _) => Container(
-                      width: 58,
-                      height: 58,
+                      width: 44,
+                      height: 44,
                       color: AppColors.midnightFaithDark,
                       child: const Icon(
                         Icons.image_not_supported_outlined,
                         color: AppColors.softMist,
-                        size: 18,
+                        size: 14,
                       ),
                     ),
                   ),
@@ -390,21 +408,21 @@ class _InboxActorAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 52,
-      height: 52,
+      width: 40,
+      height: 40,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
           Container(
-            width: 52,
-            height: 52,
+            width: 40,
+            height: 40,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               border: Border.all(
                 color: unread
                     ? AppColors.holyGold
                     : AppColors.softMist.withValues(alpha: 0.2),
-                width: 2,
+                width: 1.5,
               ),
             ),
             child: ClipOval(
@@ -425,14 +443,14 @@ class _InboxActorAvatar extends StatelessWidget {
               right: -2,
               bottom: -2,
               child: Container(
-                width: 22,
-                height: 22,
+                width: 18,
+                height: 18,
                 decoration: BoxDecoration(
                   color: AppColors.holyGold,
                   shape: BoxShape.circle,
                   border: Border.all(
                     color: AppColors.midnightFaithDark,
-                    width: 2,
+                    width: 1.5,
                   ),
                 ),
                 child: Center(
@@ -441,7 +459,7 @@ class _InboxActorAvatar extends StatelessWidget {
                     style: AppTextStyles.labelSmall.copyWith(
                       color: AppColors.midnightFaithDark,
                       fontWeight: FontWeight.w800,
-                      fontSize: 9,
+                      fontSize: 8,
                     ),
                   ),
                 ),
@@ -469,9 +487,10 @@ class _AvatarFallback extends StatelessWidget {
       alignment: Alignment.center,
       child: Text(
         initial,
-        style: AppTextStyles.headline3.copyWith(
+        style: AppTextStyles.labelMedium.copyWith(
           color: AppColors.holyGold,
           fontWeight: FontWeight.w800,
+          fontSize: 15,
         ),
       ),
     );
