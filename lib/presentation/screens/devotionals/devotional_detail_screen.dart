@@ -14,6 +14,7 @@ import 'package:holyverso/data/devotionals/devotionals_repository.dart';
 import 'package:holyverso/data/roles/role_repository.dart';
 import 'package:holyverso/domain/devotionals/devotional.dart';
 import 'package:holyverso/domain/devotionals/devotional_comment.dart';
+import 'package:holyverso/domain/devotionals/devotional_verse_reference.dart';
 import 'package:holyverso/presentation/screens/devotionals/devotional_feed_reader_args.dart';
 import 'package:holyverso/presentation/screens/devotionals/public_devotional_feed_reader_screen.dart';
 import 'package:holyverso/presentation/state/auth/auth_controller.dart';
@@ -27,6 +28,7 @@ import 'package:holyverso/presentation/state/devotionals/devotionals_list_contro
 import 'package:holyverso/presentation/state/roles/role_provider.dart';
 import 'package:holyverso/presentation/widgets/devotionals/devotional_content_view.dart';
 import 'package:holyverso/presentation/widgets/devotionals/devotional_feed_context_copy.dart';
+import 'package:holyverso/presentation/widgets/devotionals/devotional_reference_preview.dart';
 import 'package:share_plus/share_plus.dart';
 
 const double _detailCoverImageHeight = 129;
@@ -272,6 +274,10 @@ class _DevotionalDetailScreenState
     await ref
         .read(devotionalDetailControllerProvider.notifier)
         .registerShare(shareCount: result.shareCount);
+  }
+
+  Future<void> _openReferencePreview(DevotionalVerseReference reference) {
+    return showDevotionalReferencePreview(context, reference: reference);
   }
 
   Future<void> _submitComment() async {
@@ -858,6 +864,7 @@ class _DevotionalDetailScreenState
               showFollowAction:
                   state.devotional != null &&
                   currentUserId != state.devotional!.author.id,
+              onOpenReference: _openReferencePreview,
               onOpenAuthor: () async {
                 final authorId = state.devotional?.author.id;
                 if (authorId == null || authorId.isEmpty) return;
@@ -890,6 +897,7 @@ class _DetailContent extends StatelessWidget {
     required this.onToggleFollow,
     required this.isTogglingFollow,
     required this.showFollowAction,
+    required this.onOpenReference,
     required this.onOpenAuthor,
   });
 
@@ -910,6 +918,8 @@ class _DetailContent extends StatelessWidget {
   final Future<void> Function() onToggleFollow;
   final bool isTogglingFollow;
   final bool showFollowAction;
+  final Future<void> Function(DevotionalVerseReference reference)
+  onOpenReference;
   final Future<void> Function() onOpenAuthor;
 
   @override
@@ -918,7 +928,7 @@ class _DetailContent extends StatelessWidget {
     if (devotional == null) {
       return const SizedBox.shrink();
     }
-    final referenceLabel = _referenceLabel(devotional);
+    final previewReferences = devotionalPreviewReferences(devotional);
     final continuityLabel = devotionalDetailContinuityLabel(
       context.l10n,
       devotional,
@@ -1046,13 +1056,13 @@ class _DetailContent extends StatelessWidget {
                     ],
                   ],
                 ),
-                if (referenceLabel != null) ...[
+                if (previewReferences.isNotEmpty) ...[
                   const SizedBox(height: AppSpacing.sm),
-                  Text(
-                    referenceLabel,
-                    style: AppTextStyles.reference.copyWith(
-                      color: AppColors.holyGold.withValues(alpha: 0.92),
-                    ),
+                  DevotionalReferenceLinks(
+                    references: previewReferences,
+                    onTap: (reference) {
+                      onOpenReference(reference);
+                    },
                   ),
                 ],
                 if (devotional.moderationReason != null &&
@@ -1512,21 +1522,6 @@ String _actionLabel(String baseLabel, int count) {
   }
 
   return '$baseLabel $count';
-}
-
-String? _referenceLabel(Devotional devotional) {
-  final primaryReferences = devotional.primaryReferences;
-  if (primaryReferences.isNotEmpty) {
-    return primaryReferences
-        .map((reference) => reference.referenceLabel)
-        .join(', ');
-  }
-
-  if (devotional.verseReferences.isNotEmpty) {
-    return devotional.verseReferences.first.referenceLabel;
-  }
-
-  return null;
 }
 
 class _CommentItem extends StatelessWidget {

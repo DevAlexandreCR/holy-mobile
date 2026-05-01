@@ -18,6 +18,7 @@ import 'package:holyverso/domain/creator_profiles/creator_profile.dart';
 import 'package:holyverso/domain/devotionals/devotional.dart';
 import 'package:holyverso/domain/devotionals/devotional_comment.dart';
 import 'package:holyverso/domain/devotionals/devotional_feed_mode.dart';
+import 'package:holyverso/domain/devotionals/devotional_verse_reference.dart';
 import 'package:holyverso/presentation/screens/devotionals/devotional_feed_reader_args.dart';
 import 'package:holyverso/presentation/state/auth/auth_controller.dart';
 import 'package:holyverso/presentation/state/devotionals/devotional_comments_controller.dart';
@@ -27,6 +28,7 @@ import 'package:holyverso/presentation/state/devotionals/devotional_feed_reader_
 import 'package:holyverso/presentation/state/devotionals/devotionals_feed_controller.dart';
 import 'package:holyverso/presentation/widgets/devotionals/devotional_content_view.dart';
 import 'package:holyverso/presentation/widgets/devotionals/devotional_feed_context_copy.dart';
+import 'package:holyverso/presentation/widgets/devotionals/devotional_reference_preview.dart';
 import 'package:share_plus/share_plus.dart';
 
 const SystemUiOverlayStyle _readerOverlayStyle = SystemUiOverlayStyle(
@@ -231,6 +233,10 @@ class _PublicDevotionalFeedReaderScreenState
 
   Future<void> _openAuthor(Devotional devotional) async {
     await context.push('/users/${devotional.author.id}');
+  }
+
+  Future<void> _openReferencePreview(DevotionalVerseReference reference) {
+    return showDevotionalReferencePreview(context, reference: reference);
   }
 
   void _syncCreatorProfile(
@@ -808,6 +814,7 @@ class _PublicDevotionalFeedReaderScreenState
                 onReport: _showReportSheet,
                 onOpenAuthor: () => _openAuthor(fullDevotional),
                 onToggleFollow: () => _toggleFollow(fullDevotional),
+                onOpenReference: _openReferencePreview,
                 isTogglingLike:
                     readerState.activeDevotionalId == feedItem.id &&
                     readerState.isTogglingLike,
@@ -849,6 +856,7 @@ class _PublicReaderPage extends StatelessWidget {
     required this.onReport,
     required this.onOpenAuthor,
     required this.onToggleFollow,
+    required this.onOpenReference,
     required this.isLoading,
     required this.isTogglingLike,
     required this.isTogglingSave,
@@ -868,6 +876,8 @@ class _PublicReaderPage extends StatelessWidget {
   final VoidCallback onReport;
   final VoidCallback onOpenAuthor;
   final VoidCallback onToggleFollow;
+  final Future<void> Function(DevotionalVerseReference reference)
+  onOpenReference;
   final bool isLoading;
   final bool isTogglingLike;
   final bool isTogglingSave;
@@ -877,7 +887,7 @@ class _PublicReaderPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final referenceLabel = _referenceLabel(devotional);
+    final previewReferences = devotionalPreviewReferences(devotional);
     final continuityLabel = devotionalDetailContinuityLabel(
       context.l10n,
       devotional,
@@ -1052,13 +1062,13 @@ class _PublicReaderPage extends StatelessWidget {
                             ],
                           ),
                         ),
-                        if (referenceLabel != null) ...[
+                        if (previewReferences.isNotEmpty) ...[
                           const SizedBox(height: AppSpacing.md),
-                          Text(
-                            referenceLabel,
-                            style: AppTextStyles.reference.copyWith(
-                              color: AppColors.holyGold.withValues(alpha: 0.92),
-                            ),
+                          DevotionalReferenceLinks(
+                            references: previewReferences,
+                            onTap: (reference) {
+                              onOpenReference(reference);
+                            },
                           ),
                         ],
                         if (continuityLabel != null) ...[
@@ -1739,19 +1749,4 @@ class _CommentCard extends StatelessWidget {
       ),
     );
   }
-}
-
-String? _referenceLabel(Devotional devotional) {
-  final primaryReferences = devotional.primaryReferences;
-  if (primaryReferences.isNotEmpty) {
-    return primaryReferences
-        .map((reference) => reference.referenceLabel)
-        .join(', ');
-  }
-
-  if (devotional.verseReferences.isNotEmpty) {
-    return devotional.verseReferences.first.referenceLabel;
-  }
-
-  return null;
 }

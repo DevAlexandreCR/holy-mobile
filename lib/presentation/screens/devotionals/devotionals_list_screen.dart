@@ -28,6 +28,7 @@ import 'package:holyverso/presentation/state/devotionals/devotionals_list_state.
 import 'package:holyverso/presentation/state/devotionals/devotional_review_queue_controller.dart';
 import 'package:holyverso/presentation/widgets/common/holy_child_app_bar.dart';
 import 'package:holyverso/presentation/widgets/devotionals/devotional_feed_context_copy.dart';
+import 'package:holyverso/presentation/widgets/devotionals/devotional_reference_preview.dart';
 import 'package:holyverso/presentation/widgets/notifications/notification_inbox_bell_button.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:visibility_detector/visibility_detector.dart';
@@ -525,6 +526,10 @@ class _PublicFeedModeViewState extends ConsumerState<_PublicFeedModeView> {
     await context.push('/users/${devotional.author.id}');
   }
 
+  Future<void> _openReferencePreview(DevotionalVerseReference reference) {
+    return showDevotionalReferencePreview(context, reference: reference);
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(widget.provider);
@@ -688,6 +693,7 @@ class _PublicFeedModeViewState extends ConsumerState<_PublicFeedModeView> {
                       heroTag: _heroTagFor(devotional),
                     ),
                     onOpenAuthor: () => _openAuthor(devotional),
+                    onOpenReference: _openReferencePreview,
                     onSave: () => _toggleSave(devotional),
                     onShare: () => _share(devotional),
                   ),
@@ -1398,6 +1404,10 @@ class _MyDevotionalsTabState extends ConsumerState<_MyDevotionalsTab> {
     await context.push('/profile/insights/devotionals/${devotional.id}');
   }
 
+  Future<void> _openReferencePreview(DevotionalVerseReference reference) {
+    return showDevotionalReferencePreview(context, reference: reference);
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(devotionalsListControllerProvider);
@@ -1484,6 +1494,7 @@ class _MyDevotionalsTabState extends ConsumerState<_MyDevotionalsTab> {
                                     pendingAction == null
                                 ? () => _archive(devotional)
                                 : null,
+                            onOpenReference: _openReferencePreview,
                             onOpen: pendingAction == null
                                 ? () => _openOwnerDevotional(devotional)
                                 : null,
@@ -1540,6 +1551,10 @@ class _ReviewQueueTabState extends ConsumerState<_ReviewQueueTab> {
     await context.push('/devotionals/${devotional.id}');
   }
 
+  Future<void> _openReferencePreview(DevotionalVerseReference reference) {
+    return showDevotionalReferencePreview(context, reference: reference);
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(devotionalReviewQueueControllerProvider);
@@ -1592,6 +1607,7 @@ class _ReviewQueueTabState extends ConsumerState<_ReviewQueueTab> {
                     final devotional = state.items[index];
                     return _ReviewDevotionalCard(
                       devotional: devotional,
+                      onOpenReference: _openReferencePreview,
                       onOpen: () => _openReview(devotional),
                     );
                   },
@@ -1695,6 +1711,7 @@ class _PublicDevotionalCard extends StatelessWidget {
     required this.heroTag,
     required this.onOpen,
     required this.onOpenAuthor,
+    required this.onOpenReference,
     required this.onSave,
     required this.onShare,
   });
@@ -1704,12 +1721,13 @@ class _PublicDevotionalCard extends StatelessWidget {
   final String heroTag;
   final VoidCallback onOpen;
   final VoidCallback onOpenAuthor;
+  final ValueChanged<DevotionalVerseReference> onOpenReference;
   final VoidCallback onSave;
   final VoidCallback onShare;
 
   @override
   Widget build(BuildContext context) {
-    final referenceLabel = _referenceLabel(devotional);
+    final previewReferences = devotionalPreviewReferences(devotional);
     final secondaryTitleVisible = _shouldShowSecondaryTitle(devotional);
     final previewText = devotional.feedPreview;
     final hasImage =
@@ -1791,7 +1809,13 @@ class _PublicDevotionalCard extends StatelessWidget {
                         handle: devotional.author.handle,
                         avatarUrl: devotional.author.avatarUrl,
                         following: devotional.author.following,
-                        referenceLabel: referenceLabel,
+                        referenceLinks: previewReferences.isEmpty
+                            ? null
+                            : DevotionalReferenceLinks(
+                                references: previewReferences,
+                                onTap: onOpenReference,
+                                compact: true,
+                              ),
                         onTap: onOpenAuthor,
                       ),
                       const SizedBox(height: AppSpacing.md),
@@ -2128,6 +2152,7 @@ class _OwnerDevotionalCard extends StatelessWidget {
     required this.onEdit,
     required this.onInsights,
     required this.onOpen,
+    required this.onOpenReference,
     this.pendingAction,
     this.onPublish,
     this.onArchive,
@@ -2137,6 +2162,7 @@ class _OwnerDevotionalCard extends StatelessWidget {
   final VoidCallback onEdit;
   final VoidCallback onInsights;
   final VoidCallback? onOpen;
+  final ValueChanged<DevotionalVerseReference> onOpenReference;
   final _OwnerDevotionalAction? pendingAction;
   final VoidCallback? onPublish;
   final VoidCallback? onArchive;
@@ -2145,7 +2171,7 @@ class _OwnerDevotionalCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final isBusy = pendingAction != null;
-    final referenceLabel = _referenceLabel(devotional);
+    final previewReferences = devotionalPreviewReferences(devotional);
 
     return _DevotionalSurfaceCard(
       child: Column(
@@ -2173,14 +2199,12 @@ class _OwnerDevotionalCard extends StatelessWidget {
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-                if (referenceLabel != null) ...[
+                if (previewReferences.isNotEmpty) ...[
                   const SizedBox(height: AppSpacing.sm),
-                  Text(
-                    referenceLabel,
-                    style: AppTextStyles.referenceSmall.copyWith(
-                      color: AppColors.holyGold,
-                      fontWeight: FontWeight.w700,
-                    ),
+                  DevotionalReferenceLinks(
+                    references: previewReferences,
+                    onTap: onOpenReference,
+                    compact: true,
                   ),
                 ],
                 const SizedBox(height: AppSpacing.sm),
@@ -2308,14 +2332,19 @@ class _OwnerDevotionalCard extends StatelessWidget {
 }
 
 class _ReviewDevotionalCard extends StatelessWidget {
-  const _ReviewDevotionalCard({required this.devotional, required this.onOpen});
+  const _ReviewDevotionalCard({
+    required this.devotional,
+    required this.onOpenReference,
+    required this.onOpen,
+  });
 
   final Devotional devotional;
+  final ValueChanged<DevotionalVerseReference> onOpenReference;
   final VoidCallback onOpen;
 
   @override
   Widget build(BuildContext context) {
-    final referenceLabel = _referenceLabel(devotional);
+    final previewReferences = devotionalPreviewReferences(devotional);
 
     return _DevotionalSurfaceCard(
       child: Column(
@@ -2343,14 +2372,12 @@ class _ReviewDevotionalCard extends StatelessWidget {
                   following: false,
                   onTap: onOpen,
                 ),
-                if (referenceLabel != null) ...[
+                if (previewReferences.isNotEmpty) ...[
                   const SizedBox(height: AppSpacing.md),
-                  Text(
-                    referenceLabel,
-                    style: AppTextStyles.referenceSmall.copyWith(
-                      color: AppColors.holyGold,
-                      fontWeight: FontWeight.w700,
-                    ),
+                  DevotionalReferenceLinks(
+                    references: previewReferences,
+                    onTap: onOpenReference,
+                    compact: true,
                   ),
                 ],
                 const SizedBox(height: AppSpacing.sm),
@@ -3042,7 +3069,7 @@ class _PublicAuthorContext extends StatelessWidget {
     required this.handle,
     required this.avatarUrl,
     required this.following,
-    required this.referenceLabel,
+    this.referenceLinks,
     this.onTap,
   });
 
@@ -3050,7 +3077,7 @@ class _PublicAuthorContext extends StatelessWidget {
   final String? handle;
   final String? avatarUrl;
   final bool following;
-  final String? referenceLabel;
+  final Widget? referenceLinks;
   final VoidCallback? onTap;
 
   @override
@@ -3115,17 +3142,9 @@ class _PublicAuthorContext extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               authorLine,
-              if (referenceLabel != null) ...[
+              if (referenceLinks != null) ...[
                 const SizedBox(height: 4),
-                Text(
-                  referenceLabel!,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTextStyles.referenceSmall.copyWith(
-                    color: AppColors.holyGold.withValues(alpha: 0.92),
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
+                referenceLinks!,
               ],
             ],
           ),
@@ -3385,17 +3404,6 @@ class _ErrorState extends StatelessWidget {
       ),
     );
   }
-}
-
-String? _referenceLabel(Devotional devotional) {
-  final primaryReferences = devotional.primaryReferences;
-  if (primaryReferences.isNotEmpty) {
-    return primaryReferences.first.referenceLabel;
-  }
-  if (devotional.verseReferences.isNotEmpty) {
-    return devotional.verseReferences.first.referenceLabel;
-  }
-  return null;
 }
 
 bool _shouldShowSecondaryTitle(Devotional devotional) {
