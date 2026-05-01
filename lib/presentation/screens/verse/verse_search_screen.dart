@@ -590,7 +590,7 @@ class _SearchResultCard extends StatelessWidget {
               Builder(
                 builder: (BuildContext context) {
                   return _CircleIconButton(
-                    icon: Icons.ios_share,
+                    icon: Icons.share_outlined,
                     color: AppColors.pureWhite.withValues(alpha: 0.85),
                     isLoading: isSharingImage,
                     onPressed: () {

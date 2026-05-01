@@ -343,111 +343,72 @@ class _VerseOfTheDayScreenState extends ConsumerState<VerseOfTheDayScreen>
             fontWeight: FontWeight.w700,
           ),
         ),
-        actions: [
-          Builder(
-            builder: (BuildContext context) {
-              return IconButton(
-                tooltip: l10n.shareTooltip,
-                onPressed: verse == null || isGuest
-                    ? null
-                    : () {
-                        final box = context.findRenderObject() as RenderBox?;
-                        final sharePositionOrigin = box == null
-                            ? null
-                            : box.localToGlobal(Offset.zero) & box.size;
-                        _showShareOptions(verse, sharePositionOrigin);
-                      },
-                icon: _isGeneratingImage
-                    ? SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            AppColors.pureWhite,
-                          ),
-                        ),
-                      )
-                    : Icon(
-                        Icons.ios_share,
-                        color: verse == null || isGuest
-                            ? AppColors.softMist.withValues(alpha: 0.4)
-                            : AppColors.pureWhite,
-                      ),
-              );
-            },
-          ),
-        ],
       ),
-      body: Stack(
-        children: [
-          const _VerseBackground(),
-          SafeArea(
-            child: RefreshIndicator(
-              color: AppColors.holyGold,
-              backgroundColor: AppColors.midnightFaith,
-              onRefresh: _onRefresh,
-              child: ListView(
-                physics: const AlwaysScrollableScrollPhysics(
-                  parent: BouncingScrollPhysics(),
-                ),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.lg,
-                  vertical: AppSpacing.md,
-                ),
-                children: [
-                  _Header(verse: verse),
-                  const SizedBox(height: AppSpacing.md),
-                  _VerseCard(
-                    verse: verse,
-                    isLoading: verseState.isLoading,
+      body: DecoratedBox(
+        decoration: BoxDecoration(gradient: AppColors.midnightGradient),
+        child: SafeArea(
+          child: RefreshIndicator(
+            color: AppColors.holyGold,
+            backgroundColor: AppColors.midnightFaith,
+            onRefresh: _onRefresh,
+            child: ListView(
+              physics: const AlwaysScrollableScrollPhysics(
+                parent: BouncingScrollPhysics(),
+              ),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.lg,
+                vertical: AppSpacing.md,
+              ),
+              children: [
+                _Header(verse: verse),
+                const SizedBox(height: AppSpacing.md),
+                _VerseCard(verse: verse, isLoading: verseState.isLoading),
+                if (verse != null) ...[
+                  const SizedBox(height: AppSpacing.sm),
+                  _VerseActionBar(
                     isSaved: isSaved,
                     isSaving: isSaving,
                     isFavorite: _isFavorite,
                     isGeneratingImage: _isGeneratingImage,
                     canUseAccountFeatures: !isGuest,
-                    onToggleSave: verse == null || isGuest
-                        ? null
-                        : () => _toggleSave(verse),
+                    onToggleSave: isGuest ? null : () => _toggleSave(verse),
                     onToggleFavorite: isGuest ? null : _toggleFavorite,
-                    onShare: verse == null || isGuest
+                    onShare: isGuest
                         ? null
                         : (rect) => _showShareOptions(verse, rect),
                   ),
-                  if (verse != null && !isGuest) ...[
-                    const SizedBox(height: AppSpacing.md),
-                    _ChapterEntryCard(onTap: () => _openChapterReader(verse)),
-                    if (widgetPromptState.shouldShowPrompt) ...[
-                      const SizedBox(height: AppSpacing.md),
-                      _WidgetAdoptionCard(
-                        onShowInstructions: _showWidgetSetupSheet,
-                        onDismiss: () => ref
-                            .read(
-                              widgetAdoptionPromptControllerProvider.notifier,
-                            )
-                            .dismissPrompt(),
-                      ),
-                    ],
-                  ],
-                  if (isGuest) ...[
-                    const SizedBox(height: AppSpacing.md),
-                    _GuestCtaCard(
-                      onRegister: () => context.go('/register'),
-                      onLogin: _promptLogin,
-                    ),
-                  ],
-                  if (verseState.hasError && verse == null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: AppSpacing.md),
-                      child: _ErrorPill(
-                        message: verseState.errorMessage ?? l10n.verseLoadError,
-                      ),
-                    ),
                 ],
-              ),
+                if (verse != null && !isGuest) ...[
+                  const SizedBox(height: AppSpacing.md),
+                  _ChapterEntryCard(onTap: () => _openChapterReader(verse)),
+                  if (widgetPromptState.shouldShowPrompt) ...[
+                    const SizedBox(height: AppSpacing.md),
+                    _WidgetAdoptionCard(
+                      onShowInstructions: _showWidgetSetupSheet,
+                      onDismiss: () => ref
+                          .read(widgetAdoptionPromptControllerProvider.notifier)
+                          .dismissPrompt(),
+                    ),
+                  ],
+                ],
+                if (isGuest) ...[
+                  const SizedBox(height: AppSpacing.md),
+                  _GuestCtaCard(
+                    onRegister: () => context.go('/register'),
+                    onLogin: _promptLogin,
+                  ),
+                ],
+                if (verseState.hasError && verse == null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: AppSpacing.md),
+                    child: _ErrorPill(
+                      message: verseState.errorMessage ?? l10n.verseLoadError,
+                    ),
+                  ),
+              ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }
@@ -485,9 +446,36 @@ class _Header extends StatelessWidget {
 }
 
 class _VerseCard extends StatelessWidget {
-  const _VerseCard({
-    required this.verse,
-    required this.isLoading,
+  const _VerseCard({required this.verse, required this.isLoading});
+
+  final VerseOfTheDay? verse;
+  final bool isLoading;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      decoration: BoxDecoration(
+        color: AppColors.midnightFaith.withValues(alpha: 0.85),
+        borderRadius: AppBorderRadius.card,
+        border: Border.all(color: AppColors.pureWhite.withValues(alpha: 0.08)),
+        boxShadow: AppShadows.cardShadow,
+      ),
+      child: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 250),
+        child: verse != null
+            ? _VerseContent(verse: verse!)
+            : isLoading
+            ? _SkeletonPlaceholder()
+            : const _EmptyState(),
+      ),
+    );
+  }
+}
+
+class _VerseActionBar extends StatelessWidget {
+  const _VerseActionBar({
     required this.isSaved,
     required this.isSaving,
     required this.isFavorite,
@@ -498,8 +486,6 @@ class _VerseCard extends StatelessWidget {
     required this.onShare,
   });
 
-  final VerseOfTheDay? verse;
-  final bool isLoading;
   final bool isSaved;
   final bool isSaving;
   final bool isFavorite;
@@ -511,92 +497,114 @@ class _VerseCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final screenSize = MediaQuery.sizeOf(context);
-    final contentWidth = screenSize.width - (AppSpacing.lg * 2);
-    final baseHeight = contentWidth / (9 / 19.5);
-    final minHeight = screenSize.height * 0.42;
-    final maxHeight = screenSize.height * 0.62;
-    final cardHeight = baseHeight.clamp(minHeight, maxHeight).toDouble();
-
-    return SizedBox(
-      height: cardHeight,
-      child: Container(
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        decoration: BoxDecoration(
-          gradient: AppColors.midnightGradient,
-          borderRadius: BorderRadius.circular(AppBorderRadius.xl),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.35),
-              blurRadius: 34,
-              offset: const Offset(0, 20),
-            ),
-          ],
-        ),
-        child: Stack(
-          children: [
-            AnimatedSwitcher(
-              duration: const Duration(milliseconds: 250),
-              child: verse != null
-                  ? _VerseContent(verse: verse!)
-                  : isLoading
-                  ? _SkeletonPlaceholder()
-                  : const _EmptyState(),
-            ),
-            Positioned(
-              bottom: AppSpacing.md,
-              right: AppSpacing.md,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  _CircleIconButton(
-                    icon: isSaved
-                        ? Icons.bookmark
-                        : Icons.bookmark_border_outlined,
-                    color: canUseAccountFeatures
-                        ? (isSaved
-                              ? AppColors.holyGold
-                              : AppColors.pureWhite.withValues(alpha: 0.85))
-                        : AppColors.softMist.withValues(alpha: 0.35),
-                    isLoading: isSaving,
-                    onPressed: canUseAccountFeatures ? onToggleSave : null,
-                  ),
-                  const SizedBox(width: AppSpacing.sm),
-                  _CircleIconButton(
-                    icon: isFavorite ? Icons.favorite : Icons.favorite_border,
-                    color: canUseAccountFeatures
-                        ? (isFavorite
-                              ? AppColors.holyGold
-                              : AppColors.pureWhite.withValues(alpha: 0.85))
-                        : AppColors.softMist.withValues(alpha: 0.35),
-                    onPressed: canUseAccountFeatures ? onToggleFavorite : null,
-                  ),
-                  const SizedBox(width: AppSpacing.sm),
-                  Builder(
-                    builder: (BuildContext context) {
-                      return _CircleIconButton(
-                        icon: Icons.ios_share,
-                        color: canUseAccountFeatures
-                            ? AppColors.pureWhite.withValues(alpha: 0.85)
-                            : AppColors.softMist.withValues(alpha: 0.35),
-                        isLoading: isGeneratingImage,
-                        onPressed: !canUseAccountFeatures || onShare == null
+    final l10n = context.l10n;
+    return Align(
+      alignment: Alignment.centerRight,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _VerseActionButton(
+            icon: isSaved
+                ? Icons.bookmark_rounded
+                : Icons.bookmark_border_rounded,
+            tooltip: isSaved ? l10n.savedAction : l10n.saveAction,
+            selected: isSaved,
+            enabled: canUseAccountFeatures,
+            isLoading: isSaving,
+            onPressed: onToggleSave,
+          ),
+          _VerseActionButton(
+            icon: isFavorite
+                ? Icons.favorite_rounded
+                : Icons.favorite_border_rounded,
+            tooltip: l10n.likesLabel,
+            selected: isFavorite,
+            enabled: canUseAccountFeatures,
+            onPressed: onToggleFavorite,
+          ),
+          Builder(
+            builder: (BuildContext context) {
+              return _VerseActionButton(
+                icon: Icons.share_outlined,
+                tooltip: l10n.shareTooltip,
+                selected: false,
+                enabled: canUseAccountFeatures,
+                isLoading: isGeneratingImage,
+                onPressed: onShare == null
+                    ? null
+                    : () {
+                        final box = context.findRenderObject() as RenderBox?;
+                        final sharePositionOrigin = box == null
                             ? null
-                            : () {
-                                final box =
-                                    context.findRenderObject() as RenderBox?;
-                                final sharePositionOrigin = box == null
-                                    ? null
-                                    : box.localToGlobal(Offset.zero) & box.size;
-                                onShare!(sharePositionOrigin);
-                              },
-                      );
-                    },
-                  ),
-                ],
+                            : box.localToGlobal(Offset.zero) & box.size;
+                        onShare!(sharePositionOrigin);
+                      },
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _VerseActionButton extends StatelessWidget {
+  const _VerseActionButton({
+    required this.icon,
+    required this.tooltip,
+    required this.selected,
+    required this.enabled,
+    required this.onPressed,
+    this.isLoading = false,
+  });
+
+  final IconData icon;
+  final String tooltip;
+  final bool selected;
+  final bool enabled;
+  final bool isLoading;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final effectiveEnabled = enabled && onPressed != null && !isLoading;
+    final foreground = !enabled
+        ? AppColors.softMist.withValues(alpha: 0.36)
+        : selected
+        ? AppColors.holyGold
+        : AppColors.pureWhite.withValues(alpha: 0.86);
+
+    return Semantics(
+      button: true,
+      enabled: effectiveEnabled,
+      label: tooltip,
+      selected: selected,
+      child: Tooltip(
+        message: tooltip,
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: effectiveEnabled ? onPressed : null,
+            borderRadius: BorderRadius.circular(AppBorderRadius.full),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.sm,
+                vertical: AppSpacing.xs,
+              ),
+              child: ExcludeSemantics(
+                child: isLoading
+                    ? SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(foreground),
+                        ),
+                      )
+                    : Icon(icon, color: foreground, size: 24),
               ),
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -959,75 +967,27 @@ class _VerseContent extends StatelessWidget {
           ),
         ),
         const SizedBox(height: AppSpacing.md),
-        Expanded(
-          child: SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '"${verse.text}"',
-                  style: AppTextStyles.headline1.copyWith(
-                    color: AppColors.pureWhite,
-                    height: 1.35,
-                    shadows: AppShadows.textGlow,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                Text(
-                  verse.reference,
-                  style: AppTextStyles.reference.copyWith(
-                    shadows: [
-                      Shadow(
-                        color: AppColors.holyGold.withValues(alpha: 0.5),
-                        blurRadius: 10,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+        Text(
+          '"${verse.text}"',
+          style: AppTextStyles.headline1.copyWith(
+            color: AppColors.pureWhite,
+            height: 1.35,
+            shadows: AppShadows.textGlow,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.lg),
+        Text(
+          verse.reference,
+          style: AppTextStyles.reference.copyWith(
+            shadows: [
+              Shadow(
+                color: AppColors.holyGold.withValues(alpha: 0.5),
+                blurRadius: 10,
+              ),
+            ],
           ),
         ),
       ],
-    );
-  }
-}
-
-class _CircleIconButton extends StatelessWidget {
-  const _CircleIconButton({
-    required this.icon,
-    required this.color,
-    this.onPressed,
-    this.isLoading = false,
-  });
-
-  final IconData icon;
-  final Color color;
-  final VoidCallback? onPressed;
-  final bool isLoading;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.pureWhite.withValues(alpha: 0.08),
-        shape: BoxShape.circle,
-        border: Border.all(color: AppColors.pureWhite.withValues(alpha: 0.1)),
-      ),
-      child: IconButton(
-        onPressed: isLoading ? null : onPressed,
-        icon: isLoading
-            ? SizedBox(
-                width: AppSizes.iconMedium,
-                height: AppSizes.iconMedium,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(color),
-                ),
-              )
-            : Icon(icon, color: color, size: AppSizes.iconMedium),
-      ),
     );
   }
 }
@@ -1154,61 +1114,6 @@ class _ShimmerBlock extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.pureWhite.withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(10),
-      ),
-    );
-  }
-}
-
-class _VerseBackground extends StatelessWidget {
-  const _VerseBackground();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [AppColors.midnightFaithDark, AppColors.midnightFaith],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-        ),
-      ),
-      child: Stack(
-        children: [
-          Positioned(
-            top: -140,
-            left: -80,
-            child: Container(
-              width: 280,
-              height: 280,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [
-                    AppColors.holyGold.withValues(alpha: 0.18),
-                    Colors.transparent,
-                  ],
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            bottom: -140,
-            right: -80,
-            child: Container(
-              width: 260,
-              height: 260,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [
-                    AppColors.morningLight.withValues(alpha: 0.16),
-                    Colors.transparent,
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }

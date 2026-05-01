@@ -870,7 +870,7 @@ class _SavedVerseCard extends StatelessWidget {
               ),
               const SizedBox(width: AppSpacing.sm),
               _CircleAction(
-                icon: Icons.ios_share,
+                icon: Icons.share_outlined,
                 isLoading: isSharingImage,
                 onTap: isProcessing
                     ? null
@@ -1076,7 +1076,7 @@ class _SavedDevotionalCard extends StatelessWidget {
                         ),
                         const SizedBox(width: AppSpacing.sm),
                         _CircleAction(
-                          icon: Icons.ios_share,
+                          icon: Icons.share_outlined,
                           onTap: isProcessing ? null : (_) => onShare(),
                         ),
                         const SizedBox(width: AppSpacing.sm),

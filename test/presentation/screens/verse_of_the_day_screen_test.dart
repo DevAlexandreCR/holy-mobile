@@ -55,8 +55,10 @@ void main() {
     expect(find.textContaining(verse.text), findsOneWidget);
     expect(find.text(verse.reference), findsOneWidget);
     expect(find.textContaining(verse.versionName), findsOneWidget);
-    expect(find.byIcon(Icons.favorite_border), findsOneWidget);
-    expect(find.byIcon(Icons.ios_share), findsAtLeastNWidgets(1));
+    expect(find.byIcon(Icons.bookmark_border_rounded), findsOneWidget);
+    expect(find.byIcon(Icons.favorite_border_rounded), findsOneWidget);
+    expect(find.byIcon(Icons.share_outlined), findsOneWidget);
+    expect(find.byTooltip('Compartir'), findsOneWidget);
     expect(fakeController.loadCalls, 1);
   });
 
@@ -146,7 +148,9 @@ void main() {
             const WidgetInstallStatus(isInstalled: false, isHeuristic: false),
           ),
         ),
-        appRuntimeStorageProvider.overrideWithValue(_FakeAppRuntimeStorage(null)),
+        appRuntimeStorageProvider.overrideWithValue(
+          _FakeAppRuntimeStorage(null),
+        ),
       ],
     );
 

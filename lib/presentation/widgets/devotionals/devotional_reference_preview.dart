@@ -605,7 +605,7 @@ class _DevotionalReferencePreviewDialogState
                                       color: AppColors.midnightFaithDark,
                                     ),
                                   )
-                                : const Icon(Icons.ios_share_rounded),
+                                : const Icon(Icons.share_outlined),
                             label: Text(context.l10n.shareAction),
                             style: FilledButton.styleFrom(
                               backgroundColor: AppColors.holyGold,
