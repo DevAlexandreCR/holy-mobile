@@ -5,6 +5,7 @@
       "releaseDate": "2026-05-01",
       "changes": [
         "Se agregaron notificaciones push para nuevos devocionales y versículos del día.",
+        "Puedes compartir el versículo de referencia de devocionales en redes sociales.",
         "Ahora puedes crear tus propios devocionales personalizados con tus versículos favoritos.",
         "Se corrigieron errores menores en la interfaz de usuario al crear devocionales."
       ],
