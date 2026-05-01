@@ -455,38 +455,6 @@ class _PublicDevotionalFeedReaderScreenState
           scrolledUnderElevation: 0,
           systemOverlayStyle: _readerOverlayStyle,
           leading: const BackButton(),
-          actions: [
-            PopupMenuButton<_ReaderMenuAction>(
-              icon: const Icon(Icons.more_horiz_rounded),
-              color: AppColors.midnightFaithDark,
-              surfaceTintColor: Colors.transparent,
-              onSelected: (value) {
-                if (value == _ReaderMenuAction.report) {
-                  _showReportSheet();
-                }
-              },
-              itemBuilder: (context) => [
-                PopupMenuItem<_ReaderMenuAction>(
-                  value: _ReaderMenuAction.report,
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.flag_outlined,
-                        color: AppColors.pureWhite,
-                      ),
-                      const SizedBox(width: AppSpacing.sm),
-                      Text(
-                        context.l10n.devotionalReportAction,
-                        style: AppTextStyles.bodyMedium.copyWith(
-                          color: AppColors.pureWhite,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ],
         ),
         body: SafeArea(
           top: false,
@@ -528,6 +496,7 @@ class _PublicDevotionalFeedReaderScreenState
                     .toggleSave(),
                 onOpenComments: _openComments,
                 onShare: () => _share(fullDevotional),
+                onReport: _showReportSheet,
                 onOpenAuthor: () => _openAuthor(fullDevotional),
                 isTogglingLike:
                     readerState.activeDevotionalId == feedItem.id &&
@@ -564,6 +533,7 @@ class _PublicReaderPage extends StatelessWidget {
     required this.onToggleSave,
     required this.onOpenComments,
     required this.onShare,
+    required this.onReport,
     required this.onOpenAuthor,
     required this.isLoading,
     required this.isTogglingLike,
@@ -580,6 +550,7 @@ class _PublicReaderPage extends StatelessWidget {
   final VoidCallback onToggleSave;
   final VoidCallback onOpenComments;
   final VoidCallback onShare;
+  final VoidCallback onReport;
   final VoidCallback onOpenAuthor;
   final bool isLoading;
   final bool isTogglingLike;
@@ -605,6 +576,7 @@ class _PublicReaderPage extends StatelessWidget {
       onToggleSave: onToggleSave,
       onOpenComments: onOpenComments,
       onShare: onShare,
+      onReport: onReport,
     );
 
     final body = Stack(
@@ -783,7 +755,11 @@ class _PublicReaderPage extends StatelessWidget {
             ),
           ),
         ),
-        PositionedDirectional(end: AppSpacing.md, bottom: 112, child: rail),
+        PositionedDirectional(
+          end: AppSpacing.md,
+          bottom: AppSpacing.lg,
+          child: rail,
+        ),
       ],
     );
 
@@ -853,6 +829,7 @@ class _PublicReaderActionRail extends StatelessWidget {
     required this.onToggleSave,
     required this.onOpenComments,
     required this.onShare,
+    required this.onReport,
   });
 
   final Devotional devotional;
@@ -863,60 +840,53 @@ class _PublicReaderActionRail extends StatelessWidget {
   final VoidCallback onToggleSave;
   final VoidCallback onOpenComments;
   final VoidCallback onShare;
+  final VoidCallback onReport;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return Column(
       key: const Key('public-feed-reader-action-rail'),
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.xs,
-        vertical: AppSpacing.sm,
-      ),
-      decoration: BoxDecoration(
-        color: AppColors.midnightFaithDark.withValues(alpha: 0.66),
-        borderRadius: BorderRadius.circular(AppBorderRadius.full),
-        border: Border.all(color: AppColors.pureWhite.withValues(alpha: 0.08)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _RailActionButton(
-            key: const Key('public-feed-reader-save-button'),
-            icon: devotional.saved
-                ? Icons.bookmark_rounded
-                : Icons.bookmark_border_rounded,
-            count: devotional.saveCount,
-            active: devotional.saved,
-            isLoading: isTogglingSave,
-            onTap: onToggleSave,
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          _RailActionButton(
-            key: const Key('public-feed-reader-like-button'),
-            icon: devotional.liked
-                ? Icons.favorite_rounded
-                : Icons.favorite_border_rounded,
-            count: devotional.likesCount,
-            active: devotional.liked,
-            isLoading: isTogglingLike,
-            onTap: onToggleLike,
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          _RailActionButton(
-            key: const Key('public-feed-reader-comment-button'),
-            icon: Icons.chat_bubble_outline_rounded,
-            count: commentCount,
-            onTap: onOpenComments,
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          _RailActionButton(
-            key: const Key('public-feed-reader-share-button'),
-            icon: Icons.share_outlined,
-            count: devotional.shareCount,
-            onTap: onShare,
-          ),
-        ],
-      ),
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        _RailActionButton(
+          key: const Key('public-feed-reader-save-button'),
+          icon: devotional.saved
+              ? Icons.bookmark_rounded
+              : Icons.bookmark_border_rounded,
+          count: devotional.saveCount,
+          active: devotional.saved,
+          isLoading: isTogglingSave,
+          onTap: onToggleSave,
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        _RailActionButton(
+          key: const Key('public-feed-reader-like-button'),
+          icon: devotional.liked
+              ? Icons.favorite_rounded
+              : Icons.favorite_border_rounded,
+          count: devotional.likesCount,
+          active: devotional.liked,
+          isLoading: isTogglingLike,
+          onTap: onToggleLike,
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        _RailActionButton(
+          key: const Key('public-feed-reader-comment-button'),
+          icon: Icons.chat_bubble_outline_rounded,
+          count: commentCount,
+          onTap: onOpenComments,
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        _RailActionButton(
+          key: const Key('public-feed-reader-share-button'),
+          icon: Icons.share_outlined,
+          count: devotional.shareCount,
+          onTap: onShare,
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        _RailOverflowButton(onReport: onReport),
+      ],
     );
   }
 }
@@ -973,6 +943,55 @@ class _RailActionButton extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _RailOverflowButton extends StatelessWidget {
+  const _RailOverflowButton({required this.onReport});
+
+  final VoidCallback onReport;
+
+  @override
+  Widget build(BuildContext context) {
+    return PopupMenuButton<_ReaderMenuAction>(
+      key: const Key('public-feed-reader-report-button'),
+      color: AppColors.midnightFaithDark,
+      surfaceTintColor: Colors.transparent,
+      tooltip: context.l10n.devotionalReportAction,
+      onSelected: (value) {
+        if (value == _ReaderMenuAction.report) {
+          onReport();
+        }
+      },
+      itemBuilder: (context) => [
+        PopupMenuItem<_ReaderMenuAction>(
+          value: _ReaderMenuAction.report,
+          child: Row(
+            children: [
+              const Icon(Icons.flag_outlined, color: AppColors.pureWhite),
+              const SizedBox(width: AppSpacing.sm),
+              Text(
+                context.l10n.devotionalReportAction,
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: AppColors.pureWhite,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.sm,
+          vertical: AppSpacing.xs,
+        ),
+        child: Icon(
+          Icons.more_horiz_rounded,
+          color: AppColors.pureWhite.withValues(alpha: 0.9),
+          size: 24,
         ),
       ),
     );
