@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -300,23 +302,648 @@ void main() {
     expect(commentsController.addCommentCalls, 1);
     expect(commentsController.lastCommentContent, 'Amén');
   });
+
+  testWidgets(
+    'public reader reveals part of next devotional during bottom drag',
+    (tester) async {
+      final first = _buildDevotional(
+        id: 'devotional-1',
+        title: 'Primer devocional',
+        content: _buildLongContent('Primero'),
+      );
+      final second = _buildDevotional(
+        id: 'devotional-2',
+        title: 'Segundo devocional',
+        withCover: true,
+        content: _buildLongContent('Segundo'),
+      );
+      final readerArgs = const DevotionalFeedReaderArgs(
+        feedMode: DevotionalFeedMode.forYou,
+        initialDevotionalId: 'devotional-1',
+        initialDeliveryToken: 'delivery-1',
+      );
+      final readerController = _TrackingDevotionalFeedReaderController(
+        DevotionalFeedReaderState(
+          readerArgs: readerArgs,
+          activeDevotionalId: first.id,
+          activeIndex: 0,
+          status: DevotionalFeedReaderStatus.success,
+          loadedDevotionals: {first.id: first, second.id: second},
+        ),
+        nextIndex: 1,
+      );
+
+      await tester.pumpWidget(
+        _TestApp(
+          devotional: first,
+          feedItems: [first, second],
+          readerArgs: readerArgs,
+          readerController: readerController,
+          initialDevotionalId: first.id,
+        ),
+      );
+      await tester.pumpAndSettle();
+      await _jumpReaderToBottom(tester, first.id);
+
+      final gesture = await tester.startGesture(
+        tester.getCenter(_scrollFinder(first.id)),
+      );
+      await gesture.moveBy(const Offset(0, -120));
+      await tester.pump();
+
+      final viewportHeight = _pageViewHeight(tester);
+      final nextPageTop = _pageTop(tester, second.id);
+      expect(nextPageTop, greaterThan(0));
+      expect(nextPageTop, lessThan(viewportHeight));
+      expect(readerController.activateIndexCalls, isEmpty);
+
+      await gesture.up();
+      await tester.pumpAndSettle();
+    },
+  );
+
+  testWidgets('public reader settles on next devotional after sustained drag', (
+    tester,
+  ) async {
+    final first = _buildDevotional(
+      id: 'devotional-1',
+      title: 'Primer devocional',
+      content: _buildLongContent('Primero'),
+    );
+    final second = _buildDevotional(
+      id: 'devotional-2',
+      title: 'Segundo devocional',
+      content: _buildLongContent('Segundo'),
+    );
+    final readerArgs = const DevotionalFeedReaderArgs(
+      feedMode: DevotionalFeedMode.forYou,
+      initialDevotionalId: 'devotional-1',
+      initialDeliveryToken: 'delivery-1',
+    );
+    final readerController = _TrackingDevotionalFeedReaderController(
+      DevotionalFeedReaderState(
+        readerArgs: readerArgs,
+        activeDevotionalId: first.id,
+        activeIndex: 0,
+        status: DevotionalFeedReaderStatus.success,
+        loadedDevotionals: {first.id: first, second.id: second},
+      ),
+      nextIndex: 1,
+    );
+
+    await tester.pumpWidget(
+      _TestApp(
+        devotional: first,
+        feedItems: [first, second],
+        readerArgs: readerArgs,
+        readerController: readerController,
+        initialDevotionalId: first.id,
+      ),
+    );
+    await tester.pumpAndSettle();
+    await _jumpReaderToBottom(tester, first.id);
+
+    final gesture = await tester.startGesture(
+      tester.getCenter(_scrollFinder(first.id)),
+    );
+    await gesture.moveBy(const Offset(0, -180));
+    await tester.pump();
+    await gesture.up();
+    await tester.pumpAndSettle();
+
+    expect(readerController.resolveNextIndexCalls, 1);
+    expect(readerController.activateIndexCalls, [1]);
+    expect(readerController.state.activeDevotionalId, second.id);
+  });
+
+  testWidgets(
+    'public reader reveals part of previous devotional during top drag',
+    (tester) async {
+      final first = _buildDevotional(
+        id: 'devotional-1',
+        title: 'Primer devocional',
+        content: _buildLongContent('Primero'),
+      );
+      final second = _buildDevotional(
+        id: 'devotional-2',
+        title: 'Segundo devocional',
+        content: _buildLongContent('Segundo'),
+      );
+      final readerArgs = const DevotionalFeedReaderArgs(
+        feedMode: DevotionalFeedMode.forYou,
+        initialDevotionalId: 'devotional-2',
+        initialDeliveryToken: 'delivery-2',
+      );
+      final readerController = _TrackingDevotionalFeedReaderController(
+        DevotionalFeedReaderState(
+          readerArgs: readerArgs,
+          activeDevotionalId: second.id,
+          activeIndex: 1,
+          status: DevotionalFeedReaderStatus.success,
+          loadedDevotionals: {first.id: first, second.id: second},
+        ),
+        nextIndex: 1,
+        previousIndex: 0,
+      );
+
+      await tester.pumpWidget(
+        _TestApp(
+          devotional: second,
+          feedItems: [first, second],
+          readerArgs: readerArgs,
+          readerController: readerController,
+          initialDevotionalId: second.id,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final gesture = await tester.startGesture(
+        tester.getCenter(_scrollFinder(second.id)),
+      );
+      await gesture.moveBy(const Offset(0, 100));
+      await tester.pump();
+
+      final viewportHeight = _pageViewHeight(tester);
+      final previousPageTop = _pageTop(tester, first.id);
+      final currentPageTop = _pageTop(tester, second.id);
+      expect(previousPageTop, greaterThan(-viewportHeight));
+      expect(previousPageTop, lessThan(0));
+      expect(currentPageTop, greaterThan(0));
+      expect(readerController.activateIndexCalls, isEmpty);
+
+      await gesture.up();
+      await tester.pumpAndSettle();
+    },
+  );
+
+  testWidgets(
+    'public reader settles on previous devotional after sustained drag',
+    (tester) async {
+      final first = _buildDevotional(
+        id: 'devotional-1',
+        title: 'Primer devocional',
+        content: _buildLongContent('Primero'),
+      );
+      final second = _buildDevotional(
+        id: 'devotional-2',
+        title: 'Segundo devocional',
+        content: _buildLongContent('Segundo'),
+      );
+      final readerArgs = const DevotionalFeedReaderArgs(
+        feedMode: DevotionalFeedMode.forYou,
+        initialDevotionalId: 'devotional-2',
+        initialDeliveryToken: 'delivery-2',
+      );
+      final readerController = _TrackingDevotionalFeedReaderController(
+        DevotionalFeedReaderState(
+          readerArgs: readerArgs,
+          activeDevotionalId: second.id,
+          activeIndex: 1,
+          status: DevotionalFeedReaderStatus.success,
+          loadedDevotionals: {first.id: first, second.id: second},
+        ),
+        nextIndex: 1,
+        previousIndex: 0,
+      );
+
+      await tester.pumpWidget(
+        _TestApp(
+          devotional: second,
+          feedItems: [first, second],
+          readerArgs: readerArgs,
+          readerController: readerController,
+          initialDevotionalId: second.id,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final gesture = await tester.startGesture(
+        tester.getCenter(_scrollFinder(second.id)),
+      );
+      await gesture.moveBy(const Offset(0, 180));
+      await tester.pump();
+      await gesture.up();
+      await tester.pumpAndSettle();
+
+      expect(readerController.resolvePreviousIndexCalls, 1);
+      expect(readerController.activateIndexCalls, [0]);
+      expect(readerController.state.activeDevotionalId, first.id);
+    },
+  );
+
+  testWidgets('public reader snaps back after a short forward handoff', (
+    tester,
+  ) async {
+    final first = _buildDevotional(
+      id: 'devotional-1',
+      title: 'Primer devocional',
+      content: _buildLongContent('Primero'),
+    );
+    final second = _buildDevotional(
+      id: 'devotional-2',
+      title: 'Segundo devocional',
+      content: _buildLongContent('Segundo'),
+    );
+    final readerArgs = const DevotionalFeedReaderArgs(
+      feedMode: DevotionalFeedMode.forYou,
+      initialDevotionalId: 'devotional-1',
+      initialDeliveryToken: 'delivery-1',
+    );
+    final readerController = _TrackingDevotionalFeedReaderController(
+      DevotionalFeedReaderState(
+        readerArgs: readerArgs,
+        activeDevotionalId: first.id,
+        activeIndex: 0,
+        status: DevotionalFeedReaderStatus.success,
+        loadedDevotionals: {first.id: first, second.id: second},
+      ),
+      nextIndex: 1,
+    );
+
+    await tester.pumpWidget(
+      _TestApp(
+        devotional: first,
+        feedItems: [first, second],
+        readerArgs: readerArgs,
+        readerController: readerController,
+        initialDevotionalId: first.id,
+      ),
+    );
+    await tester.pumpAndSettle();
+    await _jumpReaderToBottom(tester, first.id);
+
+    final gesture = await tester.startGesture(
+      tester.getCenter(_scrollFinder(first.id)),
+    );
+    await gesture.moveBy(const Offset(0, -80));
+    await tester.pump();
+    await gesture.up();
+    await tester.pumpAndSettle();
+
+    expect(readerController.activateIndexCalls, isEmpty);
+    expect(readerController.state.activeDevotionalId, first.id);
+    expect(_pageTop(tester, first.id), 0);
+  });
+
+  testWidgets('public reader snaps back after a short reverse handoff', (
+    tester,
+  ) async {
+    final first = _buildDevotional(
+      id: 'devotional-1',
+      title: 'Primer devocional',
+      content: _buildLongContent('Primero'),
+    );
+    final second = _buildDevotional(
+      id: 'devotional-2',
+      title: 'Segundo devocional',
+      content: _buildLongContent('Segundo'),
+    );
+    final readerArgs = const DevotionalFeedReaderArgs(
+      feedMode: DevotionalFeedMode.forYou,
+      initialDevotionalId: 'devotional-2',
+      initialDeliveryToken: 'delivery-2',
+    );
+    final readerController = _TrackingDevotionalFeedReaderController(
+      DevotionalFeedReaderState(
+        readerArgs: readerArgs,
+        activeDevotionalId: second.id,
+        activeIndex: 1,
+        status: DevotionalFeedReaderStatus.success,
+        loadedDevotionals: {first.id: first, second.id: second},
+      ),
+      previousIndex: 0,
+    );
+
+    await tester.pumpWidget(
+      _TestApp(
+        devotional: second,
+        feedItems: [first, second],
+        readerArgs: readerArgs,
+        readerController: readerController,
+        initialDevotionalId: second.id,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final gesture = await tester.startGesture(
+      tester.getCenter(_scrollFinder(second.id)),
+    );
+    await gesture.moveBy(const Offset(0, 80));
+    await tester.pump();
+    await gesture.up();
+    await tester.pumpAndSettle();
+
+    expect(readerController.activateIndexCalls, isEmpty);
+    expect(readerController.state.activeDevotionalId, second.id);
+    expect(_pageTop(tester, second.id), 0);
+  });
+
+  testWidgets(
+    'public reader does not move to a previous devotional from the first page',
+    (tester) async {
+      final first = _buildDevotional(
+        id: 'devotional-1',
+        title: 'Primer devocional',
+        content: _buildLongContent('Primero'),
+      );
+      final second = _buildDevotional(
+        id: 'devotional-2',
+        title: 'Segundo devocional',
+        content: _buildLongContent('Segundo'),
+      );
+      final readerArgs = const DevotionalFeedReaderArgs(
+        feedMode: DevotionalFeedMode.forYou,
+        initialDevotionalId: 'devotional-1',
+        initialDeliveryToken: 'delivery-1',
+      );
+      final readerController = _TrackingDevotionalFeedReaderController(
+        DevotionalFeedReaderState(
+          readerArgs: readerArgs,
+          activeDevotionalId: first.id,
+          activeIndex: 0,
+          status: DevotionalFeedReaderStatus.success,
+          loadedDevotionals: {first.id: first, second.id: second},
+        ),
+        nextIndex: 1,
+      );
+
+      await tester.pumpWidget(
+        _TestApp(
+          devotional: first,
+          feedItems: [first, second],
+          readerArgs: readerArgs,
+          readerController: readerController,
+          initialDevotionalId: first.id,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final gesture = await tester.startGesture(
+        tester.getCenter(_scrollFinder(first.id)),
+      );
+      await gesture.moveBy(const Offset(0, 180));
+      await tester.pump();
+      await gesture.up();
+      await tester.pumpAndSettle();
+
+      expect(readerController.resolvePreviousIndexCalls, 1);
+      expect(readerController.activateIndexCalls, isEmpty);
+      expect(readerController.state.activeDevotionalId, first.id);
+    },
+  );
+
+  testWidgets(
+    'public reader stays on current devotional when no next item exists',
+    (tester) async {
+      final devotional = _buildDevotional(content: _buildLongContent('Unico'));
+      final readerArgs = const DevotionalFeedReaderArgs(
+        feedMode: DevotionalFeedMode.forYou,
+        initialDevotionalId: 'devotional-1',
+        initialDeliveryToken: 'delivery-1',
+      );
+      final readerController = _TrackingDevotionalFeedReaderController(
+        DevotionalFeedReaderState(
+          readerArgs: readerArgs,
+          activeDevotionalId: devotional.id,
+          activeIndex: 0,
+          status: DevotionalFeedReaderStatus.success,
+          loadedDevotionals: {devotional.id: devotional},
+        ),
+      );
+
+      await tester.pumpWidget(
+        _TestApp(
+          devotional: devotional,
+          readerArgs: readerArgs,
+          readerController: readerController,
+          initialDevotionalId: devotional.id,
+        ),
+      );
+      await tester.pumpAndSettle();
+      await _jumpReaderToBottom(tester, devotional.id);
+
+      final gesture = await tester.startGesture(
+        tester.getCenter(_scrollFinder(devotional.id)),
+      );
+      await gesture.moveBy(const Offset(0, -180));
+      await tester.pump();
+      await gesture.up();
+      await tester.pumpAndSettle();
+
+      expect(readerController.resolveNextIndexCalls, 1);
+      expect(readerController.activateIndexCalls, isEmpty);
+      expect(readerController.state.activeDevotionalId, devotional.id);
+    },
+  );
+
+  testWidgets(
+    'public reader waits for next-index resolution before revealing the next devotional',
+    (tester) async {
+      final first = _buildDevotional(
+        id: 'devotional-1',
+        title: 'Primer devocional',
+        content: _buildLongContent('Primero'),
+      );
+      final second = _buildDevotional(
+        id: 'devotional-2',
+        title: 'Segundo devocional',
+        content: _buildLongContent('Segundo'),
+      );
+      final readerArgs = const DevotionalFeedReaderArgs(
+        feedMode: DevotionalFeedMode.forYou,
+        initialDevotionalId: 'devotional-1',
+        initialDeliveryToken: 'delivery-1',
+      );
+      final completer = Completer<int?>();
+      final readerController = _TrackingDevotionalFeedReaderController(
+        DevotionalFeedReaderState(
+          readerArgs: readerArgs,
+          activeDevotionalId: first.id,
+          activeIndex: 0,
+          status: DevotionalFeedReaderStatus.success,
+          loadedDevotionals: {first.id: first, second.id: second},
+        ),
+        resolveNextIndexHandler: () => completer.future,
+      );
+
+      await tester.pumpWidget(
+        _TestApp(
+          devotional: first,
+          feedItems: [first, second],
+          readerArgs: readerArgs,
+          readerController: readerController,
+          initialDevotionalId: first.id,
+        ),
+      );
+      await tester.pumpAndSettle();
+      await _jumpReaderToBottom(tester, first.id);
+
+      final gesture = await tester.startGesture(
+        tester.getCenter(_scrollFinder(first.id)),
+      );
+      await gesture.moveBy(const Offset(0, -120));
+      await tester.pump();
+
+      final viewportHeight = _pageViewHeight(tester);
+      expect(_pageTop(tester, second.id), greaterThanOrEqualTo(viewportHeight));
+      expect(readerController.resolveNextIndexCalls, 1);
+
+      completer.complete(1);
+      await tester.pump();
+      await gesture.moveBy(const Offset(0, -120));
+      await tester.pump();
+
+      expect(_pageTop(tester, second.id), lessThan(viewportHeight));
+
+      await gesture.up();
+      await tester.pumpAndSettle();
+
+      expect(readerController.activateIndexCalls, [1]);
+    },
+  );
+
+  testWidgets('public reader still reports read complete after 75 percent', (
+    tester,
+  ) async {
+    final devotional = _buildDevotional(content: _buildLongContent('Lectura'));
+    final readerArgs = const DevotionalFeedReaderArgs(
+      feedMode: DevotionalFeedMode.forYou,
+      initialDevotionalId: 'devotional-1',
+      initialDeliveryToken: 'delivery-1',
+    );
+    final readerController = _TrackingDevotionalFeedReaderController(
+      DevotionalFeedReaderState(
+        readerArgs: readerArgs,
+        activeDevotionalId: devotional.id,
+        activeIndex: 0,
+        status: DevotionalFeedReaderStatus.success,
+        loadedDevotionals: {devotional.id: devotional},
+      ),
+    );
+
+    await tester.pumpWidget(
+      _TestApp(
+        devotional: devotional,
+        readerArgs: readerArgs,
+        readerController: readerController,
+        initialDevotionalId: devotional.id,
+      ),
+    );
+    await tester.pumpAndSettle();
+    await _jumpReaderToProgress(tester, devotional.id, 0.72);
+
+    final gesture = await tester.startGesture(
+      tester.getCenter(_scrollFinder(devotional.id)),
+    );
+    await gesture.moveBy(const Offset(0, -140));
+    await tester.pump();
+    await gesture.up();
+    await tester.pumpAndSettle();
+
+    expect(readerController.reportReadCompleteCalls, 1);
+    expect(readerController.resolveNextIndexCalls, 0);
+  });
+
+  testWidgets(
+    'public reader ignores duplicate edge drags while next-index resolution is pending',
+    (tester) async {
+      final first = _buildDevotional(
+        id: 'devotional-1',
+        title: 'Primer devocional',
+        content: _buildLongContent('Primero'),
+      );
+      final second = _buildDevotional(
+        id: 'devotional-2',
+        title: 'Segundo devocional',
+        content: _buildLongContent('Segundo'),
+      );
+      final readerArgs = const DevotionalFeedReaderArgs(
+        feedMode: DevotionalFeedMode.forYou,
+        initialDevotionalId: 'devotional-1',
+        initialDeliveryToken: 'delivery-1',
+      );
+      final completer = Completer<int?>();
+      final readerController = _TrackingDevotionalFeedReaderController(
+        DevotionalFeedReaderState(
+          readerArgs: readerArgs,
+          activeDevotionalId: first.id,
+          activeIndex: 0,
+          status: DevotionalFeedReaderStatus.success,
+          loadedDevotionals: {first.id: first, second.id: second},
+        ),
+        resolveNextIndexHandler: () => completer.future,
+      );
+
+      await tester.pumpWidget(
+        _TestApp(
+          devotional: first,
+          feedItems: [first, second],
+          readerArgs: readerArgs,
+          readerController: readerController,
+          initialDevotionalId: first.id,
+        ),
+      );
+      await tester.pumpAndSettle();
+      await _jumpReaderToBottom(tester, first.id);
+
+      final firstGesture = await tester.startGesture(
+        tester.getCenter(_scrollFinder(first.id)),
+      );
+      await firstGesture.moveBy(const Offset(0, -120));
+      await tester.pump();
+      await firstGesture.up();
+      await tester.pump();
+
+      final secondGesture = await tester.startGesture(
+        tester.getCenter(_scrollFinder(first.id)),
+      );
+      await secondGesture.moveBy(const Offset(0, -120));
+      await tester.pump();
+      await secondGesture.up();
+      await tester.pump();
+
+      expect(readerController.resolveNextIndexCalls, 1);
+
+      completer.complete(1);
+      await tester.pumpAndSettle();
+    },
+  );
 }
 
 class _TestApp extends StatelessWidget {
   const _TestApp({
     required this.devotional,
+    this.feedItems,
     this.readerArgs,
     this.readerState,
     this.commentsController,
+    this.readerController,
+    this.initialDevotionalId,
   });
 
   final Devotional devotional;
+  final List<Devotional>? feedItems;
   final DevotionalFeedReaderArgs? readerArgs;
   final DevotionalFeedReaderState? readerState;
   final DevotionalCommentsController? commentsController;
+  final DevotionalFeedReaderController? readerController;
+  final String? initialDevotionalId;
 
   @override
   Widget build(BuildContext context) {
+    final effectiveFeedItems = feedItems ?? [devotional];
+    final effectiveReaderState =
+        readerState ??
+        DevotionalFeedReaderState(
+          readerArgs: readerArgs,
+          activeDevotionalId: effectiveFeedItems.first.id,
+          activeIndex: 0,
+          status: DevotionalFeedReaderStatus.success,
+          loadedDevotionals: {
+            for (final devotional in effectiveFeedItems)
+              devotional.id: devotional,
+          },
+        );
     final commentsOverride =
         commentsController ??
         _StaticDevotionalCommentsController(
@@ -340,22 +967,15 @@ class _TestApp extends StatelessWidget {
           () => commentsOverride,
         ),
         devotionalFeedReaderControllerProvider.overrideWith(
-          () => _StaticDevotionalFeedReaderController(
-            readerState ??
-                DevotionalFeedReaderState(
-                  readerArgs: readerArgs,
-                  activeDevotionalId: 'devotional-1',
-                  activeIndex: 0,
-                  status: DevotionalFeedReaderStatus.success,
-                  loadedDevotionals: {'devotional-1': devotional},
-                ),
-          ),
+          () =>
+              readerController ??
+              _StaticDevotionalFeedReaderController(effectiveReaderState),
         ),
         forYouFeedControllerProvider.overrideWith(
           () => _StaticForYouFeedController(
             DevotionalsFeedState(
               status: DevotionalsFeedStatus.success,
-              items: [devotional],
+              items: effectiveFeedItems,
             ),
           ),
         ),
@@ -363,7 +983,7 @@ class _TestApp extends StatelessWidget {
           () => _StaticFollowingFeedController(
             DevotionalsFeedState(
               status: DevotionalsFeedStatus.success,
-              items: [devotional],
+              items: effectiveFeedItems,
             ),
           ),
         ),
@@ -375,7 +995,10 @@ class _TestApp extends StatelessWidget {
         theme: AppTheme.light(),
         darkTheme: AppTheme.dark(),
         home: DevotionalDetailScreen(
-          devotionalId: 'devotional-1',
+          devotionalId:
+              initialDevotionalId ??
+              readerArgs?.initialDevotionalId ??
+              devotional.id,
           readerArgs: readerArgs,
         ),
       ),
@@ -505,6 +1128,9 @@ class _StaticDevotionalFeedReaderController
   Future<int?> resolveNextIndex() async => null;
 
   @override
+  int? resolvePreviousIndex() => null;
+
+  @override
   Future<void> reloadActive() async {}
 
   @override
@@ -521,6 +1147,92 @@ class _StaticDevotionalFeedReaderController
 
   @override
   Future<void> reportReadComplete() async {}
+
+  @override
+  void acknowledgeReadComplete() {}
+
+  @override
+  void syncCommentCount(int count) {}
+}
+
+class _TrackingDevotionalFeedReaderController
+    extends DevotionalFeedReaderController {
+  _TrackingDevotionalFeedReaderController(
+    this._initialState, {
+    this.nextIndex,
+    this.previousIndex,
+    this.resolveNextIndexHandler,
+  });
+
+  final DevotionalFeedReaderState _initialState;
+  final int? nextIndex;
+  final int? previousIndex;
+  final Future<int?> Function()? resolveNextIndexHandler;
+  int resolveNextIndexCalls = 0;
+  int resolvePreviousIndexCalls = 0;
+  int reportReadCompleteCalls = 0;
+  final List<int> activateIndexCalls = <int>[];
+
+  @override
+  DevotionalFeedReaderState build() => _initialState;
+
+  @override
+  Future<void> configure({
+    DevotionalFeedReaderArgs? readerArgs,
+    required String devotionalId,
+    String? deliveryToken,
+    required String deviceId,
+  }) async {}
+
+  @override
+  Future<void> activateIndex(int index) async {
+    activateIndexCalls.add(index);
+    final readerArgs = state.readerArgs;
+    final devotionalIds = state.loadedDevotionals.keys.toList();
+    final activeDevotionalId = index >= 0 && index < devotionalIds.length
+        ? devotionalIds[index]
+        : state.activeDevotionalId;
+    state = state.copyWith(
+      activeIndex: index,
+      activeDevotionalId: activeDevotionalId,
+      status: DevotionalFeedReaderStatus.success,
+    );
+  }
+
+  @override
+  Future<int?> resolveNextIndex() async {
+    resolveNextIndexCalls += 1;
+    if (resolveNextIndexHandler != null) {
+      return resolveNextIndexHandler!();
+    }
+    return nextIndex;
+  }
+
+  @override
+  int? resolvePreviousIndex() {
+    resolvePreviousIndexCalls += 1;
+    return previousIndex;
+  }
+
+  @override
+  Future<void> reloadActive() async {}
+
+  @override
+  Future<void> toggleLike() async {}
+
+  @override
+  Future<void> toggleSave() async {}
+
+  @override
+  Future<void> registerShare({int? shareCount}) async {}
+
+  @override
+  Future<bool> report({required String reason, String? details}) async => true;
+
+  @override
+  Future<void> reportReadComplete() async {
+    reportReadCompleteCalls += 1;
+  }
 
   @override
   void acknowledgeReadComplete() {}
@@ -605,14 +1317,17 @@ class _StaticFollowingFeedController extends FollowingFeedController {
 }
 
 Devotional _buildDevotional({
+  String id = 'devotional-1',
+  String title = 'Un descanso para hoy',
   String? feedContextReason,
   String? recommendationReason,
   bool withCover = false,
   double coverImageFocusY = 0,
+  List<dynamic>? content,
 }) {
   return Devotional(
-    id: 'devotional-1',
-    title: 'Un descanso para hoy',
+    id: id,
+    title: title,
     status: DevotionalStatus.published,
     publicationState: DevotionalPublicationState.publishedLowReach,
     moderationStatus: DevotionalModerationStatus.clear,
@@ -661,10 +1376,64 @@ Devotional _buildDevotional({
     deliveryToken: 'delivery-1',
     recommendationReason: recommendationReason,
     feedContextReason: feedContextReason,
-    content: const [
-      {'insert': 'Primer párrafo de apertura.\nSegundo párrafo final.\n'},
-    ],
+    content:
+        content ??
+        const [
+          {'insert': 'Primer párrafo de apertura.\nSegundo párrafo final.\n'},
+        ],
   );
+}
+
+Finder _scrollFinder(String devotionalId) {
+  return find.byKey(Key('public-feed-reader-scroll-$devotionalId'));
+}
+
+double _pageTop(WidgetTester tester, String devotionalId) {
+  return tester
+      .getTopLeft(find.byKey(Key('public-feed-reader-page-$devotionalId')))
+      .dy;
+}
+
+double _pageViewHeight(WidgetTester tester) {
+  return tester
+      .getSize(find.byKey(const Key('public-feed-reader-page-view')))
+      .height;
+}
+
+Future<void> _jumpReaderToBottom(
+  WidgetTester tester,
+  String devotionalId,
+) async {
+  final controller = tester
+      .widget<SingleChildScrollView>(_scrollFinder(devotionalId))
+      .controller!;
+  controller.jumpTo(controller.position.maxScrollExtent);
+  await tester.pump();
+}
+
+Future<void> _jumpReaderToProgress(
+  WidgetTester tester,
+  String devotionalId,
+  double progress,
+) async {
+  final controller = tester
+      .widget<SingleChildScrollView>(_scrollFinder(devotionalId))
+      .controller!;
+  controller.jumpTo(controller.position.maxScrollExtent * progress);
+  await tester.pump();
+}
+
+List<dynamic> _buildLongContent(String prefix) {
+  final buffer = StringBuffer();
+  for (var index = 0; index < 48; index += 1) {
+    buffer.writeln(
+      '$prefix ${index + 1}. Dios sigue obrando en medio de cada detalle de nuestra vida diaria para sostenernos y guiarnos.',
+    );
+    buffer.writeln();
+  }
+  return [
+    {'insert': buffer.toString()},
+  ];
 }
 
 DevotionalComment _buildComment({required String id, required String content}) {

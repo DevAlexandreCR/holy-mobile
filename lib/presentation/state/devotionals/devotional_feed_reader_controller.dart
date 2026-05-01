@@ -107,6 +107,25 @@ class DevotionalFeedReaderController
     return null;
   }
 
+  int? resolvePreviousIndex() {
+    final readerArgs = state.readerArgs;
+    if (readerArgs == null) {
+      return null;
+    }
+
+    final previousIndex = state.activeIndex - 1;
+    if (previousIndex < 0) {
+      return null;
+    }
+
+    final feedItems = _feedItems(readerArgs.feedMode);
+    if (previousIndex >= feedItems.length) {
+      return null;
+    }
+
+    return previousIndex;
+  }
+
   Future<void> reloadActive() async {
     final devotionalId = state.activeDevotionalId;
     if (devotionalId == null) {
