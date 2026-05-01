@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:holyverso/core/l10n/app_localizations.dart';
 import 'package:holyverso/core/theme/app_colors.dart';
+import 'package:holyverso/core/theme/app_design_tokens.dart';
 import 'package:holyverso/core/theme/app_text_styles.dart';
 import 'package:holyverso/core/services/version_detector_service.dart';
 import 'package:holyverso/domain/models/release_note.dart';
@@ -122,6 +123,13 @@ class _BottomNavigationShellState extends ConsumerState<BottomNavigationShell> {
     return maxLabelWidth <= perItemWidth - horizontalPadding;
   }
 
+  double _compactBottomInset(BuildContext context) {
+    final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
+    if (bottomInset == 0) return 0;
+
+    return (bottomInset * 0.25).clamp(AppSpacing.xs, AppSpacing.sm).toDouble();
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
@@ -136,47 +144,56 @@ class _BottomNavigationShellState extends ConsumerState<BottomNavigationShell> {
       (item) => item.branchIndex == currentBranchIndex,
     );
     final showLabels = _shouldShowLabels(context, items);
+    final compactBottomInset = _compactBottomInset(context);
 
     return Scaffold(
       backgroundColor: AppColors.midnightFaith,
       body: widget.navigationShell,
-      bottomNavigationBar: Theme(
-        data: Theme.of(context).copyWith(
-          splashColor: AppColors.holyGold.withValues(alpha: 0.12),
-          highlightColor: Colors.transparent,
-          hoverColor: Colors.transparent,
-          splashFactory:
-              Theme.of(context).platform == TargetPlatform.iOS ||
-                  Theme.of(context).platform == TargetPlatform.macOS
-              ? InkSparkle.splashFactory
-              : Theme.of(context).splashFactory,
-        ),
-        child: BottomNavigationBar(
-          currentIndex: currentIndex < 0 ? 0 : currentIndex,
-          onTap: (index) => _onTap(items[index].branchIndex),
-          type: BottomNavigationBarType.fixed,
-          backgroundColor: AppColors.midnightFaith,
-          selectedItemColor: AppColors.holyGold,
-          unselectedItemColor: AppColors.softMist.withValues(alpha: 0.65),
-          selectedLabelStyle: AppTextStyles.labelSmall.copyWith(
-            color: AppColors.holyGold,
-            fontWeight: FontWeight.w600,
+      bottomNavigationBar: Container(
+        color: AppColors.midnightFaith,
+        padding: EdgeInsets.only(top: compactBottomInset),
+        child: Theme(
+          data: Theme.of(context).copyWith(
+            splashColor: AppColors.holyGold.withValues(alpha: 0.12),
+            highlightColor: Colors.transparent,
+            hoverColor: Colors.transparent,
+            splashFactory:
+                Theme.of(context).platform == TargetPlatform.iOS ||
+                    Theme.of(context).platform == TargetPlatform.macOS
+                ? InkSparkle.splashFactory
+                : Theme.of(context).splashFactory,
           ),
-          unselectedLabelStyle: AppTextStyles.labelSmall.copyWith(
-            color: AppColors.softMist.withValues(alpha: 0.7),
-            fontWeight: FontWeight.w500,
+          child: MediaQuery.removePadding(
+            context: context,
+            removeBottom: true,
+            child: BottomNavigationBar(
+              currentIndex: currentIndex < 0 ? 0 : currentIndex,
+              onTap: (index) => _onTap(items[index].branchIndex),
+              type: BottomNavigationBarType.fixed,
+              backgroundColor: AppColors.midnightFaith,
+              selectedItemColor: AppColors.holyGold,
+              unselectedItemColor: AppColors.softMist.withValues(alpha: 0.65),
+              selectedLabelStyle: AppTextStyles.labelSmall.copyWith(
+                color: AppColors.holyGold,
+                fontWeight: FontWeight.w600,
+              ),
+              unselectedLabelStyle: AppTextStyles.labelSmall.copyWith(
+                color: AppColors.softMist.withValues(alpha: 0.7),
+                fontWeight: FontWeight.w500,
+              ),
+              showSelectedLabels: showLabels,
+              showUnselectedLabels: showLabels,
+              items: items
+                  .map(
+                    (item) => BottomNavigationBarItem(
+                      icon: Icon(item.icon),
+                      activeIcon: _ActiveNavIcon(icon: item.icon),
+                      label: item.label,
+                    ),
+                  )
+                  .toList(),
+            ),
           ),
-          showSelectedLabels: showLabels,
-          showUnselectedLabels: showLabels,
-          items: items
-              .map(
-                (item) => BottomNavigationBarItem(
-                  icon: Icon(item.icon),
-                  activeIcon: _ActiveNavIcon(icon: item.icon),
-                  label: item.label,
-                ),
-              )
-              .toList(),
         ),
       ),
     );
