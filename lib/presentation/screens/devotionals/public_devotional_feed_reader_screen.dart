@@ -28,6 +28,7 @@ import 'package:holyverso/presentation/state/devotionals/devotional_feed_reader_
 import 'package:holyverso/presentation/state/devotionals/devotionals_feed_controller.dart';
 import 'package:holyverso/presentation/widgets/devotionals/devotional_content_view.dart';
 import 'package:holyverso/presentation/widgets/devotionals/devotional_feed_context_copy.dart';
+import 'package:holyverso/presentation/widgets/devotionals/devotional_reading_scale_gesture.dart';
 import 'package:holyverso/presentation/widgets/devotionals/devotional_reference_preview.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -1102,9 +1103,13 @@ class _PublicReaderPage extends StatelessWidget {
                             ),
                           )
                         else
-                          DevotionalContentView(
-                            content: devotional.content!,
-                            emphasizeLeadingParagraph: true,
+                          DevotionalReadingScaleGesture(
+                            builder: (context, textScale) =>
+                                DevotionalContentView(
+                                  content: devotional.content!,
+                                  emphasizeLeadingParagraph: true,
+                                  textScale: textScale,
+                                ),
                           ),
                         const SizedBox(height: AppSpacing.xl),
                         Text(

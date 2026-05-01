@@ -10,10 +10,12 @@ class DevotionalContentView extends StatelessWidget {
     super.key,
     required this.content,
     this.emphasizeLeadingParagraph = false,
+    this.textScale = 1.0,
   });
 
   final List<dynamic> content;
   final bool emphasizeLeadingParagraph;
+  final double textScale;
 
   @override
   Widget build(BuildContext context) {
@@ -45,8 +47,9 @@ class DevotionalContentView extends StatelessWidget {
   }
 
   DefaultStyles _buildReadingStyles({required bool emphasizeParagraph}) {
+    final effectiveTextScale = textScale;
     final paragraphStyle = AppTextStyles.bodyLarge.copyWith(
-      fontSize: 17,
+      fontSize: 17 * effectiveTextScale,
       height: 1.72,
       fontWeight: emphasizeParagraph ? FontWeight.w500 : FontWeight.w400,
       color: AppColors.pureWhite.withValues(
@@ -54,7 +57,7 @@ class DevotionalContentView extends StatelessWidget {
       ),
     );
     final listStyle = AppTextStyles.bodyLarge.copyWith(
-      fontSize: 17,
+      fontSize: 17 * effectiveTextScale,
       height: 1.72,
       color: AppColors.pureWhite.withValues(alpha: 0.9),
     );
@@ -68,6 +71,7 @@ class DevotionalContentView extends StatelessWidget {
       ),
       h1: DefaultTextBlockStyle(
         AppTextStyles.headline2.copyWith(
+          fontSize: 24 * effectiveTextScale,
           color: AppColors.pureWhite,
           fontWeight: FontWeight.w700,
         ),
@@ -77,6 +81,7 @@ class DevotionalContentView extends StatelessWidget {
       ),
       h2: DefaultTextBlockStyle(
         AppTextStyles.headline3.copyWith(
+          fontSize: 22 * effectiveTextScale,
           color: AppColors.pureWhite,
           fontWeight: FontWeight.w700,
         ),
@@ -93,7 +98,7 @@ class DevotionalContentView extends StatelessWidget {
       ),
       quote: DefaultTextBlockStyle(
         AppTextStyles.bodyLarge.copyWith(
-          fontSize: 17,
+          fontSize: 17 * effectiveTextScale,
           color: AppColors.softMist.withValues(alpha: 0.92),
           height: 1.72,
           fontStyle: FontStyle.italic,

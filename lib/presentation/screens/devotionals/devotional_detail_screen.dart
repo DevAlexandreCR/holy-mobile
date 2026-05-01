@@ -28,6 +28,7 @@ import 'package:holyverso/presentation/state/devotionals/devotionals_list_contro
 import 'package:holyverso/presentation/state/roles/role_provider.dart';
 import 'package:holyverso/presentation/widgets/devotionals/devotional_content_view.dart';
 import 'package:holyverso/presentation/widgets/devotionals/devotional_feed_context_copy.dart';
+import 'package:holyverso/presentation/widgets/devotionals/devotional_reading_scale_gesture.dart';
 import 'package:holyverso/presentation/widgets/devotionals/devotional_reference_preview.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -1105,9 +1106,12 @@ class _DetailContent extends StatelessWidget {
                     ),
                     const SizedBox(height: AppSpacing.md),
                   ],
-                  DevotionalContentView(
-                    content: devotional.content!,
-                    emphasizeLeadingParagraph: true,
+                  DevotionalReadingScaleGesture(
+                    builder: (context, textScale) => DevotionalContentView(
+                      content: devotional.content!,
+                      emphasizeLeadingParagraph: true,
+                      textScale: textScale,
+                    ),
                   ),
                   const SizedBox(height: AppSpacing.lg),
                   Text(

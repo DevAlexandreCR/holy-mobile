@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -88,6 +89,37 @@ void main() {
     expect(contentY, lessThan(reflectionY));
     expect(reflectionY, lessThan(saveY));
     expect(saveY, lessThan(commentsY));
+  });
+
+  testWidgets('legacy detail scales devotional text with a pinch gesture', (
+    tester,
+  ) async {
+    await tester.pumpWidget(_TestApp(devotional: _buildDevotional()));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const Key('devotional-reading-scale-gesture')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('devotional-reading-scale-percentage')),
+      findsNothing,
+    );
+
+    await _pinchDevotionalText(tester);
+
+    expect(
+      find.byKey(const Key('devotional-reading-scale-percentage')),
+      findsOneWidget,
+    );
+    expect(find.text('150%'), findsOneWidget);
+
+    await tester.pump(const Duration(milliseconds: 700));
+
+    expect(
+      find.byKey(const Key('devotional-reading-scale-percentage')),
+      findsNothing,
+    );
   });
 
   testWidgets('moves report action to overflow menu', (tester) async {
@@ -257,6 +289,56 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('Comentarios'), findsOneWidget);
+  });
+
+  testWidgets('public reader scales devotional text with a pinch gesture', (
+    tester,
+  ) async {
+    final devotional = _buildDevotional();
+    final readerArgs = const DevotionalFeedReaderArgs(
+      feedMode: DevotionalFeedMode.forYou,
+      initialDevotionalId: 'devotional-1',
+      initialDeliveryToken: 'delivery-1',
+    );
+
+    await tester.pumpWidget(
+      _TestApp(
+        devotional: devotional,
+        readerArgs: readerArgs,
+        readerState: DevotionalFeedReaderState(
+          readerArgs: readerArgs,
+          activeDevotionalId: 'devotional-1',
+          activeIndex: 0,
+          status: DevotionalFeedReaderStatus.success,
+          loadedDevotionals: {'devotional-1': devotional},
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const Key('devotional-reading-scale-gesture')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('devotional-reading-scale-percentage')),
+      findsNothing,
+    );
+
+    await _pinchDevotionalText(tester);
+
+    expect(
+      find.byKey(const Key('devotional-reading-scale-percentage')),
+      findsOneWidget,
+    );
+    expect(find.text('150%'), findsOneWidget);
+
+    await tester.pump(const Duration(milliseconds: 700));
+
+    expect(
+      find.byKey(const Key('devotional-reading-scale-percentage')),
+      findsNothing,
+    );
   });
 
   testWidgets('public reader submits comments through comments controller', (
@@ -1213,7 +1295,6 @@ class _TrackingDevotionalFeedReaderController
   @override
   Future<void> activateIndex(int index) async {
     activateIndexCalls.add(index);
-    final readerArgs = state.readerArgs;
     final devotionalIds = state.loadedDevotionals.keys.toList();
     final activeDevotionalId = index >= 0 && index < devotionalIds.length
         ? devotionalIds[index]
@@ -1451,6 +1532,22 @@ Devotional _buildDevotional({
           {'insert': 'Primer párrafo de apertura.\nSegundo párrafo final.\n'},
         ],
   );
+}
+
+Future<void> _pinchDevotionalText(WidgetTester tester) async {
+  final target = find.byKey(const Key('devotional-reading-scale-gesture'));
+  final center = tester.getCenter(target);
+  final gesture = await tester.createGesture(
+    pointer: 11,
+    kind: PointerDeviceKind.trackpad,
+  );
+
+  await gesture.panZoomStart(center);
+  await tester.pump();
+  await gesture.panZoomUpdate(center, scale: 1.6);
+  await tester.pump(const Duration(milliseconds: 16));
+  await gesture.panZoomEnd();
+  await tester.pump();
 }
 
 Finder _scrollFinder(String devotionalId) {
