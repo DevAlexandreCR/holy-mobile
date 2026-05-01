@@ -314,6 +314,16 @@ class _PublicDevotionalFeedReaderScreenState
       return;
     }
 
+    final loadedItems = ref
+        .read(devotionalFeedProviderForMode(widget.readerArgs.feedMode))
+        .items;
+    final immediateNextIndex = activeIndex + 1;
+    if (immediateNextIndex < loadedItems.length) {
+      _edgeDirection = direction;
+      _edgeTargetIndex = immediateNextIndex;
+      return;
+    }
+
     if (_isResolvingEdgeTarget) {
       return;
     }
