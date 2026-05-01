@@ -411,7 +411,7 @@ void main() {
     await gesture.up();
     await tester.pumpAndSettle();
 
-    expect(readerController.resolveNextIndexCalls, 1);
+    expect(readerController.resolveNextIndexCalls, 0);
     expect(readerController.activateIndexCalls, [1]);
     expect(readerController.state.activeDevotionalId, second.id);
   });
@@ -456,6 +456,7 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
+      readerController.activateIndexCalls.clear();
 
       final gesture = await tester.startGesture(
         tester.getCenter(_scrollFinder(second.id)),
@@ -516,6 +517,7 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
+      readerController.activateIndexCalls.clear();
 
       final gesture = await tester.startGesture(
         tester.getCenter(_scrollFinder(second.id)),
@@ -622,11 +624,12 @@ void main() {
         readerController: readerController,
         initialDevotionalId: second.id,
       ),
-    );
-    await tester.pumpAndSettle();
+      );
+      await tester.pumpAndSettle();
+      readerController.activateIndexCalls.clear();
 
-    final gesture = await tester.startGesture(
-      tester.getCenter(_scrollFinder(second.id)),
+      final gesture = await tester.startGesture(
+        tester.getCenter(_scrollFinder(second.id)),
     );
     await gesture.moveBy(const Offset(0, 80));
     await tester.pump();
@@ -784,8 +787,10 @@ void main() {
       await gesture.moveBy(const Offset(0, -120));
       await tester.pump();
 
-      final viewportHeight = _pageViewHeight(tester);
-      expect(_pageTop(tester, second.id), greaterThanOrEqualTo(viewportHeight));
+      expect(
+        find.byKey(Key('public-feed-reader-page-${second.id}')),
+        findsNothing,
+      );
       expect(readerController.resolveNextIndexCalls, 1);
 
       completer.complete(1);
@@ -830,12 +835,12 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    await _jumpReaderToProgress(tester, devotional.id, 0.72);
+    await _jumpReaderToProgress(tester, devotional.id, 0.74);
 
     final gesture = await tester.startGesture(
       tester.getCenter(_scrollFinder(devotional.id)),
     );
-    await gesture.moveBy(const Offset(0, -140));
+    await gesture.moveBy(const Offset(0, -260));
     await tester.pump();
     await gesture.up();
     await tester.pumpAndSettle();
