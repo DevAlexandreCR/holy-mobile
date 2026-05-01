@@ -127,7 +127,10 @@ class _BottomNavigationShellState extends ConsumerState<BottomNavigationShell> {
     final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
     if (bottomInset == 0) return 0;
 
-    return (bottomInset * 0.25).clamp(AppSpacing.xs, AppSpacing.sm).toDouble();
+    final computedInset = (bottomInset * 0.25)
+        .clamp(AppSpacing.xs, AppSpacing.sm)
+        .toDouble();
+    return computedInset / 2;
   }
 
   @override

@@ -93,14 +93,21 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    for (final route in ['/saved', '/settings', '/devotionals', '/notifications']) {
+    for (final route in [
+      '/saved',
+      '/settings',
+      '/devotionals',
+      '/notifications',
+    ]) {
       container.read(appRouterProvider).go(route);
       await tester.pumpAndSettle();
       expect(find.byType(LoginScreen), findsOneWidget);
     }
   });
 
-  testWidgets('authenticated users can open notification inbox', (tester) async {
+  testWidgets('authenticated users can open notification inbox', (
+    tester,
+  ) async {
     final container = _buildContainer(
       const AuthState(
         user: _user,
@@ -254,6 +261,34 @@ void main() {
       expect(find.byIcon(Icons.home_rounded), findsNothing);
     },
   );
+
+  testWidgets('bottom navigation halves top safe-area padding', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.viewPadding = const FakeViewPadding(bottom: 34);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetViewPadding);
+
+    final container = _buildContainer(
+      const AuthState(
+        user: _user,
+        sessionStatus: AuthSessionStatus.authenticated,
+      ),
+    );
+    addTearDown(container.dispose);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(container: container, child: const _TestApp()),
+    );
+    await tester.pumpAndSettle();
+
+    final navigationScaffold = tester
+        .widgetList<Scaffold>(find.byType(Scaffold))
+        .firstWhere((scaffold) => scaffold.bottomNavigationBar is Container);
+    final bottomNavigationBar =
+        navigationScaffold.bottomNavigationBar! as Container;
+
+    expect(bottomNavigationBar.padding, const EdgeInsets.only(top: 4));
+  });
 
   testWidgets('manager can access users route', (tester) async {
     final container = _buildContainer(
@@ -531,11 +566,7 @@ class _StaticNotificationInboxRepository extends NotificationInboxRepository {
     int limit = 20,
     NotificationInboxFilter filter = NotificationInboxFilter.all,
   }) async {
-    return const CursorPagedResult(
-      items: [],
-      nextCursor: null,
-      hasMore: false,
-    );
+    return const CursorPagedResult(items: [], nextCursor: null, hasMore: false);
   }
 
   @override
