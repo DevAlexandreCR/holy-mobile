@@ -1,6 +1,15 @@
 {
   "releases": [
     {
+      "version": "1.2.3",
+      "releaseDate": "2026-05-05",
+      "changes": [
+        "Ahora puedes escuchar devocionales con audio generado por IA, para una experiencia más inmersiva.",
+        "Se corrigieron errores menores en la interfaz de usuario."
+      ],
+      "isImportant": true
+    },
+    {
       "version": "1.2.2",
       "releaseDate": "2026-05-01",
       "changes": [
