@@ -16,6 +16,7 @@ class DevotionalListeningState {
     this.status = DevotionalListeningStatus.idle,
     this.configLoaded = false,
     this.enabled = false,
+    this.isPlayerVisible = false,
     this.unavailableMessage,
     this.activeDevotionalId,
     this.completedDevotionalId,
@@ -28,6 +29,7 @@ class DevotionalListeningState {
   final DevotionalListeningStatus status;
   final bool configLoaded;
   final bool enabled;
+  final bool isPlayerVisible;
   final String? unavailableMessage;
   final String? activeDevotionalId;
   final String? completedDevotionalId;
@@ -37,6 +39,12 @@ class DevotionalListeningState {
   final Duration duration;
 
   bool get hasProgress => duration > Duration.zero;
+
+  bool get hasActiveSession =>
+      status == DevotionalListeningStatus.loading ||
+      status == DevotionalListeningStatus.buffering ||
+      status == DevotionalListeningStatus.playing ||
+      status == DevotionalListeningStatus.paused;
 
   double get progressValue {
     if (!hasProgress) {
@@ -55,6 +63,7 @@ class DevotionalListeningState {
     DevotionalListeningStatus? status,
     bool? configLoaded,
     bool? enabled,
+    bool? isPlayerVisible,
     Object? unavailableMessage = _unset,
     Object? activeDevotionalId = _unset,
     Object? completedDevotionalId = _unset,
@@ -68,6 +77,7 @@ class DevotionalListeningState {
       status: status ?? this.status,
       configLoaded: configLoaded ?? this.configLoaded,
       enabled: enabled ?? this.enabled,
+      isPlayerVisible: isPlayerVisible ?? this.isPlayerVisible,
       unavailableMessage: identical(unavailableMessage, _unset)
           ? this.unavailableMessage
           : unavailableMessage as String?,

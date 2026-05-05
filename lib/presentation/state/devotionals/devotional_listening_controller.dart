@@ -43,7 +43,18 @@ class DevotionalListeningController extends Notifier<DevotionalListeningState> {
   }
 
   Future<void> togglePlayback(Devotional devotional) async {
+    if (state.activeDevotionalId == devotional.id &&
+        !state.isPlayerVisible &&
+        state.hasActiveSession) {
+      showPlayer();
+      return;
+    }
+
     if (state.activeDevotionalId == devotional.id) {
+      if (state.status == DevotionalListeningStatus.loading) {
+        return;
+      }
+
       if (state.status == DevotionalListeningStatus.playing ||
           state.status == DevotionalListeningStatus.buffering) {
         await pause();
@@ -59,13 +70,18 @@ class DevotionalListeningController extends Notifier<DevotionalListeningState> {
     await playDevotional(devotional.id);
   }
 
-  Future<void> playDevotional(String devotionalId) async {
+  Future<void> playDevotional(
+    String devotionalId, {
+    bool showPlayer = true,
+  }) async {
     await _cancelPolling();
+    await _player.stop();
 
     state = state.copyWith(
       activeDevotionalId: devotionalId,
       completedDevotionalId: null,
       status: DevotionalListeningStatus.loading,
+      isPlayerVisible: showPlayer,
       retryAfterMs: null,
       position: Duration.zero,
       duration: Duration.zero,
@@ -76,6 +92,7 @@ class DevotionalListeningController extends Notifier<DevotionalListeningState> {
     if (config == null) {
       state = state.copyWith(
         status: DevotionalListeningStatus.error,
+        isPlayerVisible: false,
         errorMessage: _l10n.devotionalListeningError,
       );
       return;
@@ -85,6 +102,7 @@ class DevotionalListeningController extends Notifier<DevotionalListeningState> {
       state = state.copyWith(
         status: DevotionalListeningStatus.disabled,
         enabled: false,
+        isPlayerVisible: false,
         unavailableMessage: config.unavailableMessage,
       );
       return;
@@ -125,6 +143,7 @@ class DevotionalListeningController extends Notifier<DevotionalListeningState> {
           status: DevotionalListeningStatus.disabled,
           configLoaded: true,
           enabled: false,
+          isPlayerVisible: false,
           unavailableMessage: disabledMessage,
           errorMessage: null,
         );
@@ -133,6 +152,7 @@ class DevotionalListeningController extends Notifier<DevotionalListeningState> {
 
       state = state.copyWith(
         status: DevotionalListeningStatus.error,
+        isPlayerVisible: false,
         errorMessage: _resolveErrorMessage(error),
         retryAfterMs: null,
       );
@@ -157,12 +177,29 @@ class DevotionalListeningController extends Notifier<DevotionalListeningState> {
     state = state.copyWith(status: DevotionalListeningStatus.playing);
   }
 
+  void showPlayer() {
+    if (state.activeDevotionalId == null) {
+      return;
+    }
+
+    state = state.copyWith(isPlayerVisible: true);
+  }
+
+  void hidePlayer() {
+    if (state.activeDevotionalId == null) {
+      return;
+    }
+
+    state = state.copyWith(isPlayerVisible: false);
+  }
+
   Future<void> stop() async {
     await _cancelPolling();
     await _player.stop();
     state = DevotionalListeningState(
       configLoaded: state.configLoaded,
       enabled: state.enabled,
+      isPlayerVisible: false,
       unavailableMessage: state.unavailableMessage,
     );
   }
@@ -289,7 +326,6 @@ class DevotionalListeningController extends Notifier<DevotionalListeningState> {
         .map((segment) => AudioSource.uri(Uri.parse(segment.url)))
         .toList();
 
-    await _player.stop();
     await _player.setAudioSources(children);
     if (state.activeDevotionalId != devotionalId) {
       return;

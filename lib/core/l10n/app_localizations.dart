@@ -350,6 +350,7 @@ class AppLocalizations {
       _string('devotionalListeningTooLong');
   String get devotionalListeningAiDisclosure =>
       _string('devotionalListeningAiDisclosure');
+  String get devotionalListeningHide => _string('devotionalListeningHide');
   String get devotionalsFeedEmptyTitle => _string('devotionalsFeedEmptyTitle');
   String get devotionalsFeedEmptySubtitle =>
       _string('devotionalsFeedEmptySubtitle');
@@ -729,6 +730,7 @@ class AppLocalizations {
       'devotionalListeningTooLong':
           'Este devocional todavía es muy largo para escucharlo.',
       'devotionalListeningAiDisclosure': 'Narración generada con IA',
+      'devotionalListeningHide': 'Ocultar reproductor',
       'devotionalsFeedEmptyTitle': 'Todavía no hay devocionales en el feed',
       'devotionalsFeedEmptySubtitle':
           'Cuando la comunidad publique nuevos devocionales, aparecerán aquí.',
@@ -1085,6 +1087,7 @@ class AppLocalizations {
       'devotionalListeningTooLong':
           'This devotional is still too long to listen to.',
       'devotionalListeningAiDisclosure': 'AI-generated narration',
+      'devotionalListeningHide': 'Hide player',
       'devotionalsFeedEmptyTitle': 'There are no devotionals in the feed yet',
       'devotionalsFeedEmptySubtitle':
           'When the community publishes new devotionals, they will appear here.',

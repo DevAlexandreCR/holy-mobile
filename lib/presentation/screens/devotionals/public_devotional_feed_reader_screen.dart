@@ -359,15 +359,23 @@ class _PublicDevotionalFeedReaderScreenState
         .read(devotionalCommentsControllerProvider.notifier)
         .load(activeDevotionalId);
     if (_pendingAutoPlayDevotionalId == activeDevotionalId) {
+      final keepPlayerVisible = ref
+          .read(devotionalListeningControllerProvider)
+          .isPlayerVisible;
       _pendingAutoPlayDevotionalId = null;
       await ref
           .read(devotionalListeningControllerProvider.notifier)
-          .playDevotional(activeDevotionalId);
+          .playDevotional(activeDevotionalId, showPlayer: keepPlayerVisible);
       return;
     }
     await ref
         .read(devotionalListeningControllerProvider.notifier)
         .stopIfDifferentDevotional(activeDevotionalId);
+  }
+
+  Future<void> _handleListenTrigger(Devotional devotional) async {
+    final controller = ref.read(devotionalListeningControllerProvider.notifier);
+    await controller.togglePlayback(devotional);
   }
 
   @override
@@ -417,6 +425,7 @@ class _PublicDevotionalFeedReaderScreenState
           .acknowledgeCompletion();
 
       if (nextIndex == null) {
+        await ref.read(devotionalListeningControllerProvider.notifier).stop();
         return;
       }
 
@@ -852,6 +861,33 @@ class _PublicDevotionalFeedReaderScreenState
       },
     );
 
+    ref.listen<DevotionalListeningState>(
+      devotionalListeningControllerProvider,
+      (previous, next) {
+        if (!mounted) {
+          return;
+        }
+
+        final becameDisabled =
+            previous?.status != DevotionalListeningStatus.disabled &&
+            next.status == DevotionalListeningStatus.disabled;
+        final becameError =
+            previous?.status != DevotionalListeningStatus.error &&
+            next.status == DevotionalListeningStatus.error;
+        if (!becameDisabled && !becameError) {
+          return;
+        }
+
+        final message = becameDisabled
+            ? (next.unavailableMessage ??
+                  context.l10n.devotionalListeningComingSoon)
+            : (next.errorMessage ?? context.l10n.devotionalListeningError);
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(SnackBar(content: Text(message)));
+      },
+    );
+
     if (feedState.items.isEmpty &&
         readerState.status == DevotionalFeedReaderStatus.loading) {
       return const Scaffold(
@@ -928,12 +964,12 @@ class _PublicDevotionalFeedReaderScreenState
                 onToggleFollow: () => _toggleFollow(fullDevotional),
                 onOpenReference: _openReferencePreview,
                 listeningState: pageListeningState,
-                onToggleListening: () => ref
+                onListenTrigger: () => _handleListenTrigger(fullDevotional),
+                onPlayerPrimaryAction: () =>
+                    _handleListenTrigger(fullDevotional),
+                onHideListeningPlayer: () => ref
                     .read(devotionalListeningControllerProvider.notifier)
-                    .togglePlayback(fullDevotional),
-                onRetryListening: () => ref
-                    .read(devotionalListeningControllerProvider.notifier)
-                    .playDevotional(fullDevotional.id),
+                    .hidePlayer(),
                 isTogglingLike:
                     readerState.activeDevotionalId == feedItem.id &&
                     readerState.isTogglingLike,
@@ -977,8 +1013,9 @@ class _PublicReaderPage extends StatelessWidget {
     required this.onToggleFollow,
     required this.onOpenReference,
     required this.listeningState,
-    required this.onToggleListening,
-    required this.onRetryListening,
+    required this.onListenTrigger,
+    required this.onPlayerPrimaryAction,
+    required this.onHideListeningPlayer,
     required this.isLoading,
     required this.isTogglingLike,
     required this.isTogglingSave,
@@ -1001,8 +1038,9 @@ class _PublicReaderPage extends StatelessWidget {
   final Future<void> Function(DevotionalVerseReference reference)
   onOpenReference;
   final DevotionalListeningState listeningState;
-  final VoidCallback onToggleListening;
-  final VoidCallback onRetryListening;
+  final VoidCallback onListenTrigger;
+  final VoidCallback onPlayerPrimaryAction;
+  final VoidCallback onHideListeningPlayer;
   final bool isLoading;
   final bool isTogglingLike;
   final bool isTogglingSave;
@@ -1020,6 +1058,7 @@ class _PublicReaderPage extends StatelessWidget {
     final hasCoverImage =
         devotional.coverImageUrl != null &&
         devotional.coverImageUrl!.isNotEmpty;
+    final topInset = MediaQuery.paddingOf(context).top;
     final rail = _PublicReaderActionRail(
       devotional: devotional,
       commentCount: commentCount,
@@ -1187,15 +1226,13 @@ class _PublicReaderPage extends StatelessWidget {
                             ],
                           ),
                         ),
-                        if (previewReferences.isNotEmpty) ...[
-                          const SizedBox(height: AppSpacing.md),
-                          DevotionalReferenceLinks(
-                            references: previewReferences,
-                            onTap: (reference) {
-                              onOpenReference(reference);
-                            },
-                          ),
-                        ],
+                        const SizedBox(height: AppSpacing.md),
+                        _ReferenceListenRow(
+                          references: previewReferences,
+                          listeningState: listeningState,
+                          onOpenReference: onOpenReference,
+                          onTriggerTap: onListenTrigger,
+                        ),
                         if (continuityLabel != null) ...[
                           const SizedBox(height: AppSpacing.md),
                           Text(
@@ -1206,12 +1243,6 @@ class _PublicReaderPage extends StatelessWidget {
                             ),
                           ),
                         ],
-                        const SizedBox(height: AppSpacing.lg),
-                        _DevotionalListenPanel(
-                          state: listeningState,
-                          onPrimaryAction: onToggleListening,
-                          onRetry: onRetryListening,
-                        ),
                         const SizedBox(height: AppSpacing.lg),
                         if (isLoading)
                           const Center(
@@ -1257,6 +1288,19 @@ class _PublicReaderPage extends StatelessWidget {
             ),
           ),
         ),
+        if (listeningState.isPlayerVisible && listeningState.hasActiveSession)
+          Positioned(
+            top: topInset + kToolbarHeight + AppSpacing.sm,
+            left: AppSpacing.lg,
+            right: AppSpacing.lg + 72,
+            child: _FloatingDevotionalPlayer(
+              devotional: devotional,
+              references: previewReferences,
+              state: listeningState,
+              onPrimaryAction: onPlayerPrimaryAction,
+              onHide: onHideListeningPlayer,
+            ),
+          ),
         PositionedDirectional(
           end: AppSpacing.sm,
           bottom: AppSpacing.lg,
@@ -1276,160 +1320,280 @@ class _PublicReaderPage extends StatelessWidget {
   }
 }
 
-class _DevotionalListenPanel extends StatelessWidget {
-  const _DevotionalListenPanel({
-    required this.state,
-    required this.onPrimaryAction,
-    required this.onRetry,
+class _ReferenceListenRow extends StatelessWidget {
+  const _ReferenceListenRow({
+    required this.references,
+    required this.listeningState,
+    required this.onOpenReference,
+    required this.onTriggerTap,
   });
 
+  final List<DevotionalVerseReference> references;
+  final DevotionalListeningState listeningState;
+  final Future<void> Function(DevotionalVerseReference reference)
+  onOpenReference;
+  final VoidCallback onTriggerTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: references.isEmpty
+              ? const SizedBox.shrink()
+              : DevotionalReferenceLinks(
+                  references: references,
+                  onTap: (reference) {
+                    onOpenReference(reference);
+                  },
+                ),
+        ),
+        const SizedBox(width: AppSpacing.sm),
+        _ReferenceListenTrigger(state: listeningState, onTap: onTriggerTap),
+      ],
+    );
+  }
+}
+
+class _ReferenceListenTrigger extends StatelessWidget {
+  const _ReferenceListenTrigger({required this.state, required this.onTap});
+
+  final DevotionalListeningState state;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final isPlaying = state.status == DevotionalListeningStatus.playing;
+    final isBuffering = state.status == DevotionalListeningStatus.buffering;
+    final isLoading = state.status == DevotionalListeningStatus.loading;
+    final isPaused = state.status == DevotionalListeningStatus.paused;
+    final isHiddenActive = !state.isPlayerVisible && state.hasActiveSession;
+
+    final icon = isPlaying && !isHiddenActive
+        ? Icons.pause_rounded
+        : isHiddenActive
+        ? Icons.graphic_eq_rounded
+        : isPaused
+        ? Icons.play_arrow_rounded
+        : Icons.play_arrow_rounded;
+    final backgroundColor =
+        isPlaying || isPaused || isLoading || isBuffering || isHiddenActive
+        ? AppColors.holyGold
+        : AppColors.pureWhite.withValues(alpha: 0.1);
+    final foregroundColor =
+        isPlaying || isPaused || isLoading || isBuffering || isHiddenActive
+        ? AppColors.midnightFaithDark
+        : AppColors.holyGold;
+
+    return Material(
+      color: backgroundColor,
+      borderRadius: BorderRadius.circular(AppBorderRadius.full),
+      elevation: isHiddenActive ? 4 : 0,
+      shadowColor: Colors.black.withValues(alpha: 0.22),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppBorderRadius.full),
+        child: SizedBox(
+          width: 36,
+          height: 36,
+          child: Center(
+            child: isLoading || isBuffering
+                ? SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: foregroundColor,
+                    ),
+                  )
+                : Icon(icon, size: 18, color: foregroundColor),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _FloatingDevotionalPlayer extends StatelessWidget {
+  const _FloatingDevotionalPlayer({
+    required this.devotional,
+    required this.references,
+    required this.state,
+    required this.onPrimaryAction,
+    required this.onHide,
+  });
+
+  final Devotional devotional;
+  final List<DevotionalVerseReference> references;
   final DevotionalListeningState state;
   final VoidCallback onPrimaryAction;
-  final VoidCallback onRetry;
+  final VoidCallback onHide;
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final isPaused = state.status == DevotionalListeningStatus.paused;
     final isPlaying = state.status == DevotionalListeningStatus.playing;
     final isBuffering = state.status == DevotionalListeningStatus.buffering;
     final isLoading = state.status == DevotionalListeningStatus.loading;
-    final isDisabled = state.status == DevotionalListeningStatus.disabled;
-    final isError = state.status == DevotionalListeningStatus.error;
+    final primaryReference = references.isNotEmpty
+        ? references.first.referenceLabel
+        : null;
 
-    final buttonLabel = isPlaying || isBuffering
-        ? l10n.devotionalListeningPause
-        : isError
-        ? l10n.devotionalListeningRetry
-        : isPaused
-        ? l10n.devotionalListeningPlay
-        : l10n.devotionalListen;
-    final buttonIcon = isPlaying || isBuffering
-        ? Icons.pause_rounded
-        : Icons.play_arrow_rounded;
-    final helperText = switch (state.status) {
-      DevotionalListeningStatus.disabled =>
-        state.unavailableMessage ?? l10n.devotionalListeningComingSoon,
-      DevotionalListeningStatus.loading ||
-      DevotionalListeningStatus.buffering => l10n.devotionalListeningLoading,
-      DevotionalListeningStatus.error =>
-        state.errorMessage ?? l10n.devotionalListeningError,
-      _ => null,
-    };
-
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: AppColors.pureWhite.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-        border: Border.all(color: AppColors.pureWhite.withValues(alpha: 0.12)),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.md),
+    return Material(
+      color: AppColors.midnightFaithDark.withValues(alpha: 0.88),
+      elevation: 14,
+      shadowColor: Colors.black.withValues(alpha: 0.28),
+      borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+          border: Border.all(color: AppColors.pureWhite.withValues(alpha: 0.1)),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              AppColors.midnightFaithDark.withValues(alpha: 0.96),
+              AppColors.midnightFaith.withValues(alpha: 0.92),
+            ],
+          ),
+        ),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.md,
+          AppSpacing.sm,
+          AppSpacing.sm,
+          AppSpacing.sm,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
             Row(
               children: [
                 Container(
-                  width: 38,
-                  height: 38,
+                  width: 34,
+                  height: 34,
                   decoration: BoxDecoration(
-                    color: AppColors.holyGold.withValues(alpha: 0.16),
+                    color: AppColors.holyGold.withValues(alpha: 0.18),
                     borderRadius: BorderRadius.circular(AppBorderRadius.full),
                   ),
-                  child: const Icon(
-                    Icons.graphic_eq_rounded,
-                    color: AppColors.holyGold,
+                  child: Center(
+                    child: isLoading || isBuffering
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AppColors.holyGold,
+                            ),
+                          )
+                        : Icon(
+                            isPlaying
+                                ? Icons.pause_rounded
+                                : Icons.play_arrow_rounded,
+                            color: AppColors.holyGold,
+                            size: 18,
+                          ),
                   ),
                 ),
                 const SizedBox(width: AppSpacing.sm),
                 Expanded(
-                  child: Text(
-                    l10n.devotionalListen,
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: AppColors.pureWhite,
-                      fontWeight: FontWeight.w700,
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (primaryReference != null &&
+                          primaryReference.isNotEmpty)
+                        Text(
+                          primaryReference,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTextStyles.labelSmall.copyWith(
+                            color: AppColors.holyGold,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      Text(
+                        devotional.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: AppColors.pureWhite,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                FilledButton.icon(
-                  onPressed: isError ? onRetry : onPrimaryAction,
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.holyGold,
-                    foregroundColor: AppColors.midnightFaithDark,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 10,
-                    ),
-                    textStyle: AppTextStyles.labelMedium.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
+                IconButton(
+                  onPressed: onPrimaryAction,
+                  tooltip: isPlaying
+                      ? l10n.devotionalListeningPause
+                      : l10n.devotionalListeningPlay,
+                  visualDensity: VisualDensity.compact,
+                  icon: Icon(
+                    isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                    color: AppColors.pureWhite,
                   ),
-                  icon: isLoading || isBuffering
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: AppColors.midnightFaithDark,
-                          ),
-                        )
-                      : Icon(buttonIcon, size: 18),
-                  label: Text(buttonLabel),
+                ),
+                IconButton(
+                  onPressed: onHide,
+                  tooltip: l10n.devotionalListeningHide,
+                  visualDensity: VisualDensity.compact,
+                  icon: const Icon(
+                    Icons.keyboard_arrow_up_rounded,
+                    color: AppColors.pureWhite,
+                  ),
                 ),
               ],
             ),
-            if (state.hasProgress) ...[
-              const SizedBox(height: AppSpacing.sm),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(AppBorderRadius.full),
-                child: LinearProgressIndicator(
-                  minHeight: 5,
-                  value: state.progressValue,
-                  backgroundColor: AppColors.pureWhite.withValues(alpha: 0.12),
-                  valueColor: const AlwaysStoppedAnimation<Color>(
-                    AppColors.holyGold,
+            const SizedBox(height: AppSpacing.sm),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(AppBorderRadius.full),
+              child: LinearProgressIndicator(
+                minHeight: 4,
+                value: state.hasProgress ? state.progressValue : null,
+                backgroundColor: AppColors.pureWhite.withValues(alpha: 0.12),
+                valueColor: const AlwaysStoppedAnimation<Color>(
+                  AppColors.holyGold,
+                ),
+              ),
+            ),
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                Text(
+                  _formatDuration(state.position),
+                  style: AppTextStyles.labelSmall.copyWith(
+                    color: AppColors.softMist.withValues(alpha: 0.88),
                   ),
                 ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                '${_formatDuration(state.position)} / ${_formatDuration(state.duration)}',
-                style: AppTextStyles.labelSmall.copyWith(
-                  color: AppColors.softMist.withValues(alpha: 0.9),
+                const Spacer(),
+                Text(
+                  l10n.devotionalListeningAiDisclosure,
+                  style: AppTextStyles.labelSmall.copyWith(
+                    color: AppColors.softMist.withValues(alpha: 0.82),
+                  ),
                 ),
-              ),
-            ],
-            if (helperText != null) ...[
-              const SizedBox(height: AppSpacing.sm),
-              Text(
-                helperText,
-                style: AppTextStyles.bodySmall.copyWith(
-                  color: isDisabled
-                      ? AppColors.holyGold
-                      : AppColors.softMist.withValues(alpha: 0.95),
-                  fontWeight: isDisabled ? FontWeight.w600 : FontWeight.w400,
+                const SizedBox(width: AppSpacing.sm),
+                Text(
+                  _formatDuration(state.duration),
+                  style: AppTextStyles.labelSmall.copyWith(
+                    color: AppColors.softMist.withValues(alpha: 0.88),
+                  ),
                 ),
-              ),
-            ],
-            const SizedBox(height: AppSpacing.xs),
-            Text(
-              l10n.devotionalListeningAiDisclosure,
-              style: AppTextStyles.labelSmall.copyWith(
-                color: AppColors.softMist.withValues(alpha: 0.82),
-              ),
+              ],
             ),
           ],
         ),
       ),
     );
   }
+}
 
-  String _formatDuration(Duration duration) {
-    final minutes = duration.inMinutes.remainder(60).toString().padLeft(2, '0');
-    final seconds = duration.inSeconds.remainder(60).toString().padLeft(2, '0');
-    return '$minutes:$seconds';
-  }
+String _formatDuration(Duration duration) {
+  final minutes = duration.inMinutes.remainder(60).toString().padLeft(2, '0');
+  final seconds = duration.inSeconds.remainder(60).toString().padLeft(2, '0');
+  return '$minutes:$seconds';
 }
 
 class _PublicReaderHero extends StatelessWidget {
