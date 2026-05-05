@@ -262,9 +262,10 @@ void main() {
     },
   );
 
-  testWidgets('bottom navigation halves top safe-area padding', (tester) async {
+  testWidgets('bottom navigation includes bottom safe-area inset', (
+    tester,
+  ) async {
     tester.view.devicePixelRatio = 1;
-    tester.view.viewPadding = const FakeViewPadding(bottom: 34);
     addTearDown(tester.view.resetDevicePixelRatio);
     addTearDown(tester.view.resetViewPadding);
 
@@ -281,13 +282,22 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final navigationScaffold = tester
-        .widgetList<Scaffold>(find.byType(Scaffold))
-        .firstWhere((scaffold) => scaffold.bottomNavigationBar is Container);
-    final bottomNavigationBar =
-        navigationScaffold.bottomNavigationBar! as Container;
+    final bottomNavigationBarFinder = find.byType(BottomNavigationBar);
+    final baselineHeight = tester
+        .renderObject<RenderBox>(bottomNavigationBarFinder)
+        .size
+        .height;
 
-    expect(bottomNavigationBar.padding, const EdgeInsets.only(top: 4));
+    tester.view.viewPadding = const FakeViewPadding(bottom: 34);
+    await tester.pumpAndSettle();
+
+    final paddedHeight = tester
+        .renderObject<RenderBox>(bottomNavigationBarFinder)
+        .size
+        .height;
+
+    expect(baselineHeight, greaterThanOrEqualTo(kBottomNavigationBarHeight));
+    expect(paddedHeight, baselineHeight + 34);
   });
 
   testWidgets('manager can access users route', (tester) async {
