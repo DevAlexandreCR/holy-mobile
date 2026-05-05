@@ -342,6 +342,8 @@ class AppLocalizations {
   String get devotionalListeningPause => _string('devotionalListeningPause');
   String get devotionalListeningLoading =>
       _string('devotionalListeningLoading');
+  String get devotionalListeningBuffering =>
+      _string('devotionalListeningBuffering');
   String get devotionalListeningRetry => _string('devotionalListeningRetry');
   String get devotionalListeningComingSoon =>
       _string('devotionalListeningComingSoon');
@@ -722,7 +724,9 @@ class AppLocalizations {
       'devotionalListen': 'Escuchar',
       'devotionalListeningPlay': 'Reproducir',
       'devotionalListeningPause': 'Pausar',
-      'devotionalListeningLoading': 'Preparando audio...',
+      'devotionalListeningLoading':
+          'Generando narración... puede tardar unos segundos.',
+      'devotionalListeningBuffering': 'Preparando reproducción...',
       'devotionalListeningRetry': 'Reintentar audio',
       'devotionalListeningComingSoon':
           'Próximamente: estamos preparando esta función para ti.',
@@ -1079,7 +1083,9 @@ class AppLocalizations {
       'devotionalListen': 'Listen',
       'devotionalListeningPlay': 'Play',
       'devotionalListeningPause': 'Pause',
-      'devotionalListeningLoading': 'Preparing audio...',
+      'devotionalListeningLoading':
+          'Generating narration... this may take a few seconds.',
+      'devotionalListeningBuffering': 'Preparing playback...',
       'devotionalListeningRetry': 'Retry audio',
       'devotionalListeningComingSoon':
           'Coming soon: we are preparing this feature for you.',

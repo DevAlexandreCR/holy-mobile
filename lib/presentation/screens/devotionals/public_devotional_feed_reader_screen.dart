@@ -1439,153 +1439,217 @@ class _FloatingDevotionalPlayer extends StatelessWidget {
     final primaryReference = references.isNotEmpty
         ? references.first.referenceLabel
         : null;
+    final footerMessage = switch (state.status) {
+      DevotionalListeningStatus.loading => l10n.devotionalListeningLoading,
+      DevotionalListeningStatus.buffering => l10n.devotionalListeningBuffering,
+      _ => l10n.devotionalListeningAiDisclosure,
+    };
 
-    return Material(
-      color: AppColors.midnightFaithDark.withValues(alpha: 0.88),
-      elevation: 14,
-      shadowColor: Colors.black.withValues(alpha: 0.28),
-      borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-      child: Container(
-        decoration: BoxDecoration(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compactFooter = constraints.maxWidth < 320;
+
+        return Material(
+          color: AppColors.midnightFaithDark.withValues(alpha: 0.88),
+          elevation: 14,
+          shadowColor: Colors.black.withValues(alpha: 0.28),
           borderRadius: BorderRadius.circular(AppBorderRadius.lg),
-          border: Border.all(color: AppColors.pureWhite.withValues(alpha: 0.1)),
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              AppColors.midnightFaithDark.withValues(alpha: 0.96),
-              AppColors.midnightFaith.withValues(alpha: 0.92),
-            ],
-          ),
-        ),
-        padding: const EdgeInsets.fromLTRB(
-          AppSpacing.md,
-          AppSpacing.sm,
-          AppSpacing.sm,
-          AppSpacing.sm,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(AppBorderRadius.lg),
+              border: Border.all(
+                color: AppColors.pureWhite.withValues(alpha: 0.1),
+              ),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  AppColors.midnightFaithDark.withValues(alpha: 0.96),
+                  AppColors.midnightFaith.withValues(alpha: 0.92),
+                ],
+              ),
+            ),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.sm,
+              AppSpacing.sm,
+              AppSpacing.sm,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Container(
-                  width: 34,
-                  height: 34,
-                  decoration: BoxDecoration(
-                    color: AppColors.holyGold.withValues(alpha: 0.18),
-                    borderRadius: BorderRadius.circular(AppBorderRadius.full),
-                  ),
-                  child: Center(
-                    child: isLoading || isBuffering
-                        ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: AppColors.holyGold,
+                Row(
+                  children: [
+                    Container(
+                      width: 34,
+                      height: 34,
+                      decoration: BoxDecoration(
+                        color: AppColors.holyGold.withValues(alpha: 0.18),
+                        borderRadius: BorderRadius.circular(
+                          AppBorderRadius.full,
+                        ),
+                      ),
+                      child: Center(
+                        child: isLoading || isBuffering
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: AppColors.holyGold,
+                                ),
+                              )
+                            : Icon(
+                                isPlaying
+                                    ? Icons.pause_rounded
+                                    : Icons.play_arrow_rounded,
+                                color: AppColors.holyGold,
+                                size: 18,
+                              ),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (primaryReference != null &&
+                              primaryReference.isNotEmpty)
+                            Text(
+                              primaryReference,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppTextStyles.labelSmall.copyWith(
+                                color: AppColors.holyGold,
+                                fontWeight: FontWeight.w700,
+                              ),
                             ),
-                          )
-                        : Icon(
-                            isPlaying
-                                ? Icons.pause_rounded
-                                : Icons.play_arrow_rounded,
-                            color: AppColors.holyGold,
-                            size: 18,
+                          Text(
+                            devotional.title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTextStyles.bodyMedium.copyWith(
+                              color: AppColors.pureWhite,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: onPrimaryAction,
+                      tooltip: isPlaying
+                          ? l10n.devotionalListeningPause
+                          : l10n.devotionalListeningPlay,
+                      visualDensity: VisualDensity.compact,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints.tightFor(
+                        width: 32,
+                        height: 32,
+                      ),
+                      icon: Icon(
+                        isPlaying
+                            ? Icons.pause_rounded
+                            : Icons.play_arrow_rounded,
+                        color: AppColors.pureWhite,
+                      ),
+                    ),
+                    const SizedBox(width: 2),
+                    IconButton(
+                      onPressed: onHide,
+                      tooltip: l10n.devotionalListeningHide,
+                      visualDensity: VisualDensity.compact,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints.tightFor(
+                        width: 32,
+                        height: 32,
+                      ),
+                      icon: const Icon(
+                        Icons.keyboard_arrow_up_rounded,
+                        color: AppColors.pureWhite,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(AppBorderRadius.full),
+                  child: LinearProgressIndicator(
+                    minHeight: 4,
+                    value: state.hasProgress ? state.progressValue : null,
+                    backgroundColor: AppColors.pureWhite.withValues(
+                      alpha: 0.12,
+                    ),
+                    valueColor: const AlwaysStoppedAnimation<Color>(
+                      AppColors.holyGold,
+                    ),
                   ),
                 ),
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                const SizedBox(height: 6),
+                if (compactFooter) ...[
+                  Text(
+                    footerMessage,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.labelSmall.copyWith(
+                      color: AppColors.softMist.withValues(alpha: 0.82),
+                      height: 1.2,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
                     children: [
-                      if (primaryReference != null &&
-                          primaryReference.isNotEmpty)
-                        Text(
-                          primaryReference,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppTextStyles.labelSmall.copyWith(
-                            color: AppColors.holyGold,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
                       Text(
-                        devotional.title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTextStyles.bodyMedium.copyWith(
-                          color: AppColors.pureWhite,
-                          fontWeight: FontWeight.w700,
+                        _formatDuration(state.position),
+                        style: AppTextStyles.labelSmall.copyWith(
+                          color: AppColors.softMist.withValues(alpha: 0.88),
+                        ),
+                      ),
+                      const Spacer(),
+                      Text(
+                        _formatDuration(state.duration),
+                        style: AppTextStyles.labelSmall.copyWith(
+                          color: AppColors.softMist.withValues(alpha: 0.88),
                         ),
                       ),
                     ],
                   ),
-                ),
-                IconButton(
-                  onPressed: onPrimaryAction,
-                  tooltip: isPlaying
-                      ? l10n.devotionalListeningPause
-                      : l10n.devotionalListeningPlay,
-                  visualDensity: VisualDensity.compact,
-                  icon: Icon(
-                    isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
-                    color: AppColors.pureWhite,
+                ] else
+                  Row(
+                    children: [
+                      Text(
+                        _formatDuration(state.position),
+                        style: AppTextStyles.labelSmall.copyWith(
+                          color: AppColors.softMist.withValues(alpha: 0.88),
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: Text(
+                          footerMessage,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
+                          style: AppTextStyles.labelSmall.copyWith(
+                            color: AppColors.softMist.withValues(alpha: 0.82),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      Text(
+                        _formatDuration(state.duration),
+                        style: AppTextStyles.labelSmall.copyWith(
+                          color: AppColors.softMist.withValues(alpha: 0.88),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-                IconButton(
-                  onPressed: onHide,
-                  tooltip: l10n.devotionalListeningHide,
-                  visualDensity: VisualDensity.compact,
-                  icon: const Icon(
-                    Icons.keyboard_arrow_up_rounded,
-                    color: AppColors.pureWhite,
-                  ),
-                ),
               ],
             ),
-            const SizedBox(height: AppSpacing.sm),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(AppBorderRadius.full),
-              child: LinearProgressIndicator(
-                minHeight: 4,
-                value: state.hasProgress ? state.progressValue : null,
-                backgroundColor: AppColors.pureWhite.withValues(alpha: 0.12),
-                valueColor: const AlwaysStoppedAnimation<Color>(
-                  AppColors.holyGold,
-                ),
-              ),
-            ),
-            const SizedBox(height: 6),
-            Row(
-              children: [
-                Text(
-                  _formatDuration(state.position),
-                  style: AppTextStyles.labelSmall.copyWith(
-                    color: AppColors.softMist.withValues(alpha: 0.88),
-                  ),
-                ),
-                const Spacer(),
-                Text(
-                  l10n.devotionalListeningAiDisclosure,
-                  style: AppTextStyles.labelSmall.copyWith(
-                    color: AppColors.softMist.withValues(alpha: 0.82),
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                Text(
-                  _formatDuration(state.duration),
-                  style: AppTextStyles.labelSmall.copyWith(
-                    color: AppColors.softMist.withValues(alpha: 0.88),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }
