@@ -337,6 +337,19 @@ class AppLocalizations {
   String get devotionalReportOther => _string('devotionalReportOther');
   String get devotionalReflectionPrompt =>
       _string('devotionalReflectionPrompt');
+  String get devotionalListen => _string('devotionalListen');
+  String get devotionalListeningPlay => _string('devotionalListeningPlay');
+  String get devotionalListeningPause => _string('devotionalListeningPause');
+  String get devotionalListeningLoading =>
+      _string('devotionalListeningLoading');
+  String get devotionalListeningRetry => _string('devotionalListeningRetry');
+  String get devotionalListeningComingSoon =>
+      _string('devotionalListeningComingSoon');
+  String get devotionalListeningError => _string('devotionalListeningError');
+  String get devotionalListeningTooLong =>
+      _string('devotionalListeningTooLong');
+  String get devotionalListeningAiDisclosure =>
+      _string('devotionalListeningAiDisclosure');
   String get devotionalsFeedEmptyTitle => _string('devotionalsFeedEmptyTitle');
   String get devotionalsFeedEmptySubtitle =>
       _string('devotionalsFeedEmptySubtitle');
@@ -705,6 +718,17 @@ class AppLocalizations {
       'devotionalReportMisleading': 'Contenido engañoso',
       'devotionalReportOther': 'Otro motivo',
       'devotionalReflectionPrompt': 'Tómate un momento para reflexionar',
+      'devotionalListen': 'Escuchar',
+      'devotionalListeningPlay': 'Reproducir',
+      'devotionalListeningPause': 'Pausar',
+      'devotionalListeningLoading': 'Preparando audio...',
+      'devotionalListeningRetry': 'Reintentar audio',
+      'devotionalListeningComingSoon':
+          'Próximamente: estamos preparando esta función para ti.',
+      'devotionalListeningError': 'No pudimos iniciar el audio del devocional.',
+      'devotionalListeningTooLong':
+          'Este devocional todavía es muy largo para escucharlo.',
+      'devotionalListeningAiDisclosure': 'Narración generada con IA',
       'devotionalsFeedEmptyTitle': 'Todavía no hay devocionales en el feed',
       'devotionalsFeedEmptySubtitle':
           'Cuando la comunidad publique nuevos devocionales, aparecerán aquí.',
@@ -1050,6 +1074,17 @@ class AppLocalizations {
       'devotionalReportMisleading': 'Misleading content',
       'devotionalReportOther': 'Other',
       'devotionalReflectionPrompt': 'Take a moment to reflect',
+      'devotionalListen': 'Listen',
+      'devotionalListeningPlay': 'Play',
+      'devotionalListeningPause': 'Pause',
+      'devotionalListeningLoading': 'Preparing audio...',
+      'devotionalListeningRetry': 'Retry audio',
+      'devotionalListeningComingSoon':
+          'Coming soon: we are preparing this feature for you.',
+      'devotionalListeningError': 'We could not start devotional audio.',
+      'devotionalListeningTooLong':
+          'This devotional is still too long to listen to.',
+      'devotionalListeningAiDisclosure': 'AI-generated narration',
       'devotionalsFeedEmptyTitle': 'There are no devotionals in the feed yet',
       'devotionalsFeedEmptySubtitle':
           'When the community publishes new devotionals, they will appear here.',

@@ -5,6 +5,8 @@ import 'package:holyverso/data/devotionals/devotionals_api_client.dart';
 import 'package:holyverso/domain/core/cursor_paged_result.dart';
 import 'package:holyverso/domain/core/paged_result.dart';
 import 'package:holyverso/domain/devotionals/devotional.dart';
+import 'package:holyverso/domain/devotionals/devotional_audio_config.dart';
+import 'package:holyverso/domain/devotionals/devotional_audio_response.dart';
 import 'package:holyverso/domain/devotionals/devotional_comment.dart';
 import 'package:holyverso/domain/devotionals/devotional_feed_mode.dart';
 import 'package:holyverso/domain/devotionals/devotional_feed_header.dart';
@@ -50,6 +52,10 @@ class DevotionalsRepository {
     return _client.fetchFeedHeader();
   }
 
+  Future<DevotionalAudioConfig> fetchDevotionalAudioConfig() {
+    return _client.fetchDevotionalAudioConfig();
+  }
+
   Future<CursorPagedResult<Devotional>> fetchSavedDevotionals({
     String? cursor,
     int limit = 20,
@@ -71,6 +77,10 @@ class DevotionalsRepository {
       shareToken: shareToken,
       deviceId: deviceId,
     );
+  }
+
+  Future<DevotionalAudioResponse> requestDevotionalAudio(String devotionalId) {
+    return _client.requestDevotionalAudio(devotionalId);
   }
 
   Future<Devotional> createDevotional({

@@ -8,6 +8,8 @@ import 'package:holyverso/data/network/api_client.dart';
 import 'package:holyverso/domain/core/cursor_paged_result.dart';
 import 'package:holyverso/domain/core/paged_result.dart';
 import 'package:holyverso/domain/devotionals/devotional.dart';
+import 'package:holyverso/domain/devotionals/devotional_audio_config.dart';
+import 'package:holyverso/domain/devotionals/devotional_audio_response.dart';
 import 'package:holyverso/domain/devotionals/devotional_comment.dart';
 import 'package:holyverso/domain/devotionals/devotional_feed_mode.dart';
 import 'package:holyverso/domain/devotionals/devotional_feed_header.dart';
@@ -45,6 +47,21 @@ class DevotionalsApiClient {
         ...author,
         'avatar_url': _resolveUrl(author['avatar_url']?.toString()),
       },
+    };
+  }
+
+  Map<String, dynamic> _normalizeDevotionalAudioResponse(
+    Map<String, dynamic> map,
+  ) {
+    final segmentsRaw = map['segments'] as List? ?? const [];
+
+    return {
+      ...map,
+      'segments': segmentsRaw.whereType<Map>().map((item) {
+        final segment = Map<String, dynamic>.from(item);
+        final resolvedUrl = _resolveUrl(segment['url']?.toString());
+        return {...segment, if (resolvedUrl != null) 'url': resolvedUrl};
+      }).toList(),
     };
   }
 
@@ -156,6 +173,12 @@ class DevotionalsApiClient {
     return DevotionalFeedHeader.fromMap(data);
   }
 
+  Future<DevotionalAudioConfig> fetchDevotionalAudioConfig() async {
+    final response = await _dio.get('/devotionals/audio/config');
+    final data = _unwrapData(response.data);
+    return DevotionalAudioConfig.fromMap(data);
+  }
+
   Future<CursorPagedResult<Devotional>> fetchSavedDevotionals({
     String? cursor,
     int limit = 20,
@@ -204,6 +227,16 @@ class DevotionalsApiClient {
     );
     final data = _unwrapData(response.data);
     return Devotional.fromMap(_normalizeDevotional(data));
+  }
+
+  Future<DevotionalAudioResponse> requestDevotionalAudio(
+    String devotionalId,
+  ) async {
+    final response = await _dio.post('/devotionals/$devotionalId/audio');
+    final data = _unwrapData(response.data);
+    return DevotionalAudioResponse.fromMap(
+      _normalizeDevotionalAudioResponse(data),
+    );
   }
 
   Future<Devotional> createDevotional({
