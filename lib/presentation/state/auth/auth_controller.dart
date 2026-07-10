@@ -32,7 +32,7 @@ class AuthController extends Notifier<AuthState> {
         _applyRestoreResult(result);
       } catch (error) {
         state = const AuthState(
-          sessionStatus: AuthSessionStatus.guest,
+          sessionStatus: AuthSessionStatus.reconnecting,
           isLoading: false,
         );
       }
@@ -51,7 +51,7 @@ class AuthController extends Notifier<AuthState> {
       _applyRestoreResult(result);
     } catch (error) {
       state = const AuthState(
-        sessionStatus: AuthSessionStatus.guest,
+        sessionStatus: AuthSessionStatus.reconnecting,
         isLoading: false,
       );
     }
@@ -434,6 +434,12 @@ class AuthController extends Notifier<AuthState> {
           sessionStatus: AuthSessionStatus.authenticatedStale,
           infoMessage: _l10n.showingLastAvailableSessionMessage,
           isServerValidated: false,
+        );
+        return;
+      case AuthRestoreStatus.reconnecting:
+        state = const AuthState(
+          sessionStatus: AuthSessionStatus.reconnecting,
+          isLoading: false,
         );
         return;
       case AuthRestoreStatus.expired:

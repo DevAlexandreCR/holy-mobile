@@ -20,6 +20,7 @@ import 'package:holyverso/presentation/screens/insights/devotional_insight_detai
 import 'package:holyverso/presentation/screens/notifications/notification_inbox_screen.dart';
 import 'package:holyverso/presentation/screens/search/search_screen.dart';
 import 'package:holyverso/presentation/screens/settings/settings_screen.dart';
+import 'package:holyverso/presentation/screens/splash/reconnecting_screen.dart';
 import 'package:holyverso/presentation/screens/splash/splash_screen.dart';
 import 'package:holyverso/presentation/screens/users/users_list_screen.dart';
 import 'package:holyverso/presentation/screens/verse/saved_verses_screen.dart';
@@ -55,6 +56,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/splash',
         builder: (context, state) =>
             SplashScreen(message: splashMessage, errorDetails: splashError),
+      ),
+      GoRoute(
+        path: '/reconnecting',
+        builder: (context, state) => const ReconnectingScreen(),
       ),
       GoRoute(
         path: '/login',
@@ -267,7 +272,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     ],
     redirect: (context, state) {
       final bootstrapping = authState.isBootstrapping;
+      final isReconnecting =
+          authState.sessionStatus == AuthSessionStatus.reconnecting;
       final atSplash = state.matchedLocation == '/splash';
+      final atReconnecting = state.matchedLocation == '/reconnecting';
       final atResetPassword = state.matchedLocation == '/reset-password';
       final atAuthRoute =
           state.matchedLocation == '/login' ||
@@ -306,7 +314,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           );
           return '/login?message=$encodedMessage';
         }
+        if (isReconnecting) {
+          return '/reconnecting';
+        }
         return authState.canAccessProtectedRoutes ? '/devotionals' : '/home';
+      }
+
+      if (isReconnecting && !atResetPassword) {
+        return atReconnecting ? null : '/reconnecting';
       }
 
       if (authState.canAccessProtectedRoutes && atAuthRoute) {

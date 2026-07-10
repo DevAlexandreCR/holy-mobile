@@ -16,6 +16,12 @@ class AuthRepository {
   final AuthApiClient _client;
   final AuthTokenService _tokenService;
 
+  static const int _restoreMaxAttempts = 3;
+  static const List<Duration> _restoreRetryBackoff = [
+    Duration(milliseconds: 500),
+    Duration(milliseconds: 1000),
+  ];
+
   Future<AuthPayload> register({
     required String name,
     required String email,
@@ -64,35 +70,40 @@ class AuthRepository {
       return AuthRestoreResult.missing();
     }
 
-    try {
-      final profile = await _client.me();
-      final payload = AuthPayload(
-        user: profile.user,
-        settings: profile.settings,
-        accessToken: token,
-      );
-      await persistSessionSnapshot(
-        user: payload.user,
-        settings: payload.settings,
-      );
-      return AuthRestoreResult.authenticated(payload);
-    } on DioException catch (error) {
-      if (AppErrorMapper.isUnauthorized(error)) {
-        await clearSession();
-        return AuthRestoreResult.expired();
-      }
+    await _tokenService.saveToken(token);
 
-      final snapshot = await _readSessionSnapshot(token);
-      if (snapshot != null && AppErrorMapper.isRecoverableSessionError(error)) {
-        return AuthRestoreResult.authenticatedStale(snapshot);
-      }
+    for (var attempt = 1; attempt <= _restoreMaxAttempts; attempt++) {
+      try {
+        final profile = await _client.me();
+        final payload = AuthPayload(
+          user: profile.user,
+          settings: profile.settings,
+          accessToken: token,
+        );
+        await persistSessionSnapshot(
+          user: payload.user,
+          settings: payload.settings,
+        );
+        return AuthRestoreResult.authenticated(payload);
+      } on DioException catch (error) {
+        if (AppErrorMapper.isDefinitiveRejection(error)) {
+          await clearSession();
+          return AuthRestoreResult.expired();
+        }
 
-      if (AppErrorMapper.isRecoverableSessionError(error)) {
-        return AuthRestoreResult.missing();
+        final isLastAttempt = attempt == _restoreMaxAttempts;
+        if (!isLastAttempt) {
+          await Future.delayed(_restoreRetryBackoff[attempt - 1]);
+        }
       }
-
-      rethrow;
     }
+
+    final snapshot = await _readSessionSnapshot(token);
+    if (snapshot != null) {
+      return AuthRestoreResult.authenticatedStale(snapshot);
+    }
+
+    return AuthRestoreResult.reconnecting();
   }
 
   Future<void> logout() {

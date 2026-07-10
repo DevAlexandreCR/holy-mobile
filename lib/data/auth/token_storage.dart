@@ -3,9 +3,19 @@ import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+const _iosOptions = IOSOptions(
+  accessibility: KeychainAccessibility.first_unlock_this_device,
+);
+const _androidOptions = AndroidOptions(encryptedSharedPreferences: true);
+
 class AuthTokenService {
   AuthTokenService({FlutterSecureStorage? storage, MethodChannel? channel})
-    : _storage = storage ?? const FlutterSecureStorage(),
+    : _storage =
+          storage ??
+          const FlutterSecureStorage(
+            iOptions: _iosOptions,
+            aOptions: _androidOptions,
+          ),
       _channel = channel ?? const MethodChannel('bible_widget/auth');
 
   static const _tokenKey = 'auth_token';

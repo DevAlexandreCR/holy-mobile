@@ -5,6 +5,7 @@ enum AuthSessionStatus {
   bootstrapping,
   authenticated,
   authenticatedStale,
+  reconnecting,
   guest,
   expired,
 }

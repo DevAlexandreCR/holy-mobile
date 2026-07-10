@@ -29,6 +29,8 @@ class AppLocalizations {
   String get splashSessionError => _string('splashSessionError');
   String get splashReady => _string('splashReady');
   String get splashLoading => _string('splashLoading');
+  String get reconnectingTitle => _string('reconnectingTitle');
+  String get reconnectingMessage => _string('reconnectingMessage');
 
   String get genericError => _string('genericError');
   String get networkError => _string('networkError');
@@ -424,6 +426,8 @@ class AppLocalizations {
       'splashSessionError': 'No se pudo validar tu sesión',
       'splashReady': 'Listo para comenzar',
       'splashLoading': 'Cargando configuración...',
+      'reconnectingTitle': 'Reconectando',
+      'reconnectingMessage': 'Estamos restableciendo tu sesión...',
       'genericError': 'Ocurrió un error inesperado. Inténtalo nuevamente.',
       'networkError': 'Verifica tu conexión a internet.',
       'connectionUnavailableMessage':
@@ -791,6 +795,8 @@ class AppLocalizations {
       'splashSessionError': 'Session could not be validated',
       'splashReady': 'Ready to start',
       'splashLoading': 'Loading configuration...',
+      'reconnectingTitle': 'Reconnecting',
+      'reconnectingMessage': 'We are restoring your session...',
       'genericError': 'Something went wrong. Please try again.',
       'networkError': 'Check your internet connection.',
       'connectionUnavailableMessage': 'No connection is available right now.',

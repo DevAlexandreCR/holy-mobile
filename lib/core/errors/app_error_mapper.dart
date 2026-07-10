@@ -6,6 +6,11 @@ import 'package:holyverso/core/l10n/app_localizations.dart';
 class AppErrorMapper {
   const AppErrorMapper._();
 
+  static const Set<String> _accountGoneCodes = {
+    'USER_NOT_FOUND',
+    'ACCOUNT_DELETED',
+  };
+
   static String toMessage(
     Object error, {
     required AppLocalizations l10n,
@@ -65,6 +70,16 @@ class AppErrorMapper {
 
     final statusCode = error.response?.statusCode;
     return statusCode != null && statusCode >= 500;
+  }
+
+  static bool isDefinitiveRejection(Object error) {
+    if (error is! DioException) return false;
+
+    final statusCode = error.response?.statusCode;
+    if (statusCode == 401 || statusCode == 403) return true;
+
+    final code = _errorCode(error);
+    return code != null && _accountGoneCodes.contains(code);
   }
 
   static String? backendCode(Object error) {

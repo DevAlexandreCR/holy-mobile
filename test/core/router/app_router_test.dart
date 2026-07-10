@@ -172,6 +172,36 @@ void main() {
     expect(find.text('Aún no tienes devocionales guardados'), findsOneWidget);
   });
 
+  testWidgets('reconnecting session lands on reconnect surface, not login', (
+    tester,
+  ) async {
+    final container = _buildContainer(
+      const AuthState(sessionStatus: AuthSessionStatus.reconnecting),
+    );
+    addTearDown(container.dispose);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(container: container, child: const _TestApp()),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    final router = container.read(appRouterProvider);
+    expect(router.routeInformationProvider.value.uri.path, '/reconnecting');
+    expect(find.byType(LoginScreen), findsNothing);
+    expect(find.byType(VerseOfTheDayScreen), findsNothing);
+
+    container.read(appRouterProvider).go('/saved');
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(
+      container.read(appRouterProvider).routeInformationProvider.value.uri.path,
+      '/reconnecting',
+    );
+    expect(find.byType(LoginScreen), findsNothing);
+  });
+
   testWidgets('expired session redirects to login with message', (
     tester,
   ) async {

@@ -1,6 +1,12 @@
 import 'package:holyverso/data/auth/models/auth_payload.dart';
 
-enum AuthRestoreStatus { missing, authenticated, authenticatedStale, expired }
+enum AuthRestoreStatus {
+  missing,
+  authenticated,
+  authenticatedStale,
+  reconnecting,
+  expired,
+}
 
 class AuthRestoreResult {
   const AuthRestoreResult._(this.status, {this.payload});
@@ -28,6 +34,10 @@ class AuthRestoreResult {
       AuthRestoreStatus.authenticatedStale,
       payload: payload,
     );
+  }
+
+  factory AuthRestoreResult.reconnecting() {
+    return const AuthRestoreResult._(AuthRestoreStatus.reconnecting);
   }
 
   factory AuthRestoreResult.expired() {
