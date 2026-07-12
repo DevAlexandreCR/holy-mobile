@@ -1,6 +1,15 @@
 {
   "releases": [
     {
+      "version": "1.2.6",
+      "releaseDate": "2026-07-12",
+      "changes": [
+        "Configura un recordatorio diario a la hora que prefieras para no perderte tu versículo y devocional del día.",
+        "Celebramos tus logros con una nueva animación cuando alcanzas hitos de lectura."
+      ],
+      "isImportant": true
+    },
+    {
       "version": "1.2.4",
       "releaseDate": "2026-07-11",
       "changes": [
