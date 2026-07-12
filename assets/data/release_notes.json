@@ -1,6 +1,15 @@
 {
   "releases": [
     {
+      "version": "1.2.4",
+      "releaseDate": "2026-07-11",
+      "changes": [
+        "Mejoramos la reconexión de tu sesión para que vuelvas a la app sin interrupciones.",
+        "Se corrigieron errores menores en la interfaz de usuario."
+      ],
+      "isImportant": false
+    },
+    {
       "version": "1.2.3",
       "releaseDate": "2026-05-05",
       "changes": [
