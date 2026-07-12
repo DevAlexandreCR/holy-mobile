@@ -145,13 +145,14 @@ struct WidgetVerseModel: Codable {
         try container.encodeIfPresent(completedToday, forKey: .completedToday)
     }
 
-    /// Compact habit-status line ("🔥 Día N · Hoy pendiente" / "🔥 Día N · Completado ✅").
-    /// Only present when both fields are non-nil; absent (stale payload, logged-out) renders nothing.
     var statusLine: String? {
-        guard let streakCount, let completedToday else { return nil }
-        return completedToday
-            ? "🔥 Día \(streakCount) · Completado ✅"
-            : "🔥 Día \(streakCount) · Hoy pendiente"
+        if completedToday == true, let streakCount {
+            return "🔥 Día \(streakCount) · ¡Listo por hoy!"
+        }
+        if let streakCount, streakCount > 0 {
+            return "🔥 Día \(streakCount) · Te toca hoy"
+        }
+        return "🔥 Empieza tu racha hoy"
     }
 }
 
@@ -410,34 +411,27 @@ struct WidgetVerseView: View {
                         .shadow(color: .black.opacity(0.5), radius: 2, x: 0, y: 1)
                         .accessibilityLabel("Versículo del día")
 
-                    HStack(alignment: .bottom, spacing: nil) {
+                    HStack(alignment: .firstTextBaseline, spacing: 8) {
                         Text(verse.reference)
                             .font(.system(size: 10, weight: .regular))
                             .foregroundColor(HolyVersoColors.holyGold)
                             .lineLimit(1)
                             .minimumScaleFactor(0.8)
                             .shadow(color: HolyVersoColors.holyGold.opacity(0.5), radius: 4, x: 0, y: 0)
+                            .layoutPriority(0)
 
                         Spacer()
 
-                        Text(shouldShowSecondaryLine ? resolvedSecondaryLine : verse.versionName)
-                            .font(.system(size: 9, weight: .regular))
-                            .foregroundColor(
-                                shouldShowSecondaryLine
-                                    ? HolyVersoColors.pureWhite.opacity(0.5)
-                                    : HolyVersoColors.pureWhite.opacity(0.6)
-                            )
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.8)
-                    }
-
-                    if let statusLine = verse.statusLine {
-                        Text(statusLine)
-                            .font(.system(size: 9, weight: .medium))
-                            .foregroundColor(HolyVersoColors.holyGold.opacity(0.9))
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.8)
-                            .accessibilityLabel(statusLine)
+                        if let statusLine = verse.statusLine {
+                            Text(statusLine)
+                                .font(.system(size: 9, weight: .medium))
+                                .foregroundColor(HolyVersoColors.holyGold.opacity(0.9))
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.8)
+                                .accessibilityLabel(statusLine)
+                                .layoutPriority(1)
+                                .fixedSize(horizontal: true, vertical: false)
+                        }
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)

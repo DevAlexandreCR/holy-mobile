@@ -98,30 +98,26 @@ class BibleWidgetProvider : AppWidgetProvider() {
             // Aplicar tamaño de fuente dinámico
             views.setFloat(R.id.widget_verse_text, "setTextSize", verse.fontSize)
 
-            val slotText = verse.secondaryLine ?: WIDGET_FALLBACK_SECONDARY_LINE
-            val slotColor = Color.parseColor("#80D7DCE3")
-            views.setTextViewText(R.id.widget_version, slotText)
-            views.setTextColor(R.id.widget_version, slotColor)
+            views.setViewVisibility(R.id.widget_version, android.view.View.GONE)
 
             val streakCount = verse.streakCount
             val completedToday = verse.completedToday
-            if (streakCount != null && completedToday != null) {
-                val statusLine = if (completedToday) {
-                    "🔥 Día $streakCount · Completado ✅"
-                } else {
-                    "🔥 Día $streakCount · Hoy pendiente"
-                }
-                views.setTextViewText(R.id.widget_status_line, statusLine)
-                views.setViewVisibility(R.id.widget_status_line, android.view.View.VISIBLE)
+            val statusLine = if (completedToday == true && streakCount != null) {
+                "🔥 Día $streakCount · ¡Listo por hoy!"
+            } else if (streakCount != null && streakCount > 0) {
+                "🔥 Día $streakCount · Te toca hoy"
             } else {
-                views.setViewVisibility(R.id.widget_status_line, android.view.View.GONE)
+                "🔥 Empieza tu racha hoy"
             }
+            views.setTextViewText(R.id.widget_status_line, statusLine)
+            views.setViewVisibility(R.id.widget_status_line, android.view.View.VISIBLE)
         } else {
             android.util.Log.d("BibleWidgetProvider", "No verse found, showing placeholder")
             views.setTextViewText(R.id.widget_verse_text, "Abre HolyVerso para actualizar el versículo")
             views.setTextViewText(R.id.widget_reference, "")
             views.setTextViewText(R.id.widget_version, "")
             views.setTextColor(R.id.widget_version, Color.parseColor("#99FFFFFF"))
+            views.setViewVisibility(R.id.widget_version, android.view.View.GONE)
             views.setViewVisibility(R.id.widget_status_line, android.view.View.GONE)
         }
 

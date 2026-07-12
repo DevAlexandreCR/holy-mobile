@@ -164,7 +164,13 @@ class DailyVerseFetchTask {
         if let secondaryLine = displaySelection.secondaryLine {
             widgetVerse["secondary_line"] = secondaryLine
         }
-        
+        if let streakCount = (verseData["streak_count"] as? NSNumber)?.intValue {
+            widgetVerse["streak_count"] = streakCount
+        }
+        if let completedToday = verseData["completed_today"] as? Bool {
+            widgetVerse["completed_today"] = completedToday
+        }
+
         // Convert to a JSON string
         let jsonData = try JSONSerialization.data(withJSONObject: widgetVerse)
         guard let jsonString = String(data: jsonData, encoding: .utf8) else {
