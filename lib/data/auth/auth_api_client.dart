@@ -111,6 +111,10 @@ class AuthApiClient {
     required bool commentNotificationsEnabled,
     required bool followNotificationsEnabled,
     required bool reactionNotificationsEnabled,
+    int? dailyReminderHour,
+    required bool dailyReminderNotificationsEnabled,
+    required bool streakMilestoneNotificationsEnabled,
+    required bool winbackNotificationsEnabled,
   }) async {
     final response = await _dio.put(
       '/users/me/notification-preferences',
@@ -129,6 +133,12 @@ class AuthApiClient {
         'comment_notifications_enabled': commentNotificationsEnabled,
         'follow_notifications_enabled': followNotificationsEnabled,
         'reaction_notifications_enabled': reactionNotificationsEnabled,
+        'daily_reminder_hour': dailyReminderHour,
+        'daily_reminder_notifications_enabled':
+            dailyReminderNotificationsEnabled,
+        'streak_milestone_notifications_enabled':
+            streakMilestoneNotificationsEnabled,
+        'winback_notifications_enabled': winbackNotificationsEnabled,
       },
     );
 

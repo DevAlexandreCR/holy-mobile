@@ -77,6 +77,8 @@ class WidgetVerse {
     this.theme,
     this.displayVariant = WidgetVerseDisplayVariant.verseOnly,
     this.secondaryLine,
+    this.streakCount,
+    this.completedToday,
   });
 
   final String date;
@@ -90,6 +92,8 @@ class WidgetVerse {
   final String? theme;
   final WidgetVerseDisplayVariant displayVariant;
   final String? secondaryLine;
+  final int? streakCount;
+  final bool? completedToday;
 
   Map<String, dynamic> toJson() {
     return {
@@ -104,6 +108,8 @@ class WidgetVerse {
       if (theme != null) 'theme': theme,
       'display_variant': displayVariant.value,
       if (secondaryLine != null) 'secondary_line': secondaryLine,
+      if (streakCount != null) 'streak_count': streakCount,
+      if (completedToday != null) 'completed_today': completedToday,
     };
   }
 
@@ -131,6 +137,11 @@ class WidgetVerse {
       ),
       secondaryLine:
           json['secondary_line'] as String? ?? json['secondaryLine'] as String?,
+      streakCount:
+          (json['streak_count'] as num?)?.toInt() ??
+          (json['streakCount'] as num?)?.toInt(),
+      completedToday:
+          json['completed_today'] as bool? ?? json['completedToday'] as bool?,
     );
   }
 
@@ -140,6 +151,8 @@ class WidgetVerse {
     WidgetVerseDisplayVariant displayVariant =
         WidgetVerseDisplayVariant.verseOnly,
     String? secondaryLine,
+    int? streakCount,
+    bool? completedToday,
   }) {
     return WidgetVerse(
       date: verse.date,
@@ -153,6 +166,40 @@ class WidgetVerse {
       theme: verse.theme,
       displayVariant: displayVariant,
       secondaryLine: secondaryLine,
+      streakCount: streakCount,
+      completedToday: completedToday,
+    );
+  }
+
+  WidgetVerse copyWith({
+    String? date,
+    String? versionCode,
+    String? versionName,
+    String? reference,
+    String? text,
+    double? fontSize,
+    int? libraryVerseId,
+    bool? isSaved,
+    String? theme,
+    WidgetVerseDisplayVariant? displayVariant,
+    String? secondaryLine,
+    int? streakCount,
+    bool? completedToday,
+  }) {
+    return WidgetVerse(
+      date: date ?? this.date,
+      versionCode: versionCode ?? this.versionCode,
+      versionName: versionName ?? this.versionName,
+      reference: reference ?? this.reference,
+      text: text ?? this.text,
+      fontSize: fontSize ?? this.fontSize,
+      libraryVerseId: libraryVerseId ?? this.libraryVerseId,
+      isSaved: isSaved ?? this.isSaved,
+      theme: theme ?? this.theme,
+      displayVariant: displayVariant ?? this.displayVariant,
+      secondaryLine: secondaryLine ?? this.secondaryLine,
+      streakCount: streakCount ?? this.streakCount,
+      completedToday: completedToday ?? this.completedToday,
     );
   }
 

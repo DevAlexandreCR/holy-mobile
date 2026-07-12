@@ -12,6 +12,8 @@ class AppRuntimeStorage {
       'phase3.notification_prompt_attempt_version';
   static const _widgetPromptDismissedUntilKey =
       'phase3.widget_prompt_dismissed_until';
+  static const _dailyReminderPromptSeenKey =
+      'phase3.daily_reminder_prompt_seen';
 
   SharedPreferences? _preferences;
 
@@ -119,6 +121,16 @@ class AppRuntimeStorage {
   Future<void> clearWidgetPromptDismissedUntil() async {
     final preferences = await _instance;
     await preferences.remove(_widgetPromptDismissedUntilKey);
+  }
+
+  Future<void> saveDailyReminderPromptSeen() async {
+    final preferences = await _instance;
+    await preferences.setBool(_dailyReminderPromptSeenKey, true);
+  }
+
+  Future<bool> hasSeenDailyReminderPrompt() async {
+    final preferences = await _instance;
+    return preferences.getBool(_dailyReminderPromptSeenKey) ?? false;
   }
 
   Future<SharedPreferences> get _instance async {

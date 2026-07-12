@@ -1,15 +1,21 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:holyverso/core/l10n/app_localizations.dart';
+import 'package:holyverso/core/services/app_runtime_storage.dart';
+import 'package:holyverso/core/services/phase_three_runtime_service.dart';
 import 'package:holyverso/core/theme/app_colors.dart';
 import 'package:holyverso/core/theme/app_text_styles.dart';
 import 'package:holyverso/core/services/version_detector_service.dart';
 import 'package:holyverso/domain/models/release_note.dart';
+import 'package:holyverso/presentation/providers/daily_reminder_prompt_provider.dart';
 import 'package:holyverso/presentation/providers/navigation_provider.dart';
 import 'package:holyverso/presentation/providers/whats_new_provider.dart';
 import 'package:holyverso/presentation/state/auth/auth_controller.dart';
+import 'package:holyverso/presentation/widgets/dialogs/daily_reminder_prompt_sheet.dart';
 import 'package:holyverso/presentation/widgets/dialogs/whats_new_dialog.dart';
 
 const SystemUiOverlayStyle _bottomNavigationOverlayStyle = SystemUiOverlayStyle(
@@ -33,7 +39,9 @@ class BottomNavigationShell extends ConsumerStatefulWidget {
 class _BottomNavigationShellState extends ConsumerState<BottomNavigationShell> {
   ProviderSubscription<int>? _navigationListener;
   ProviderSubscription<AsyncValue<ReleaseNote?>>? _whatsNewListener;
+  ProviderSubscription<AsyncValue<bool>>? _dailyReminderPromptListener;
   bool _whatsNewHandled = false;
+  bool _dailyReminderPromptHandled = false;
 
   @override
   void initState() {
@@ -62,12 +70,29 @@ class _BottomNavigationShellState extends ConsumerState<BottomNavigationShell> {
       },
       fireImmediately: true,
     );
+    _dailyReminderPromptListener = ref.listenManual<AsyncValue<bool>>(
+      dailyReminderPromptProvider,
+      (previous, next) {
+        next.whenData((shouldShow) {
+          if (!shouldShow || _dailyReminderPromptHandled) {
+            return;
+          }
+          _dailyReminderPromptHandled = true;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted) return;
+            unawaited(_showDailyReminderPromptSheet());
+          });
+        });
+      },
+      fireImmediately: true,
+    );
   }
 
   @override
   void dispose() {
     _navigationListener?.close();
     _whatsNewListener?.close();
+    _dailyReminderPromptListener?.close();
     super.dispose();
   }
 
@@ -97,6 +122,61 @@ class _BottomNavigationShellState extends ConsumerState<BottomNavigationShell> {
 
     if (!mounted) return;
     await ref.read(versionDetectorServiceProvider).markVersionAsSeen();
+  }
+
+  Future<void> _showDailyReminderPromptSheet() async {
+    final selectedHour = await showModalBottomSheet<int?>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (sheetContext) => const DailyReminderPromptSheet(),
+    );
+
+    if (!mounted) return;
+
+    if (selectedHour != null) {
+      await _saveDailyReminderHour(selectedHour);
+    }
+
+    if (!mounted) return;
+    await ref.read(appRuntimeStorageProvider).saveDailyReminderPromptSeen();
+  }
+
+  Future<void> _saveDailyReminderHour(int hour) async {
+    final settings = ref.read(authControllerProvider).settings;
+    if (settings == null) {
+      return;
+    }
+
+    await ref
+        .read(authControllerProvider.notifier)
+        .updateNotificationPreferences(
+          devotionalNotificationsEnabled:
+              settings.devotionalNotificationsEnabled,
+          followedCreatorNotificationsEnabled:
+              settings.followedCreatorNotificationsEnabled,
+          featuredDevotionalNotificationsEnabled:
+              settings.featuredDevotionalNotificationsEnabled,
+          streakRiskNotificationsEnabled:
+              settings.streakRiskNotificationsEnabled,
+          authorModerationNotificationsEnabled:
+              settings.authorModerationNotificationsEnabled,
+          editorReviewNotificationsEnabled:
+              settings.editorReviewNotificationsEnabled,
+          socialActivityNotificationsEnabled:
+              settings.socialActivityNotificationsEnabled,
+          commentNotificationsEnabled: settings.commentNotificationsEnabled,
+          followNotificationsEnabled: settings.followNotificationsEnabled,
+          reactionNotificationsEnabled: settings.reactionNotificationsEnabled,
+          dailyReminderHour: hour,
+          dailyReminderNotificationsEnabled: true,
+          streakMilestoneNotificationsEnabled:
+              settings.streakMilestoneNotificationsEnabled,
+          winbackNotificationsEnabled: settings.winbackNotificationsEnabled,
+        );
+
+    if (!mounted) return;
+    await ref.read(phaseThreeRuntimeServiceProvider).requestNotificationPermission();
   }
 
   void _onTap(int branchIndex) {

@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:holyverso/core/errors/app_error_mapper.dart';
 import 'package:holyverso/core/l10n/app_localizations.dart';
 import 'package:holyverso/data/devotionals/devotionals_repository.dart';
+import 'package:holyverso/data/widget/widget_sync_service.dart';
 import 'package:holyverso/domain/devotionals/devotional.dart';
 import 'package:holyverso/domain/devotionals/devotional_feed_mode.dart';
 import 'package:holyverso/presentation/state/auth/auth_controller.dart';
@@ -15,6 +16,7 @@ import 'package:holyverso/presentation/state/devotionals/saved_devotionals_contr
 abstract class BaseDevotionalsFeedController
     extends Notifier<DevotionalsFeedState> {
   late final DevotionalsRepository _repository;
+  late final WidgetSyncService _widgetSyncService;
   final Set<String> _trackedImpressions = <String>{};
   final Set<String> _trackedOpens = <String>{};
   bool _isRecoveringInvalidFeedState = false;
@@ -26,6 +28,7 @@ abstract class BaseDevotionalsFeedController
   @override
   DevotionalsFeedState build() {
     _repository = ref.read(devotionalsRepositoryProvider);
+    _widgetSyncService = ref.read(widgetSyncServiceProvider);
     return const DevotionalsFeedState();
   }
 
@@ -67,6 +70,17 @@ abstract class BaseDevotionalsFeedController
     }
 
     await _fetchHeader();
+
+    // The header is refreshed right after a devotional read completes;
+    // merge the fresh streak/completion state onto the already-stored
+    // widget verse (no verse refetch) and flip the widget immediately.
+    final header = state.feedHeader;
+    if (header != null) {
+      await _widgetSyncService.syncStreakStatus(
+        streakCount: header.currentStreak,
+        completedToday: header.completedToday,
+      );
+    }
   }
 
   Future<void> loadMore() async {

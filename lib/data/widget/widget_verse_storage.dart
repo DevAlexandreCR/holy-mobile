@@ -54,6 +54,31 @@ class WidgetVerseStorage {
     }
   }
 
+  /// Merges a fresh streak status onto the already-stored today's verse
+  /// (no verse refetch) and persists it, so a subsequent widget refresh
+  /// reflects the new streak/completion state immediately.
+  ///
+  /// No-op if there is no stored verse for today.
+  Future<void> mergeStreakStatus({
+    required int streakCount,
+    required bool completedToday,
+  }) async {
+    try {
+      final storedVerse = await getTodayVerse();
+      if (storedVerse == null) return;
+
+      await saveVerse(
+        storedVerse.copyWith(
+          streakCount: streakCount,
+          completedToday: completedToday,
+        ),
+      );
+    } catch (error, stackTrace) {
+      debugPrint('[WidgetStorage] Failed to merge streak status: $error');
+      debugPrint('$stackTrace');
+    }
+  }
+
   String _getTodayDateString() {
     final now = DateTime.now();
     return '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';

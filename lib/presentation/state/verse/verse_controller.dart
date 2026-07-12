@@ -94,6 +94,8 @@ class VerseController extends Notifier<VerseState> {
       verse,
       fontSize: fontSize,
       requestImmediateUpdate: true, // Always request an update
+      streakCount: verse.streakCount,
+      completedToday: verse.completedToday,
     );
   }
 

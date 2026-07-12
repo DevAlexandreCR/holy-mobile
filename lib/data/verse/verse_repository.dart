@@ -68,6 +68,8 @@ class VerseRepository {
       libraryVerseId: widgetVerse.libraryVerseId,
       isSaved: widgetVerse.isSaved,
       theme: widgetVerse.theme,
+      streakCount: widgetVerse.streakCount,
+      completedToday: widgetVerse.completedToday,
     );
   }
 

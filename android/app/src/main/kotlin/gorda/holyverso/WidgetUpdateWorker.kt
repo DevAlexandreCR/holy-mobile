@@ -170,6 +170,16 @@ class WidgetUpdateWorker(
                 if (displayContent.secondaryLine != null) {
                     put("secondary_line", displayContent.secondaryLine)
                 }
+                // Additive streak status: tolerate absence (older backend, unauthenticated).
+                // Not carrying the previous day's values forward on purpose - this object
+                // is rebuilt from scratch every refresh, so absence here means the fields
+                // are simply omitted from the stored payload.
+                if (data.has("streak_count") && !data.isNull("streak_count")) {
+                    put("streak_count", data.optInt("streak_count"))
+                }
+                if (data.has("completed_today") && !data.isNull("completed_today")) {
+                    put("completed_today", data.optBoolean("completed_today"))
+                }
             }
 
             // Guardar en SharedPreferences

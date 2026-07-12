@@ -42,6 +42,10 @@ class UserSettings {
     this.commentNotificationsEnabled = true,
     this.followNotificationsEnabled = true,
     this.reactionNotificationsEnabled = true,
+    this.dailyReminderHour,
+    this.dailyReminderNotificationsEnabled = true,
+    this.streakMilestoneNotificationsEnabled = true,
+    this.winbackNotificationsEnabled = true,
   });
 
   final int? preferredVersionId;
@@ -57,6 +61,10 @@ class UserSettings {
   final bool commentNotificationsEnabled;
   final bool followNotificationsEnabled;
   final bool reactionNotificationsEnabled;
+  final int? dailyReminderHour;
+  final bool dailyReminderNotificationsEnabled;
+  final bool streakMilestoneNotificationsEnabled;
+  final bool winbackNotificationsEnabled;
 
   factory UserSettings.fromMap(Map<String, dynamic> map) {
     final rawPreferred =
@@ -93,6 +101,17 @@ class UserSettings {
           map['follow_notifications_enabled'] as bool? ?? true,
       reactionNotificationsEnabled:
           map['reaction_notifications_enabled'] as bool? ?? true,
+      dailyReminderHour: switch (map['daily_reminder_hour']) {
+        int value => value,
+        String value => int.tryParse(value),
+        _ => null,
+      },
+      dailyReminderNotificationsEnabled:
+          map['daily_reminder_notifications_enabled'] as bool? ?? true,
+      streakMilestoneNotificationsEnabled:
+          map['streak_milestone_notifications_enabled'] as bool? ?? true,
+      winbackNotificationsEnabled:
+          map['winback_notifications_enabled'] as bool? ?? true,
     );
   }
 
@@ -115,6 +134,12 @@ class UserSettings {
       'comment_notifications_enabled': commentNotificationsEnabled,
       'follow_notifications_enabled': followNotificationsEnabled,
       'reaction_notifications_enabled': reactionNotificationsEnabled,
+      'daily_reminder_hour': dailyReminderHour,
+      'daily_reminder_notifications_enabled':
+          dailyReminderNotificationsEnabled,
+      'streak_milestone_notifications_enabled':
+          streakMilestoneNotificationsEnabled,
+      'winback_notifications_enabled': winbackNotificationsEnabled,
     };
   }
 }

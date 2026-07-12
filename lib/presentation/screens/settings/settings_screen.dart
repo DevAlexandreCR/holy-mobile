@@ -231,6 +231,120 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
+  static const List<int> _reminderHourAnchors = [7, 12, 20];
+
+  String _reminderHourLabel(int hour) {
+    final period = hour < 12 ? 'a. m.' : 'p. m.';
+    final displayHour = switch (hour % 12) {
+      0 => 12,
+      final h => h,
+    };
+    return '$displayHour:00 $period';
+  }
+
+  String _reminderAnchorName(int hour) {
+    return switch (hour) {
+      7 => 'Mañana',
+      12 => 'Mediodía',
+      20 => 'Noche',
+      _ => 'Personalizado',
+    };
+  }
+
+  void _openReminderHourSheet({
+    required int? selectedHour,
+    required bool isUpdating,
+  }) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (sheetContext) {
+        var showCustom = selectedHour != null &&
+            !_reminderHourAnchors.contains(selectedHour);
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            void selectHour(int hour) {
+              Navigator.of(sheetContext).pop();
+              _updateNotificationPreferences(dailyReminderHour: hour);
+            }
+
+            return HolyBottomSheet(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Hora del recordatorio',
+                    style: AppTextStyles.labelLarge.copyWith(
+                      color: AppColors.pureWhite,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    'Elige cuándo quieres tu momento con Dios',
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: AppColors.softMist.withValues(alpha: 0.8),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  ..._reminderHourAnchors.map(
+                    (hour) => Padding(
+                      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                      child: _ReminderHourOption(
+                        label: _reminderAnchorName(hour),
+                        subtitle: _reminderHourLabel(hour),
+                        selected: selectedHour == hour,
+                        disabled: isUpdating,
+                        onTap: () => selectHour(hour),
+                      ),
+                    ),
+                  ),
+                  _ReminderHourOption(
+                    label: 'Personalizado',
+                    subtitle: showCustom && selectedHour != null
+                        ? _reminderHourLabel(selectedHour)
+                        : 'Elige cualquier hora del día',
+                    selected: showCustom,
+                    disabled: isUpdating,
+                    onTap: () => setSheetState(() => showCustom = true),
+                  ),
+                  if (showCustom) ...[
+                    const SizedBox(height: AppSpacing.md),
+                    SizedBox(
+                      height: 180,
+                      child: GridView.builder(
+                        physics: const BouncingScrollPhysics(),
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 4,
+                          mainAxisSpacing: AppSpacing.sm,
+                          crossAxisSpacing: AppSpacing.sm,
+                          childAspectRatio: 1.6,
+                        ),
+                        itemCount: 24,
+                        itemBuilder: (_, hour) {
+                          final isSelected = selectedHour == hour;
+                          return _ReminderHourChip(
+                            hour: hour,
+                            selected: isSelected,
+                            disabled: isUpdating,
+                            onTap: () => selectHour(hour),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   Future<void> _updateNotificationPreferences({
     bool? devotionalNotificationsEnabled,
     bool? followedCreatorNotificationsEnabled,
@@ -242,6 +356,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     bool? commentNotificationsEnabled,
     bool? followNotificationsEnabled,
     bool? reactionNotificationsEnabled,
+    bool? dailyReminderNotificationsEnabled,
+    bool? streakMilestoneNotificationsEnabled,
+    bool? winbackNotificationsEnabled,
+    int? dailyReminderHour,
   }) async {
     final settings = ref.read(authControllerProvider).settings;
     if (settings == null) {
@@ -268,6 +386,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         followNotificationsEnabled ?? settings.followNotificationsEnabled;
     final targetReactionNotificationsEnabled =
         reactionNotificationsEnabled ?? settings.reactionNotificationsEnabled;
+    final targetDailyReminderNotificationsEnabled =
+        dailyReminderNotificationsEnabled ??
+        settings.dailyReminderNotificationsEnabled;
+    final targetStreakMilestoneNotificationsEnabled =
+        streakMilestoneNotificationsEnabled ??
+        settings.streakMilestoneNotificationsEnabled;
+    final targetWinbackNotificationsEnabled =
+        winbackNotificationsEnabled ?? settings.winbackNotificationsEnabled;
+    final targetDailyReminderHour =
+        dailyReminderHour ?? settings.dailyReminderHour;
     PushPermissionRequestResult permissionResult =
         PushPermissionRequestResult.unavailable;
 
@@ -287,7 +415,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         (!settings.followNotificationsEnabled &&
             targetFollowNotificationsEnabled) ||
         (!settings.reactionNotificationsEnabled &&
-            targetReactionNotificationsEnabled);
+            targetReactionNotificationsEnabled) ||
+        (!settings.dailyReminderNotificationsEnabled &&
+            targetDailyReminderNotificationsEnabled);
 
     if (shouldRequestPermission) {
       permissionResult = await ref
@@ -315,6 +445,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           commentNotificationsEnabled: targetCommentNotificationsEnabled,
           followNotificationsEnabled: targetFollowNotificationsEnabled,
           reactionNotificationsEnabled: targetReactionNotificationsEnabled,
+          dailyReminderHour: targetDailyReminderHour,
+          dailyReminderNotificationsEnabled:
+              targetDailyReminderNotificationsEnabled,
+          streakMilestoneNotificationsEnabled:
+              targetStreakMilestoneNotificationsEnabled,
+          winbackNotificationsEnabled: targetWinbackNotificationsEnabled,
         );
 
     if (!mounted) return;
@@ -573,6 +709,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         notificationSettings?.followNotificationsEnabled ?? true;
     final reactionNotificationsEnabled =
         notificationSettings?.reactionNotificationsEnabled ?? true;
+    final dailyReminderNotificationsEnabled =
+        notificationSettings?.dailyReminderNotificationsEnabled ?? true;
+    final streakMilestoneNotificationsEnabled =
+        notificationSettings?.streakMilestoneNotificationsEnabled ?? true;
+    final winbackNotificationsEnabled =
+        notificationSettings?.winbackNotificationsEnabled ?? true;
+    final dailyReminderHour = notificationSettings?.dailyReminderHour;
     final canEditContent = authState.user?.role.canEditContent ?? false;
 
     return Scaffold(
@@ -677,6 +820,54 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             l10n.versionsLoadError,
                       ),
                     ),
+                  const SizedBox(height: AppSpacing.lg),
+                  _sectionLabel('Recordatorio Diario'),
+                  SectionCard(
+                    children: [
+                      SettingTile(
+                        icon: Icons.alarm_outlined,
+                        title: 'Recordatorio diario',
+                        subtitle:
+                            'Recibe un aviso para tu momento con Dios',
+                        trailing: Switch.adaptive(
+                          value: dailyReminderNotificationsEnabled,
+                          activeThumbColor: AppColors.holyGold,
+                          activeTrackColor: AppColors.holyGold.withValues(
+                            alpha: 0.3,
+                          ),
+                          onChanged: isUpdating
+                              ? null
+                              : (value) => _updateNotificationPreferences(
+                                  dailyReminderNotificationsEnabled: value,
+                                ),
+                        ),
+                        onTap: isUpdating
+                            ? null
+                            : () => _updateNotificationPreferences(
+                                dailyReminderNotificationsEnabled:
+                                    !dailyReminderNotificationsEnabled,
+                              ),
+                      ),
+                      SettingTile(
+                        icon: Icons.schedule_outlined,
+                        title: 'Hora del recordatorio',
+                        subtitle: dailyReminderHour != null
+                            ? _reminderHourLabel(dailyReminderHour)
+                            : 'Elige una hora',
+                        trailing: Icon(
+                          Icons.chevron_right,
+                          color: AppColors.softMist.withValues(alpha: 0.8),
+                        ),
+                        onTap:
+                            isUpdating || !dailyReminderNotificationsEnabled
+                            ? null
+                            : () => _openReminderHourSheet(
+                                selectedHour: dailyReminderHour,
+                                isUpdating: isUpdating,
+                              ),
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: AppSpacing.lg),
                   _sectionLabel('Notificaciones'),
                   SectionCard(
@@ -784,6 +975,60 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             : () => _updateNotificationPreferences(
                                 streakRiskNotificationsEnabled:
                                     !streakRiskNotificationsEnabled,
+                              ),
+                      ),
+                      SettingTile(
+                        icon: Icons.emoji_events_outlined,
+                        title: 'Celebraciones de racha',
+                        subtitle:
+                            'Recibe un aviso cuando alcances un logro de racha',
+                        trailing: Switch.adaptive(
+                          value:
+                              devotionalNotificationsEnabled &&
+                              streakMilestoneNotificationsEnabled,
+                          activeThumbColor: AppColors.holyGold,
+                          activeTrackColor: AppColors.holyGold.withValues(
+                            alpha: 0.3,
+                          ),
+                          onChanged:
+                              isUpdating || !devotionalNotificationsEnabled
+                              ? null
+                              : (value) => _updateNotificationPreferences(
+                                  streakMilestoneNotificationsEnabled: value,
+                                ),
+                        ),
+                        onTap: isUpdating || !devotionalNotificationsEnabled
+                            ? null
+                            : () => _updateNotificationPreferences(
+                                streakMilestoneNotificationsEnabled:
+                                    !streakMilestoneNotificationsEnabled,
+                              ),
+                      ),
+                      SettingTile(
+                        icon: Icons.volunteer_activism_outlined,
+                        title: 'Te extrañamos',
+                        subtitle:
+                            'Recibe un mensaje cálido si dejas de visitar la app',
+                        trailing: Switch.adaptive(
+                          value:
+                              devotionalNotificationsEnabled &&
+                              winbackNotificationsEnabled,
+                          activeThumbColor: AppColors.holyGold,
+                          activeTrackColor: AppColors.holyGold.withValues(
+                            alpha: 0.3,
+                          ),
+                          onChanged:
+                              isUpdating || !devotionalNotificationsEnabled
+                              ? null
+                              : (value) => _updateNotificationPreferences(
+                                  winbackNotificationsEnabled: value,
+                                ),
+                        ),
+                        onTap: isUpdating || !devotionalNotificationsEnabled
+                            ? null
+                            : () => _updateNotificationPreferences(
+                                winbackNotificationsEnabled:
+                                    !winbackNotificationsEnabled,
                               ),
                       ),
                       SettingTile(
@@ -1328,6 +1573,145 @@ class _FontSizeOption extends StatelessWidget {
                   : AppColors.softMist.withValues(alpha: 0.8),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ReminderHourOption extends StatelessWidget {
+  const _ReminderHourOption({
+    required this.label,
+    required this.subtitle,
+    required this.selected,
+    required this.disabled,
+    required this.onTap,
+  });
+
+  final String label;
+  final String subtitle;
+  final bool selected;
+  final bool disabled;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final borderColor = selected
+        ? AppColors.holyGold
+        : AppColors.pureWhite.withValues(alpha: 0.1);
+
+    return InkWell(
+      onTap: disabled ? null : onTap,
+      borderRadius: AppBorderRadius.input,
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        decoration: BoxDecoration(
+          borderRadius: AppBorderRadius.input,
+          gradient: LinearGradient(
+            colors: selected
+                ? [
+                    AppColors.holyGold.withValues(alpha: 0.14),
+                    AppColors.pureWhite.withValues(alpha: 0.04),
+                  ]
+                : [
+                    AppColors.pureWhite.withValues(alpha: 0.05),
+                    AppColors.pureWhite.withValues(alpha: 0.02),
+                  ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          border: Border.all(color: borderColor),
+        ),
+        child: Row(
+          children: [
+            Container(
+              height: 24,
+              width: 24,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: borderColor, width: 2),
+              ),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                margin: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: selected ? AppColors.holyGold : Colors.transparent,
+                ),
+              ),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: AppTextStyles.labelLarge.copyWith(
+                      color: AppColors.pureWhite,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: AppColors.softMist.withValues(alpha: 0.8),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              selected ? Icons.check_circle : Icons.chevron_right,
+              color: selected
+                  ? AppColors.holyGold
+                  : AppColors.softMist.withValues(alpha: 0.8),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ReminderHourChip extends StatelessWidget {
+  const _ReminderHourChip({
+    required this.hour,
+    required this.selected,
+    required this.disabled,
+    required this.onTap,
+  });
+
+  final int hour;
+  final bool selected;
+  final bool disabled;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final borderColor = selected
+        ? AppColors.holyGold
+        : AppColors.pureWhite.withValues(alpha: 0.1);
+
+    return InkWell(
+      onTap: disabled ? null : onTap,
+      borderRadius: AppBorderRadius.input,
+      child: Container(
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          borderRadius: AppBorderRadius.input,
+          color: selected
+              ? AppColors.holyGold.withValues(alpha: 0.16)
+              : AppColors.pureWhite.withValues(alpha: 0.04),
+          border: Border.all(color: borderColor),
+        ),
+        child: Text(
+          hour.toString().padLeft(2, '0'),
+          style: AppTextStyles.labelMedium.copyWith(
+            color: selected ? AppColors.holyGold : AppColors.pureWhite,
+            fontWeight: FontWeight.w700,
+          ),
         ),
       ),
     );

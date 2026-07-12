@@ -102,12 +102,27 @@ class BibleWidgetProvider : AppWidgetProvider() {
             val slotColor = Color.parseColor("#80D7DCE3")
             views.setTextViewText(R.id.widget_version, slotText)
             views.setTextColor(R.id.widget_version, slotColor)
+
+            val streakCount = verse.streakCount
+            val completedToday = verse.completedToday
+            if (streakCount != null && completedToday != null) {
+                val statusLine = if (completedToday) {
+                    "🔥 Día $streakCount · Completado ✅"
+                } else {
+                    "🔥 Día $streakCount · Hoy pendiente"
+                }
+                views.setTextViewText(R.id.widget_status_line, statusLine)
+                views.setViewVisibility(R.id.widget_status_line, android.view.View.VISIBLE)
+            } else {
+                views.setViewVisibility(R.id.widget_status_line, android.view.View.GONE)
+            }
         } else {
             android.util.Log.d("BibleWidgetProvider", "No verse found, showing placeholder")
             views.setTextViewText(R.id.widget_verse_text, "Abre HolyVerso para actualizar el versículo")
             views.setTextViewText(R.id.widget_reference, "")
             views.setTextViewText(R.id.widget_version, "")
             views.setTextColor(R.id.widget_version, Color.parseColor("#99FFFFFF"))
+            views.setViewVisibility(R.id.widget_status_line, android.view.View.GONE)
         }
 
         // Intent para abrir la app al tocar el widget
@@ -159,6 +174,16 @@ class BibleWidgetProvider : AppWidgetProvider() {
                 ),
                 secondaryLine = obj.optString("secondary_line").takeIf {
                     it.isNotBlank()
+                },
+                streakCount = if (obj.has("streak_count") && !obj.isNull("streak_count")) {
+                    obj.optInt("streak_count")
+                } else {
+                    null
+                },
+                completedToday = if (obj.has("completed_today") && !obj.isNull("completed_today")) {
+                    obj.optBoolean("completed_today")
+                } else {
+                    null
                 }
             )
         } catch (e: Exception) {
@@ -177,4 +202,6 @@ data class WidgetVerse(
     val fontSize: Float = 16f,
     val displayVariant: String = WIDGET_DISPLAY_VARIANT_VERSE_ONLY,
     val secondaryLine: String? = null,
+    val streakCount: Int? = null,
+    val completedToday: Boolean? = null,
 )

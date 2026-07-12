@@ -170,7 +170,22 @@ class DevotionalsApiClient {
   Future<DevotionalFeedHeader> fetchFeedHeader() async {
     final response = await _dio.get('/devotionals/feed/header');
     final data = _unwrapData(response.data);
-    return DevotionalFeedHeader.fromMap(data);
+    final dailyFeatured = data['daily_featured'];
+    final normalized = {
+      ...data,
+      if (dailyFeatured is Map)
+        'daily_featured': {
+          ...Map<String, dynamic>.from(dailyFeatured),
+          'preview_image_url': _resolveUrl(
+            dailyFeatured['preview_image_url']?.toString(),
+          ),
+        },
+    };
+    return DevotionalFeedHeader.fromMap(normalized);
+  }
+
+  Future<void> celebrateMilestone(int milestone) async {
+    await _dio.post('/devotionals/streak/milestones/$milestone/celebrate');
   }
 
   Future<DevotionalAudioConfig> fetchDevotionalAudioConfig() async {

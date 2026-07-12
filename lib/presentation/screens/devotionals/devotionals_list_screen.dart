@@ -345,8 +345,10 @@ class _PublicFeedModeView extends ConsumerStatefulWidget {
 class _PublicFeedModeViewState extends ConsumerState<_PublicFeedModeView> {
   final ScrollController _scrollController = ScrollController();
   ProviderSubscription<bool?>? _completedHeaderListener;
+  ProviderSubscription<(int?, bool?)>? _milestoneListener;
   bool _completedBadgeDismissed = false;
   bool? _previousHeaderCompletedToday;
+  int? _celebratingMilestone;
 
   @override
   void initState() {
@@ -355,6 +357,7 @@ class _PublicFeedModeViewState extends ConsumerState<_PublicFeedModeView> {
       ref.read(widget.provider.notifier).loadInitial();
     });
     _bindCompletedHeaderListener();
+    _bindMilestoneListener();
     _scrollController.addListener(_onScroll);
   }
 
@@ -365,12 +368,15 @@ class _PublicFeedModeViewState extends ConsumerState<_PublicFeedModeView> {
       _completedHeaderListener?.close();
       _previousHeaderCompletedToday = null;
       _bindCompletedHeaderListener();
+      _milestoneListener?.close();
+      _bindMilestoneListener();
     }
   }
 
   @override
   void dispose() {
     _completedHeaderListener?.close();
+    _milestoneListener?.close();
     _scrollController.dispose();
     super.dispose();
   }
@@ -393,6 +399,44 @@ class _PublicFeedModeViewState extends ConsumerState<_PublicFeedModeView> {
       },
       fireImmediately: true,
     );
+  }
+
+  void _bindMilestoneListener() {
+    _milestoneListener = ref.listenManual<(int?, bool?)>(
+      widget.provider.select((state) {
+        final milestone = state.feedHeader?.milestone;
+        return (milestone?.value, milestone?.celebrated);
+      }),
+      (_, next) {
+        final value = next.$1;
+        final celebrated = next.$2;
+        if (value != null && celebrated == false) {
+          unawaited(_celebrateMilestone(value));
+        }
+      },
+      fireImmediately: true,
+    );
+  }
+
+  Future<void> _celebrateMilestone(int milestone) async {
+    if (!mounted) return;
+    setState(() {
+      _celebratingMilestone = milestone;
+    });
+    try {
+      await ref
+          .read(devotionalsRepositoryProvider)
+          .celebrateMilestone(milestone);
+    } catch (_) {}
+    if (!mounted) return;
+    await ref.read(widget.provider.notifier).refreshHeader();
+  }
+
+  void _dismissMilestoneCelebration() {
+    if (!mounted) return;
+    setState(() {
+      _celebratingMilestone = null;
+    });
   }
 
   void _onScroll() {
@@ -620,6 +664,14 @@ class _PublicFeedModeViewState extends ConsumerState<_PublicFeedModeView> {
                   },
                 ),
               ),
+            if (_celebratingMilestone != null)
+              Positioned.fill(
+                child: _MilestoneCelebrationOverlay(
+                  key: const Key('milestone-celebration-overlay'),
+                  milestone: _celebratingMilestone!,
+                  onDismissed: _dismissMilestoneCelebration,
+                ),
+              ),
           ],
         ),
       );
@@ -714,6 +766,14 @@ class _PublicFeedModeViewState extends ConsumerState<_PublicFeedModeView> {
                     _completedBadgeDismissed = true;
                   });
                 },
+              ),
+            ),
+          if (_celebratingMilestone != null)
+            Positioned.fill(
+              child: _MilestoneCelebrationOverlay(
+                key: const Key('milestone-celebration-overlay'),
+                milestone: _celebratingMilestone!,
+                onDismissed: _dismissMilestoneCelebration,
               ),
             ),
         ],
@@ -1076,6 +1136,139 @@ class _CompletedStreakBadgeState extends State<_CompletedStreakBadge> {
                       ),
                     ],
                   ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MilestoneCelebrationOverlay extends StatefulWidget {
+  const _MilestoneCelebrationOverlay({
+    super.key,
+    required this.milestone,
+    required this.onDismissed,
+  });
+
+  final int milestone;
+  final VoidCallback onDismissed;
+
+  @override
+  State<_MilestoneCelebrationOverlay> createState() =>
+      _MilestoneCelebrationOverlayState();
+}
+
+class _MilestoneCelebrationOverlayState
+    extends State<_MilestoneCelebrationOverlay>
+    with SingleTickerProviderStateMixin {
+  static const _autoDismissDelay = Duration(milliseconds: 2600);
+
+  late final AnimationController _controller;
+  late final Animation<double> _scale;
+  Timer? _autoDismissTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 380),
+    );
+    _scale = CurvedAnimation(parent: _controller, curve: Curves.elasticOut);
+    _controller.forward();
+    _autoDismissTimer = Timer(_autoDismissDelay, _dismiss);
+  }
+
+  @override
+  void dispose() {
+    _autoDismissTimer?.cancel();
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _dismiss() {
+    if (!mounted) return;
+    widget.onDismissed();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final milestone = widget.milestone;
+
+    return Semantics(
+      liveRegion: true,
+      label: '¡Racha de $milestone días! Dios ve tu constancia.',
+      child: GestureDetector(
+        onTap: _dismiss,
+        behavior: HitTestBehavior.opaque,
+        child: ColoredBox(
+          color: Colors.black.withValues(alpha: 0.55),
+          child: Center(
+            child: ScaleTransition(
+              scale: _scale,
+              child: Container(
+                margin: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
+                padding: const EdgeInsets.all(AppSpacing.xl),
+                decoration: BoxDecoration(
+                  borderRadius: AppBorderRadius.card,
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      AppColors.midnightFaithDark,
+                      const Color(0xFF243553),
+                      const Color(0xFF304868),
+                    ],
+                  ),
+                  border: Border.all(
+                    color: AppColors.holyGold.withValues(alpha: 0.5),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.holyGold.withValues(alpha: 0.25),
+                      blurRadius: 32,
+                      spreadRadius: 4,
+                    ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 72,
+                      height: 72,
+                      decoration: BoxDecoration(
+                        color: AppColors.holyGold.withValues(alpha: 0.16),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.local_fire_department_rounded,
+                        color: AppColors.holyGold,
+                        size: 40,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
+                    Text(
+                      '¡$milestone días seguidos! 🔥',
+                      textAlign: TextAlign.center,
+                      style: AppTextStyles.headline2.copyWith(
+                        color: AppColors.pureWhite,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    Text(
+                      '¡Racha de $milestone días! Dios ve tu constancia.',
+                      textAlign: TextAlign.center,
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: AppColors.softMist.withValues(alpha: 0.92),
+                        height: 1.4,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),

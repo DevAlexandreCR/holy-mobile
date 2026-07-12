@@ -60,6 +60,8 @@ struct WidgetVerseModel: Codable {
     let fontSize: Double
     let displayVariant: WidgetDisplayVariant
     let secondaryLine: String?
+    let streakCount: Int?
+    let completedToday: Bool?
 
     enum CodingKeys: String, CodingKey {
         case date
@@ -70,10 +72,14 @@ struct WidgetVerseModel: Codable {
         case fontSize = "font_size"
         case displayVariant = "display_variant"
         case secondaryLine = "secondary_line"
+        case streakCount = "streak_count"
+        case completedToday = "completed_today"
         case camelVersionCode = "versionCode"
         case camelVersionName = "versionName"
         case camelDisplayVariant = "displayVariant"
         case camelSecondaryLine = "secondaryLine"
+        case camelStreakCount = "streakCount"
+        case camelCompletedToday = "completedToday"
     }
 
     init(
@@ -84,7 +90,9 @@ struct WidgetVerseModel: Codable {
         text: String,
         fontSize: Double = 16.0,
         displayVariant: WidgetDisplayVariant = .verseOnly,
-        secondaryLine: String? = nil
+        secondaryLine: String? = nil,
+        streakCount: Int? = nil,
+        completedToday: Bool? = nil
     ) {
         self.date = date
         self.versionCode = versionCode
@@ -94,6 +102,8 @@ struct WidgetVerseModel: Codable {
         self.fontSize = fontSize
         self.displayVariant = displayVariant
         self.secondaryLine = secondaryLine
+        self.streakCount = streakCount
+        self.completedToday = completedToday
     }
 
     init(from decoder: Decoder) throws {
@@ -115,6 +125,10 @@ struct WidgetVerseModel: Codable {
         ) ?? .verseOnly
         secondaryLine = try container.decodeIfPresent(String.self, forKey: .secondaryLine)
             ?? container.decodeIfPresent(String.self, forKey: .camelSecondaryLine)
+        streakCount = try container.decodeIfPresent(Int.self, forKey: .streakCount)
+            ?? container.decodeIfPresent(Int.self, forKey: .camelStreakCount)
+        completedToday = try container.decodeIfPresent(Bool.self, forKey: .completedToday)
+            ?? container.decodeIfPresent(Bool.self, forKey: .camelCompletedToday)
     }
 
     func encode(to encoder: Encoder) throws {
@@ -127,6 +141,17 @@ struct WidgetVerseModel: Codable {
         try container.encode(fontSize, forKey: .fontSize)
         try container.encode(displayVariant.rawValue, forKey: .displayVariant)
         try container.encodeIfPresent(secondaryLine, forKey: .secondaryLine)
+        try container.encodeIfPresent(streakCount, forKey: .streakCount)
+        try container.encodeIfPresent(completedToday, forKey: .completedToday)
+    }
+
+    /// Compact habit-status line ("🔥 Día N · Hoy pendiente" / "🔥 Día N · Completado ✅").
+    /// Only present when both fields are non-nil; absent (stale payload, logged-out) renders nothing.
+    var statusLine: String? {
+        guard let streakCount, let completedToday else { return nil }
+        return completedToday
+            ? "🔥 Día \(streakCount) · Completado ✅"
+            : "🔥 Día \(streakCount) · Hoy pendiente"
     }
 }
 
@@ -264,7 +289,11 @@ struct WidgetVerseProvider: TimelineProvider {
                 text: verseData["text"] as? String ?? "",
                 fontSize: fontSize,
                 displayVariant: displaySelection.variant,
-                secondaryLine: displaySelection.secondaryLine
+                secondaryLine: displaySelection.secondaryLine,
+                streakCount: (verseData["streak_count"] as? NSNumber)?.intValue
+                    ?? (verseData["streakCount"] as? NSNumber)?.intValue,
+                completedToday: (verseData["completed_today"] as? Bool)
+                    ?? (verseData["completedToday"] as? Bool)
             )
 
             saveVerseToSharedDefaults(verse, defaults: defaults)
@@ -400,6 +429,15 @@ struct WidgetVerseView: View {
                             )
                             .lineLimit(1)
                             .minimumScaleFactor(0.8)
+                    }
+
+                    if let statusLine = verse.statusLine {
+                        Text(statusLine)
+                            .font(.system(size: 9, weight: .medium))
+                            .foregroundColor(HolyVersoColors.holyGold.opacity(0.9))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
+                            .accessibilityLabel(statusLine)
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)

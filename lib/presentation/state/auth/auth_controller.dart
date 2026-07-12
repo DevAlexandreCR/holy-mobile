@@ -292,6 +292,10 @@ class AuthController extends Notifier<AuthState> {
     required bool commentNotificationsEnabled,
     required bool followNotificationsEnabled,
     required bool reactionNotificationsEnabled,
+    int? dailyReminderHour,
+    required bool dailyReminderNotificationsEnabled,
+    required bool streakMilestoneNotificationsEnabled,
+    required bool winbackNotificationsEnabled,
   }) async {
     if (state.user == null) return false;
 
@@ -315,6 +319,11 @@ class AuthController extends Notifier<AuthState> {
         commentNotificationsEnabled: commentNotificationsEnabled,
         followNotificationsEnabled: followNotificationsEnabled,
         reactionNotificationsEnabled: reactionNotificationsEnabled,
+        dailyReminderHour: dailyReminderHour,
+        dailyReminderNotificationsEnabled: dailyReminderNotificationsEnabled,
+        streakMilestoneNotificationsEnabled:
+            streakMilestoneNotificationsEnabled,
+        winbackNotificationsEnabled: winbackNotificationsEnabled,
       );
       await _repository.persistSessionSnapshot(
         user: state.user!,

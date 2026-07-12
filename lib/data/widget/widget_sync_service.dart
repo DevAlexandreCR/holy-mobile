@@ -13,6 +13,8 @@ class WidgetSyncService {
     VerseOfTheDay verse, {
     double fontSize = 16.0,
     bool requestImmediateUpdate = false,
+    int? streakCount,
+    bool? completedToday,
   }) async {
     final displaySelection = WidgetVerseDisplaySelection.pick();
     final widgetVerse = WidgetVerse.fromVerseOfTheDay(
@@ -20,6 +22,8 @@ class WidgetSyncService {
       fontSize: fontSize,
       displayVariant: displaySelection.variant,
       secondaryLine: displaySelection.secondaryLine,
+      streakCount: streakCount,
+      completedToday: completedToday,
     );
     try {
       debugPrint(
@@ -50,6 +54,28 @@ class WidgetSyncService {
       }
     } catch (error, stackTrace) {
       debugPrint('[WidgetSyncService] Widget sync failed (non-fatal): $error');
+      debugPrint('$stackTrace');
+    }
+  }
+
+  /// Re-writes the stored widget payload merging the already-stored verse
+  /// with a fresh streak/completion status (e.g. right after a devotional
+  /// read completes) and requests a native widget refresh, without
+  /// refetching the verse itself.
+  Future<void> syncStreakStatus({
+    required int streakCount,
+    required bool completedToday,
+  }) async {
+    try {
+      await _storage.mergeStreakStatus(
+        streakCount: streakCount,
+        completedToday: completedToday,
+      );
+      await _storage.refreshWidgets();
+    } catch (error, stackTrace) {
+      debugPrint(
+        '[WidgetSyncService] Streak status sync failed (non-fatal): $error',
+      );
       debugPrint('$stackTrace');
     }
   }

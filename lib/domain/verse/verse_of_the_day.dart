@@ -8,6 +8,8 @@ class VerseOfTheDay {
     this.libraryVerseId,
     this.isSaved = false,
     this.theme,
+    this.streakCount,
+    this.completedToday,
   });
 
   final String date;
@@ -18,6 +20,8 @@ class VerseOfTheDay {
   final int? libraryVerseId;
   final bool isSaved;
   final String? theme;
+  final int? streakCount;
+  final bool? completedToday;
 
   String get displayVersionCode => versionCode.toUpperCase();
 
@@ -31,6 +35,8 @@ class VerseOfTheDay {
       if (libraryVerseId != null) 'library_verse_id': libraryVerseId,
       'is_saved': isSaved,
       if (theme != null) 'theme': theme,
+      if (streakCount != null) 'streak_count': streakCount,
+      if (completedToday != null) 'completed_today': completedToday,
     };
   }
 
@@ -47,6 +53,11 @@ class VerseOfTheDay {
           map['library_verse_id'] as int? ?? map['libraryVerseId'] as int?,
       isSaved: map['is_saved'] as bool? ?? map['isSaved'] as bool? ?? false,
       theme: map['theme'] as String?,
+      streakCount:
+          (map['streak_count'] as num?)?.toInt() ??
+          (map['streakCount'] as num?)?.toInt(),
+      completedToday:
+          map['completed_today'] as bool? ?? map['completedToday'] as bool?,
     );
   }
 
@@ -59,6 +70,8 @@ class VerseOfTheDay {
     int? libraryVerseId,
     bool? isSaved,
     String? theme,
+    int? streakCount,
+    bool? completedToday,
   }) {
     return VerseOfTheDay(
       date: date ?? this.date,
@@ -69,6 +82,8 @@ class VerseOfTheDay {
       libraryVerseId: libraryVerseId ?? this.libraryVerseId,
       isSaved: isSaved ?? this.isSaved,
       theme: theme ?? this.theme,
+      streakCount: streakCount ?? this.streakCount,
+      completedToday: completedToday ?? this.completedToday,
     );
   }
 }

@@ -142,6 +142,10 @@ class AuthRepository {
     required bool commentNotificationsEnabled,
     required bool followNotificationsEnabled,
     required bool reactionNotificationsEnabled,
+    int? dailyReminderHour,
+    required bool dailyReminderNotificationsEnabled,
+    required bool streakMilestoneNotificationsEnabled,
+    required bool winbackNotificationsEnabled,
   }) {
     return _client.updateNotificationPreferences(
       devotionalNotificationsEnabled: devotionalNotificationsEnabled,
@@ -157,6 +161,11 @@ class AuthRepository {
       commentNotificationsEnabled: commentNotificationsEnabled,
       followNotificationsEnabled: followNotificationsEnabled,
       reactionNotificationsEnabled: reactionNotificationsEnabled,
+      dailyReminderHour: dailyReminderHour,
+      dailyReminderNotificationsEnabled: dailyReminderNotificationsEnabled,
+      streakMilestoneNotificationsEnabled:
+          streakMilestoneNotificationsEnabled,
+      winbackNotificationsEnabled: winbackNotificationsEnabled,
     );
   }
 

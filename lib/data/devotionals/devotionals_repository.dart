@@ -52,6 +52,10 @@ class DevotionalsRepository {
     return _client.fetchFeedHeader();
   }
 
+  Future<void> celebrateMilestone(int milestone) {
+    return _client.celebrateMilestone(milestone);
+  }
+
   Future<DevotionalAudioConfig> fetchDevotionalAudioConfig() {
     return _client.fetchDevotionalAudioConfig();
   }

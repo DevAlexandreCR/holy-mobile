@@ -2,7 +2,9 @@ import 'dart:async';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:holyverso/core/config/app_config.dart';
 import 'package:holyverso/core/services/app_runtime_storage.dart';
 import 'package:holyverso/core/services/phase_three_runtime_service.dart';
@@ -186,6 +188,94 @@ void main() {
       );
     });
   });
+
+  group('PhaseThreeRuntimeService notification-open routing', () {
+    for (final type in ['DAILY_REMINDER', 'STREAK_MILESTONE', 'WINBACK']) {
+      test(
+        '$type with a devotionalId routes to the devotional and marks it opened',
+        () async {
+          final harness = await _createHarness(
+            currentVersion: '1.1.3+13',
+            initialStatus: PushAuthorizationStatus.authorized,
+          );
+          await harness.service.syncSession(
+            isAuthenticated: true,
+            userId: 'user-1',
+            forceSessionStart: true,
+          );
+
+          final router = _buildTestRouter();
+          await harness.service.start(router);
+
+          harness.messagingClient.emitNotificationOpen(
+            PushNotificationMessage(
+              data: {'type': type, 'devotional_id': 'devo-1'},
+            ),
+          );
+          await pumpEventQueue();
+
+          expect(
+            harness.notifications.markOpenedCalls,
+            contains(
+              isA<_MarkOpenedCall>()
+                  .having((c) => c.devotionalId, 'devotionalId', 'devo-1')
+                  .having((c) => c.type, 'type', type),
+            ),
+          );
+          expect(
+            router.routeInformationProvider.value.uri.path,
+            '/devotionals/devo-1',
+          );
+        },
+      );
+
+      test(
+        '$type without a devotionalId falls back to the devotionals feed',
+        () async {
+          final harness = await _createHarness(
+            currentVersion: '1.1.3+13',
+            initialStatus: PushAuthorizationStatus.authorized,
+          );
+          await harness.service.syncSession(
+            isAuthenticated: true,
+            userId: 'user-1',
+            forceSessionStart: true,
+          );
+
+          final router = _buildTestRouter();
+          await harness.service.start(router);
+
+          harness.messagingClient.emitNotificationOpen(
+            PushNotificationMessage(data: {'type': type}),
+          );
+          await pumpEventQueue();
+
+          expect(harness.notifications.markOpenedCalls, isEmpty);
+          expect(
+            router.routeInformationProvider.value.uri.path,
+            '/devotionals',
+          );
+        },
+      );
+    }
+  });
+}
+
+GoRouter _buildTestRouter() {
+  return GoRouter(
+    initialLocation: '/home',
+    routes: [
+      GoRoute(path: '/home', builder: (context, state) => const SizedBox()),
+      GoRoute(
+        path: '/devotionals',
+        builder: (context, state) => const SizedBox(),
+      ),
+      GoRoute(
+        path: '/devotionals/:id',
+        builder: (context, state) => const SizedBox(),
+      ),
+    ],
+  );
 }
 
 Future<_Harness> _createHarness({
@@ -259,6 +349,12 @@ class _FakePushMessagingClient implements PushMessagingClient {
   final PushAuthorizationStatus _requestStatus;
   final String? token;
   int requestPermissionCallCount = 0;
+  final StreamController<PushNotificationMessage> _notificationOpenController =
+      StreamController<PushNotificationMessage>.broadcast();
+
+  void emitNotificationOpen(PushNotificationMessage message) {
+    _notificationOpenController.add(message);
+  }
 
   @override
   Future<PushNotificationSettings> getNotificationSettings() async {
@@ -273,7 +369,7 @@ class _FakePushMessagingClient implements PushMessagingClient {
 
   @override
   Stream<PushNotificationMessage> get onMessageOpenedApp =>
-      const Stream.empty();
+      _notificationOpenController.stream;
 
   @override
   Stream<String> get onTokenRefresh => const Stream.empty();
@@ -308,15 +404,33 @@ class _RegisterCall {
   final String osPermissionStatus;
 }
 
+class _MarkOpenedCall {
+  const _MarkOpenedCall({required this.devotionalId, required this.type});
+
+  final String devotionalId;
+  final String type;
+}
+
 class _FakeNotificationApiClient extends NotificationApiClient {
   _FakeNotificationApiClient() : super(Dio());
 
   final List<_RegisterCall> registerCalls = [];
   final List<String> deleteCalls = [];
+  final List<_MarkOpenedCall> markOpenedCalls = [];
 
   @override
   Future<void> deleteDeviceToken({required String token}) async {
     deleteCalls.add(token);
+  }
+
+  @override
+  Future<void> markNotificationOpened({
+    required String devotionalId,
+    required String type,
+  }) async {
+    markOpenedCalls.add(
+      _MarkOpenedCall(devotionalId: devotionalId, type: type),
+    );
   }
 
   @override

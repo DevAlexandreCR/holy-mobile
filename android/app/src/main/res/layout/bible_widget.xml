@@ -58,4 +58,22 @@
             android:maxLines="1" />
     </LinearLayout>
 
+    <TextView
+        android:id="@+id/widget_status_line"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:visibility="gone"
+        android:gravity="start"
+        android:text=""
+        android:textSize="11sp"
+        android:textColor="#F4D27A"
+        android:fontFamily="sans-serif-medium"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:shadowColor="#80000000"
+        android:shadowDx="0"
+        android:shadowDy="1"
+        android:shadowRadius="2" />
+
 </LinearLayout>

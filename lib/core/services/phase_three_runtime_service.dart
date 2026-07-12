@@ -280,6 +280,11 @@ class PhaseThreeRuntimeService {
     }
 
     if (devotionalId == null || devotionalId.isEmpty) {
+      if (type == 'DAILY_REMINDER' ||
+          type == 'STREAK_MILESTONE' ||
+          type == 'WINBACK') {
+        _navigate('/devotionals');
+      }
       return;
     }
 
